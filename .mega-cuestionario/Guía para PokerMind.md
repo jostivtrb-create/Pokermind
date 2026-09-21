@@ -124,6 +124,7 @@ El usuario publicó el juego, lo probó y trajo dos cosas. Las dos cambian decis
 | D45 | Las explicaciones **enseñan las dos partes y el total** («−42 ahora, −23 más de las calles siguientes, total −65»), y las subidas dicen **cuánto pones en total** («subir 220, pones 400») | Las dos IA hicieron la cuenta a mano y no llegaron al número de la pantalla; una entendió además «subir 220» como subir *hasta* 220 y la dio por ilegal. Los números estaban bien: la redacción, no |
 | D47 | **El jugador elige el tamaño de la subida** (½ bote, ¾, bote, y todo-in con fichas cortas), y el motor juzga el tamaño elegido | En el entrenador se aguantaba un tamaño fijo, pero en una partida el tamaño **es** la decisión |
 | D48 | **El todo-in solo se ofrece con fichas cortas** (hasta 2,5 veces el bote más lo que cuesta igualar) | Honestidad sobre lo que el motor sabe: calcula muy bien una calle, pero aproxima el dinero de las siguientes. Con 900 fichas en un bote de 100 esa aproximación sobrevalora el todo-in frente a apostar tres veces seguidas, que es lo que haría un buen jugador |
+| D52 | Cuando dos manos empatan de jugada, se explica **la carta que las separa** («las dos tienen el rey, así que decide la segunda carta: reina gana a jota»), y al corregir se enseñan **las cinco cartas** con las que juega cada una | Jugando salió una pregunta cuya explicación era *"abajo se forma carta alta: rey y arriba carta alta: rey"* — la misma frase dos veces, sin explicar nada |
 | D50 | Al terminar una lección, el botón grande es **la siguiente lección por su nombre**, no volver a la lista | Probándolo en el móvil: *"al terminar una lección me bota acá sin saber nada, es enredado"*. Aprender se para en seco cada vez que hay que decidir dónde hacer clic |
 | D51 | En la pantalla del curso, **lo primero es lo que toca ahora** y después las lecciones; el reto diario, el repaso y el modo libre van debajo | Antes lo primero eran tres tarjetas que casi nunca te tocan y las lecciones quedaban abajo del todo |
 | D49 | Los bots juegan **de uno en uno**, con pausa, y se ve lo que hace cada uno | Antes jugaban los tres de golpe y aparecía el resultado ya hecho: no se veía quién subía ni quién se iba, que es justo lo que hay que mirar |
@@ -433,3 +434,11 @@ preparado), otros idiomas (D12) y el mazo de cuatro colores.
   dos lados (D50 y D51): el fin de lección encadena con la siguiente por su nombre, y la pantalla
   del curso pone arriba lo que toca ahora. De paso, las tres cifras del final de lección van en una
   fila: apiladas empujaban el botón de seguir fuera de la pantalla del móvil.
+- **22/09/2026 (madrugada)** — Otro fallo encontrado jugando, y de los que enseñan mal: la pregunta
+  de «¿quién gana?» explicaba el resultado nombrando la jugada de cada mano, y cuando las dos eran
+  la misma («carta alta: rey») repetía la frase y no explicaba nada. Escrito `motor/comparar.ts`,
+  que busca **la primera carta en la que las dos manos se separan** y la nombra como lo haría una
+  persona en la mesa, sabiendo además si esa jugada se dice «de sietes» o «al siete». Y al corregir
+  se enseñan **las cinco cartas** con las que juega cada mano, con las cartas propias que entran
+  resaltadas. Escribiendo el test me equivoqué yo: creía que decidía el ocho y decidía la jota
+  contra la reina — el motor tenía razón.

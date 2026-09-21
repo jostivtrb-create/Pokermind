@@ -5,6 +5,7 @@ import { categoriaDe, describirMano, evaluar, mejoresCinco } from '../motor/eval
 import type { Modulo, PreguntaTest } from '../juego/lecciones'
 import { leccion } from '../juego/lecciones'
 import { dosJugadasDistintas, nombreDeJugada } from './generador'
+import { compararManos } from '../motor/comparar'
 
 /**
  * MÓDULO 1 · Las reglas y la mesa.
@@ -57,16 +58,18 @@ function queCartaEsMasAlta(azar: Aleatorio): PreguntaTest {
 /** ¿Qué jugada gana? Dos manos de cinco cartas, ya formadas. */
 function queJugadaGana(azar: Aleatorio): PreguntaTest {
   const { a, b, catA, catB } = dosJugadasDistintas(azar)
-  const ganaA = catA > catB
-  const porQue = `${mayuscula(nombreDeJugada(Math.max(catA, catB)))} gana a ${nombreDeJugada(Math.min(catA, catB))}.`
+  const comparacion = compararManos(a, b)
+  const ganaA = comparacion.gana === 'a'
 
   return {
     enunciado: '¿Cuál de estas dos jugadas gana?',
     mano: a,
     manoB: b,
+    cincoA: comparacion.cincoA,
+    cincoB: comparacion.cincoB,
     opciones: [
-      { texto: `La de arriba: ${nombreDeJugada(catA)}`, correcta: ganaA, porQue },
-      { texto: `La de abajo: ${nombreDeJugada(catB)}`, correcta: !ganaA, porQue },
+      { texto: `La de arriba: ${nombreDeJugada(catA)}`, correcta: ganaA, porQue: comparacion.porQue },
+      { texto: `La de abajo: ${nombreDeJugada(catB)}`, correcta: !ganaA, porQue: comparacion.porQue },
     ],
   }
 }
@@ -78,27 +81,26 @@ function quienGanaLaMano(azar: Aleatorio): PreguntaTest {
     const mesa = baraja.slice(0, 5)
     const manoA = baraja.slice(5, 7)
     const manoB = baraja.slice(7, 9)
-    const valorA = evaluar([...manoA, ...mesa])
-    const valorB = evaluar([...manoB, ...mesa])
-    if (valorA === valorB) continue
+    const comparacion = compararManos([...manoA, ...mesa], [...manoB, ...mesa])
+    if (comparacion.gana === 'empate') continue
 
-    const ganaA = valorA > valorB
+    /*
+      La explicación la escribe el comparador, que busca la carta en la que las
+      dos manos se separan. Antes se decía "arriba se forma X y abajo se forma
+      Y" y, cuando X e Y eran lo mismo ("carta alta: rey" las dos), no explicaba
+      absolutamente nada. Lo pilló el usuario jugando.
+    */
+    const ganaA = comparacion.gana === 'a'
     return {
       enunciado: 'Las cinco cartas de la mesa son de los dos. ¿Quién gana?',
       mesa,
       mano: manoA,
       manoB,
+      cincoA: comparacion.cincoA,
+      cincoB: comparacion.cincoB,
       opciones: [
-        {
-          texto: 'El de arriba',
-          correcta: ganaA,
-          porQue: `Arriba se forma ${describirMano([...manoA, ...mesa])} y abajo ${describirMano([...manoB, ...mesa])}.`,
-        },
-        {
-          texto: 'El de abajo',
-          correcta: !ganaA,
-          porQue: `Abajo se forma ${describirMano([...manoB, ...mesa])} y arriba ${describirMano([...manoA, ...mesa])}.`,
-        },
+        { texto: 'El de arriba', correcta: ganaA, porQue: comparacion.porQue },
+        { texto: 'El de abajo', correcta: !ganaA, porQue: comparacion.porQue },
       ],
     }
   }
@@ -134,7 +136,13 @@ function comoSeLlama(azar: Aleatorio): PreguntaTest {
       porQue: texto === correcta ? `Eso es: ${nombre}.` : `No: lo que hay aquí es ${nombre}.`,
     }))
 
-  return { enunciado: 'Juntando tus cartas con la mesa, ¿qué jugada tienes?', mesa, mano, opciones }
+  return {
+    enunciado: 'Juntando tus cartas con la mesa, ¿qué jugada tienes?',
+    mesa,
+    mano,
+    cincoA: mejoresCinco(completa),
+    opciones,
+  }
 }
 
 function mayuscula(texto: string): string {

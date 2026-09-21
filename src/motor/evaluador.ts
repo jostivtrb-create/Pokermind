@@ -146,8 +146,12 @@ export function evaluar(cartas: readonly Carta[]): number {
   return componer(Categoria.CartaAlta, cinco[0], cinco[1], cinco[2], cinco[3], cinco[4])
 }
 
-/** Los valores que deciden la mano, del más importante al menos. */
-function desglosar(valor: number): number[] {
+/**
+ * Los valores que deciden la mano, del más importante al menos.
+ * Se exporta porque comparar dos manos iguales de categoría necesita saber
+ * exactamente en qué carta se separan.
+ */
+export function desglosarValor(valor: number): number[] {
   let resto = valor % P_CATEGORIA
   const partes: number[] = []
   for (let potencia = P1; potencia >= 1; potencia /= BASE) {
@@ -164,7 +168,7 @@ function desglosar(valor: number): number[] {
 export function describirMano(cartas: readonly Carta[]): string {
   const valor = evaluar(cartas)
   const categoria = categoriaDe(valor)
-  const [c1, c2] = desglosar(valor)
+  const [c1, c2] = desglosarValor(valor)
 
   switch (categoria) {
     case Categoria.EscaleraColor:

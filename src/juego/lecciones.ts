@@ -68,6 +68,12 @@ export interface PreguntaTest {
   mesa?: Carta[]
   /** Segunda mano, para las preguntas de "cuál de las dos gana". */
   manoB?: Carta[]
+  /**
+   * Las cinco cartas que forman cada jugada. Se enseñan al corregir: decir
+   * "gana por la segunda carta" y no enseñar cuál es deja al jugador igual.
+   */
+  cincoA?: Carta[]
+  cincoB?: Carta[]
   opciones: OpcionTest[]
 }
 

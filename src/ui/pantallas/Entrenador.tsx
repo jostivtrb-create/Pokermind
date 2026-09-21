@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { aleatorioLibre } from '../../motor/aleatorio'
 import type { Accion } from '../../motor/decision'
 import { NOMBRES_CALLE, analizar } from '../../motor/decision'
-import { Categoria, categoriaDe, evaluar } from '../../motor/evaluador'
+import { Categoria, categoriaDe, describirMano, evaluar } from '../../motor/evaluador'
 import { GLOSARIO_POR_CLAVE } from '../../contenido/glosario'
 import type { Leccion } from '../../juego/lecciones'
 import { pasosDeLaLeccion } from '../../juego/lecciones'
@@ -385,6 +385,12 @@ function Test({
         </div>
       )}
 
+      {/*
+        Al corregir se enseñan LAS CINCO CARTAS que forman cada jugada. Decir
+        "gana por la segunda carta" sin enseñar cuál es deja al jugador igual que
+        estaba, y eso se vio jugando: dos manos de carta alta al rey y una
+        explicación que repetía la misma frase dos veces.
+      */}
       {/* Dos cartas sueltas se enfrentan, no se apilan: la pregunta es cuál gana. */}
       {esDuelo(pregunta) ? (
         <div style={{ display: 'flex', gap: 14, alignItems: 'center', justifyContent: 'center', margin: '14px 0' }}>
@@ -399,13 +405,21 @@ function Test({
               <span className="etiqueta">
                 {pregunta.manoB ? 'Mano de arriba' : 'Tus cartas'}
               </span>
-              <div style={{ marginTop: 6 }}><FilaDeCartas cartas={pregunta.mano} /></div>
+              <div style={{ marginTop: 6 }}>
+                <FilaDeCartas cartas={pregunta.mano} destacadas={respondida ? pregunta.cincoA : undefined} />
+              </div>
+              {respondida && pregunta.cincoA && (
+                <JugadaFormada cartas={pregunta.cincoA} nombre={pregunta.manoB ? 'Arriba juega' : 'Tu jugada'} />
+              )}
             </div>
           )}
           {pregunta.manoB && (
             <div style={{ marginBottom: 12 }}>
               <span className="etiqueta">Mano de abajo</span>
-              <div style={{ marginTop: 6 }}><FilaDeCartas cartas={pregunta.manoB} /></div>
+              <div style={{ marginTop: 6 }}>
+                <FilaDeCartas cartas={pregunta.manoB} destacadas={respondida ? pregunta.cincoB : undefined} />
+              </div>
+              {respondida && pregunta.cincoB && <JugadaFormada cartas={pregunta.cincoB} nombre="Abajo juega" />}
             </div>
           )}
         </>
@@ -535,6 +549,20 @@ function Terminada({
 function hayQueAvisarDeLaMesa(mano: readonly number[], mesa: readonly number[]): boolean {
   if (categoriaDe(evaluar([...mano, ...mesa])) < Categoria.Pareja) return false
   return !usaTusCartas(mano, mesa)
+}
+
+/** Las cinco cartas con las que juega de verdad esa mano, y cómo se llaman. */
+function JugadaFormada({ cartas, nombre }: { cartas: number[]; nombre: string }) {
+  return (
+    <div style={{ marginTop: 8 }}>
+      <span className="etiqueta" style={{ color: 'var(--ambar)' }}>
+        {nombre}: {describirMano(cartas)}
+      </span>
+      <div style={{ marginTop: 5 }}>
+        <FilaDeCartas cartas={cartas} pequenas />
+      </div>
+    </div>
+  )
 }
 
 /** Dos cartas sueltas frente a frente, sin mesa: la pregunta de "cuál vale más". */
