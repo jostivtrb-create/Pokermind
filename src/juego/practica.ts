@@ -1,8 +1,8 @@
 import type { Aleatorio } from '../motor/aleatorio'
 import type { Carta } from '../motor/cartas'
-import { NOMBRES_VALOR, barajaCompleta, barajar } from '../motor/cartas'
+import { NOMBRES_VALOR, VALORES, barajaCompleta, barajar } from '../motor/cartas'
 import type { Calle, Exigencia, Situacion } from '../motor/decision'
-import { categoriaDe, describirMano, evaluar, Categoria } from '../motor/evaluador'
+import { categoriaDe, describirMano, evaluar, mejoresCinco, Categoria } from '../motor/evaluador'
 import type { PerfilRival } from '../motor/perfiles'
 import { RIVAL_TIPICO } from '../motor/perfiles'
 import type { Posicion } from '../motor/rangos'
@@ -392,6 +392,17 @@ export function proyectosDe(mano: readonly Carta[], mesa: readonly Carta[]): str
  * confunde: ese as no es tuyo, está en la mesa y lo tiene todo el mundo. Cuando
  * tus dos cartas no pintan nada se dice así, que es como se dice en una mesa.
  */
+/**
+ * La frase entera, lista para enseñar. La pantalla ya no le pega "Tienes"
+ * delante: con las descripciones que empiezan por "no tienes" salía el
+ * destrozo "Tienes no tienes pareja".
+ */
+export function fraseDeTuMano(mano: readonly Carta[], mesa: readonly Carta[]): string {
+  const texto = describirTuMano(mano, mesa)
+  const frase = texto.startsWith('no tienes') ? texto : `tienes ${texto}`
+  return `${frase[0].toUpperCase()}${frase.slice(1)}.`
+}
+
 export function describirTuMano(mano: readonly Carta[], mesa: readonly Carta[]): string {
   const proyectos = proyectosDe(mano, mesa)
   const hecha = describirLoHecho(mano, mesa)
@@ -400,21 +411,29 @@ export function describirTuMano(mano: readonly Carta[], mesa: readonly Carta[]):
   return `${hecha}${une}${proyectos.join(' y ')}`
 }
 
-/** La jugada hecha, diciendo la verdad sobre de quién es la carta alta. */
+/**
+ * La jugada hecha, diciendo la verdad sobre lo que tienes.
+ *
+ * "Carta alta: as" con el as en la mesa confunde, pero decir "juegas la mesa"
+ * tampoco es verdad si tus cartas entran como acompañantes: con 9♥8♥ en
+ * 5♠3♦10♣A♥2♠ tu mano es A-10-9-8-5, y esos 9 y 8 son tuyos y pueden decidir
+ * el bote. Así que se enseña la mano entera: "as alto con 10-9-8".
+ */
 function describirLoHecho(mano: readonly Carta[], mesa: readonly Carta[]): string {
   if (mesa.length === 0) return describirMano([...mano, ...mesa])
+  const cinco = mejoresCinco([...mano, ...mesa])
   const categoria = categoriaDe(evaluar([...mano, ...mesa]))
   if (categoria > Categoria.CartaAlta) return describirMano([...mano, ...mesa])
 
-  // "Carta alta: as" cuando el as está en la mesa es mentira piadosa y confunde:
-  // ese as lo tiene todo el que siga en la mano.
-  const masAlta = Math.max(...[...mano, ...mesa].map((c) => c >> 2))
-  const esTuya = mano.some((c) => (c >> 2) === masAlta)
+  const valores = cinco.map((c) => c >> 2).sort((a, b) => b - a)
+  const tuyas = new Set(mano.map((c) => c >> 2))
+  if (!valores.some((v) => tuyas.has(v))) {
+    return 'no tienes pareja: juegas las cinco cartas de la mesa, y eso lo tiene todo el mundo'
+  }
   // "la jota" y "la reina" llevan artículo femenino; el resto, masculino.
-  const articulo = masAlta === 9 || masAlta === 10 ? 'la' : 'el'
-  return esTuya
-    ? `no tienes pareja: tu carta alta es ${articulo} ${NOMBRES_VALOR[masAlta]}`
-    : 'no tienes pareja: la carta más alta está en la mesa y la tiene todo el mundo'
+  const articulo = valores[0] === 9 || valores[0] === 10 ? 'la' : 'el'
+  const acompanan = valores.slice(1, 4).map((v) => VALORES[v]).join('-')
+  return `no tienes pareja: lo mejor que tienes es ${articulo} ${NOMBRES_VALOR[valores[0]]} alto con ${acompanan}`
 }
 
 /** Lo contrario de una condición. */

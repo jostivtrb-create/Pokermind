@@ -5,7 +5,7 @@ import type { Accion, Juicio } from '../../motor/decision'
 import type { Carta } from '../../motor/cartas'
 import { juzgar } from '../../motor/decision'
 import { Categoria, categoriaDe, describirMano, evaluar } from '../../motor/evaluador'
-import { describirTuMano, usaTusCartas } from '../../juego/practica'
+import { fraseDeTuMano, usaTusCartas } from '../../juego/practica'
 import { rangoEstimado, rivalPrincipal } from '../../motor/lectura'
 import type { AccionMesa, EstadoMesa } from '../../motor/mesa'
 import { aplicar, boteTotal, opcionesDisponibles, paraPagar } from '../../motor/mesa'
@@ -40,6 +40,8 @@ interface Apunte {
   pusiste: number
   accion: AccionMesa
   mesa: Carta[]
+  /** A qué te enfrentabas: "te suben", "te vuelven a subir", "van con todo". */
+  situacion: string
 }
 
 /**
@@ -177,6 +179,7 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
             : 0,
       accion: traducida,
       mesa: [...mesa.comunitarias],
+      situacion: aQueTeEnfrentas(mesa, humano, cuestaSeguir),
     }
     setJuicios((lista) => [...lista, apunte])
 
@@ -304,11 +307,10 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
                 <div style={{ marginTop: 6 }}><FilaDeCartas cartas={humano.cartas} /></div>
                 {mesa.comunitarias.length > 0 && (
                   <p className="tenue" style={{ fontSize: 13, margin: '6px 0 0' }}>
-                    Tienes {describirTuMano(humano.cartas, mesa.comunitarias)}
+                    {fraseDeTuMano(humano.cartas, mesa.comunitarias)}
                     {categoriaDe(evaluar([...humano.cartas, ...mesa.comunitarias])) >= Categoria.Pareja &&
-                    !usaTusCartas(humano.cartas, mesa.comunitarias)
-                      ? ', pero está entera en la mesa: eso lo tiene todo el mundo.'
-                      : '.'}
+                      !usaTusCartas(humano.cartas, mesa.comunitarias) &&
+                      ' Pero está entera en la mesa: eso lo tiene todo el mundo.'}
                   </p>
                 )}
               </div>
@@ -365,7 +367,9 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
                   )
                 })()}
 
-                {juicios.length > 0 && <ComoFueLaMano apuntes={juicios} />}
+                {juicios.length > 0 && (
+                  <ComoFueLaMano apuntes={juicios} neto={netoDeLaMano(mesa)} />
+                )}
 
                 <button className="boton principal ancho" onClick={terminarMano}>Siguiente mano →</button>
               </div>
@@ -440,6 +444,28 @@ function copia(mesa: EstadoMesa): EstadoMesa {
   return { ...mesa }
 }
 
+/**
+ * A qué te enfrentas en esta decisión.
+ *
+ * En una mano con tres subidas antes del flop, el repaso enseñaba tres pasos
+ * seguidos que ponían "Antes del flop" y nada más: imposible distinguirlos.
+ * Esto los separa por lo que te acababa de pasar.
+ */
+function aQueTeEnfrentas(mesa: EstadoMesa, humano: { id: number; fichas: number }, cuesta: number): string {
+  if (cuesta <= 0) return ''
+  if (cuesta >= humano.fichas) return 'van con todo'
+  const subidasAntes = mesa.historial.filter(
+    (h) => h.calle === mesa.calle && h.accion === 'subir' && h.jugador !== humano.id,
+  ).length
+  const yaHabiasPuesto = mesa.historial.some(
+    (h) => h.calle === mesa.calle && h.jugador === humano.id && h.accion !== 'pasar',
+  )
+  if (subidasAntes >= 3) return 'otra subida más'
+  if (subidasAntes === 2) return 'te vuelven a subir'
+  if (subidasAntes === 1) return yaHabiasPuesto ? 'te vuelven a subir' : 'te suben'
+  return 'te apuestan'
+}
+
 /** Lo último que hizo ese jugador en esta calle, para que se vea la mano jugarse. */
 function ultimaJugada(mesa: EstadoMesa, jugador: number): string {
   const suyas = mesa.historial.filter((h) => h.jugador === jugador && h.calle === mesa.calle)
@@ -481,7 +507,17 @@ function loQueHiciste(a: Apunte): string {
  * nada. Aquí cada paso enseña la mesa que había, lo que te pedían y lo que
  * pusiste, en orden y con el hilo dibujado: se lee como se jugó.
  */
-function ComoFueLaMano({ apuntes }: { apuntes: Apunte[] }) {
+/** Lo que ganaste o perdiste de verdad en la mano: lo cobrado menos lo puesto. */
+function netoDeLaMano(mesa: EstadoMesa): number {
+  const humano = mesa.jugadores.find((j) => j.esHumano)
+  if (!humano) return 0
+  const cobrado = mesa.ganancias
+    .filter((g) => g.jugador === humano.id)
+    .reduce((t, g) => t + g.fichas, 0)
+  return cobrado - humano.apostadoEnLaMano
+}
+
+function ComoFueLaMano({ apuntes, neto }: { apuntes: Apunte[]; neto: number }) {
   const total = apuntes.reduce((t, a) => t + a.juicio.puntos, 0)
   /*
     Los puntos totales solo suben, así que por sí solos no dicen si estás
@@ -521,7 +557,10 @@ function ComoFueLaMano({ apuntes }: { apuntes: Apunte[] }) {
 
               <div style={{ paddingBottom: ultimo ? 0 : 16, minWidth: 0 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <strong style={{ fontSize: 14.5 }}>{NOMBRE_DE_CALLE[a.calle] ?? a.calle}</strong>
+                  <strong style={{ fontSize: 14.5 }}>
+                    {NOMBRE_DE_CALLE[a.calle] ?? a.calle}
+                    {a.situacion && <span className="tenue" style={{ fontWeight: 400 }}> · {a.situacion}</span>}
+                  </strong>
                   <span className="chip" style={{ fontSize: 11.5 }}>Bote {a.bote.toLocaleString('es')}</span>
                   <span className="chip" style={{ fontSize: 11.5 }}>
                     {a.paraPagar > 0 ? `Te pedían ${a.paraPagar.toLocaleString('es')}` : 'Nadie había apostado'}
@@ -542,6 +581,43 @@ function ComoFueLaMano({ apuntes }: { apuntes: Apunte[] }) {
           )
         })}
       </div>
+
+      {(() => {
+        /*
+          El momento en que se entiende de qué va el juego.
+
+          Decidir bien y perder la mano pasa constantemente, y es justo lo que
+          hay que aprender a aguantar. Antes quedaba implícito en "los puntos son
+          por cómo decidiste"; ahora se dice con el número delante: si ganabas el
+          41% de las veces, perder así pasa 6 de cada 10.
+        */
+        const ultima = [...apuntes].reverse().find((a) => a.pusiste > 0) ?? apuntes[apuntes.length - 1]
+        const equity = ultima.juicio.analisis.equity.equity
+        if (media >= 75 && neto < 0) {
+          return (
+            <div className="aviso bien" style={{ marginTop: 14 }}>
+              <div className="titulo">Perdiste la mano, pero decidiste bien</div>
+              <p className="suave" style={{ margin: 0, fontSize: 13.5 }}>
+                En tu última decisión ganabas el {Math.round(equity * 100)}% de las veces, así que
+                perderla pasa {Math.round((1 - equity) * 10)} de cada 10. Repetida mil veces, esa
+                jugada gana fichas: eso es lo que cuenta la nota, y no el resultado de hoy.
+              </p>
+            </div>
+          )
+        }
+        if (media <= 45 && neto > 0) {
+          return (
+            <div className="aviso mal" style={{ marginTop: 14 }}>
+              <div className="titulo">Ganaste la mano, pero las cuentas no daban</div>
+              <p className="suave" style={{ margin: 0, fontSize: 13.5 }}>
+                Esta vez salió bien. Repetida mil veces, esta forma de jugar pierde fichas — y en un
+                torneo no hay mil veces: hay las que te dejen tus fichas.
+              </p>
+            </div>
+          )
+        }
+        return null
+      })()}
 
       <p className="tenue" style={{ fontSize: 13, margin: '14px 0 0' }}>
         Los puntos son por cómo decidiste, no por si ganaste la mano.

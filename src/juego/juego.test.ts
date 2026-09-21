@@ -11,7 +11,7 @@ import {
   manosConNota, notaReciente, progresoNuevo, repasarError, tendenciaDeLaNota, variarMano,
 } from './progreso'
 import { LOGROS, logroConseguido } from './logros'
-import { describirTuMano } from './practica'
+import { describirTuMano, fraseDeTuMano } from './practica'
 import { empezarLeccion, empezarPractica, responder, responderTest, siguienteMano } from './sesion'
 import { manoDeCodigo } from '../motor/cartas'
 
@@ -245,12 +245,24 @@ describe('lo que se dice de tu mano es verdad', () => {
   it('no dice "carta alta: as" cuando el as es de la mesa', () => {
     const texto = describirTuMano(m('Th 3c'), m('Ac 6c Jh 8d'))
     expect(texto).toContain('no tienes pareja')
-    expect(texto).toContain('está en la mesa')
     expect(texto).not.toMatch(/carta alta: as/)
   })
 
-  it('pero si la carta alta es tuya, se dice', () => {
-    expect(describirTuMano(m('Ah 7h'), m('Kh 4h 2c'))).toContain('tu carta alta es el as')
+  it('enseña la mano entera, no solo la carta alta: tus acompañantes cuentan', () => {
+    // 9♥8♥ en 5♠3♦10♣A♥2♠ juega A-10-9-8: el 9 y el 8 son tuyos y pueden decidir el bote.
+    const texto = describirTuMano(m('9h 8h'), m('5s 3d Tc Ah 2s'))
+    expect(texto).toContain('as alto con')
+    expect(texto).toContain('10-9-8')
+  })
+
+  it('si de verdad juegas las cinco de la mesa, lo dice', () => {
+    const texto = describirTuMano(m('3h 2c'), m('As Kd 9h 7c 4s'))
+    expect(texto).toContain('juegas las cinco cartas de la mesa')
+  })
+
+  it('la frase se lee sola, sin pegarle "Tienes" delante', () => {
+    expect(fraseDeTuMano(m('Th 3c'), m('Ac 6c Jh 8d'))).toMatch(/^No tienes pareja/)
+    expect(fraseDeTuMano(m('Kd Kc'), m('Ah Ts 3d'))).toBe('Tienes pareja de reyes.')
   })
 
   it('y nombra el proyecto con las cartas que te faltan', () => {

@@ -164,3 +164,42 @@ describe('cómo deciden los bots', () => {
     if (!mesa.manoTerminada) expect(mesa.jugadores[mesa.turno].esHumano).toBe(true)
   })
 })
+
+describe('el torneo se acaba cuando se te acaban las fichas', () => {
+  /*
+    Jugando: todo-in en la mano 1, lo pierde, se queda con 0 fichas… y el juego
+    le ofrecía "Siguiente mano". Lo que pasara después entre los bots no es su
+    partida: para él, el torneo terminó ahí.
+  */
+  const conFichas = (fichas: number[]): Torneo => {
+    const t = crearTorneo({ semilla: 5 })
+    t.jugadores = t.jugadores.map((j, i) => ({ ...j, fichas: fichas[i] }))
+    return t
+  }
+
+  it('el humano sin fichas termina el torneo aunque queden bots peleando', () => {
+    const t = conFichas([500, 1500, 1000, 1000])
+    const mesa = repartirMano({
+      jugadores: t.jugadores.map((j) => ({ id: j.id, nombre: j.nombre, fichas: j.fichas, esHumano: j.esHumano })),
+      boton: 0, ciegaPequena: 10, ciegaGrande: 20, azar: crearAleatorio(1),
+    })
+    // Se simula el final: el humano a cero, tres bots vivos.
+    mesa.manoTerminada = true
+    mesa.jugadores[0].fichas = 0
+    const cerrado = cerrarMano({ ...t, mesa })
+    expect(cerrado.jugadores.filter((j) => j.fichas > 0)).toHaveLength(3)
+    expect(cerrado.terminado).toBe(true)
+    expect(cerrado.jugadores.find((j) => j.esHumano)!.puesto).toBe(4)
+  })
+
+  it('mientras le queden fichas, el torneo sigue', () => {
+    const t = conFichas([500, 1500, 1000, 1000])
+    const mesa = repartirMano({
+      jugadores: t.jugadores.map((j) => ({ id: j.id, nombre: j.nombre, fichas: j.fichas, esHumano: j.esHumano })),
+      boton: 0, ciegaPequena: 10, ciegaGrande: 20, azar: crearAleatorio(1),
+    })
+    mesa.manoTerminada = true
+    const cerrado = cerrarMano({ ...t, mesa })
+    expect(cerrado.terminado).toBe(false)
+  })
+})

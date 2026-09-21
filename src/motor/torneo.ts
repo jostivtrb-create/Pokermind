@@ -169,6 +169,15 @@ export function cerrarMano(torneo: Torneo): Torneo {
     ESTRUCTURA_CIEGAS.length - 1,
   )
 
+  /*
+    Para el jugador, el torneo se acaba cuando se acaban SUS fichas.
+
+    Antes solo terminaba al quedar uno vivo, así que quien se iba a todo-in y lo
+    perdía se quedaba con 0 fichas y un botón de "Siguiente mano" que no llevaba
+    a ninguna parte. Lo que pasara después entre los bots no es su partida.
+  */
+  const humanoSinFichas = jugadores.some((j) => j.esHumano && j.fichas === 0)
+
   return {
     ...torneo,
     jugadores,
@@ -176,7 +185,7 @@ export function cerrarMano(torneo: Torneo): Torneo {
     nivel,
     boton: siguienteBoton(jugadores, torneo.boton),
     mesa: null,
-    terminado: vivosAhora.length <= 1,
+    terminado: vivosAhora.length <= 1 || humanoSinFichas,
   }
 }
 
