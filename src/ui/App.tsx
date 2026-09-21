@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { hayServidor, usuarioActual } from '../almacen/cuenta'
 import { ProveedorDeProgreso, useProgreso } from './estado'
+import { Cuenta } from './pantallas/Cuenta'
 import { Inicio } from './pantallas/Inicio'
 import { Jugar } from './pantallas/Jugar'
 import { Libre } from './pantallas/Libre'
@@ -7,8 +9,10 @@ import { Estadisticas } from './pantallas/Estadisticas'
 import { Logros } from './pantallas/Logros'
 import { Configuracion } from './pantallas/Configuracion'
 import { Guia } from './pantallas/Guia'
+import { Privacidad } from './pantallas/Privacidad'
 
-export type Pantalla = 'inicio' | 'jugar' | 'libre' | 'estadisticas' | 'logros' | 'configuracion' | 'guia'
+export type Pantalla =
+  | 'inicio' | 'jugar' | 'libre' | 'estadisticas' | 'logros' | 'configuracion' | 'guia' | 'privacidad'
 
 const NAVEGACION: Array<{ id: Pantalla; nombre: string; icono: string }> = [
   { id: 'inicio', nombre: 'Inicio', icono: '⌂' },
@@ -19,6 +23,32 @@ const NAVEGACION: Array<{ id: Pantalla; nombre: string; icono: string }> = [
 ]
 
 export function App() {
+  // null = comprobando · false = hace falta entrar · true = a jugar
+  const [sesion, setSesion] = useState<boolean | null>(hayServidor ? null : true)
+
+  useEffect(() => {
+    if (!hayServidor) return
+    let vivo = true
+    usuarioActual()
+      .then((usuario) => vivo && setSesion(Boolean(usuario)))
+      // Sin red no se puede preguntar, pero si ya había sesión guardada el
+      // cliente la tiene: se deja pasar y ya sincronizará (D31).
+      .catch(() => vivo && setSesion(true))
+    return () => {
+      vivo = false
+    }
+  }, [])
+
+  if (sesion === null) {
+    return (
+      <div style={{ display: 'grid', placeItems: 'center', height: '100%' }}>
+        <p className="tenue">Un momento…</p>
+      </div>
+    )
+  }
+
+  if (!sesion) return <Cuenta alEntrar={() => setSesion(true)} />
+
   return (
     <ProveedorDeProgreso>
       <Marco />
@@ -80,6 +110,7 @@ function Marco() {
         {pantalla === 'logros' && <Logros />}
         {pantalla === 'configuracion' && <Configuracion ir={setPantalla} />}
         {pantalla === 'guia' && <Guia />}
+        {pantalla === 'privacidad' && <Privacidad ir={setPantalla} />}
       </main>
 
       <nav className="inferior" aria-label="Navegación">

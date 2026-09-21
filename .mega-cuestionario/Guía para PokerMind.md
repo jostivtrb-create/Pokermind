@@ -213,7 +213,7 @@ que se puede escribir sin bloquear nada.
 **Datos y cuentas**
 
 - [x] 9 · Guardado local primero (juega sin conexión) y sincronización con el servidor al volver
-- [ ] 10 · Cuentas: registro, entrar, recuperar contraseña, borrar cuenta, página de privacidad
+- [x] 10 · Cuentas: registro, entrar, recuperar contraseña, borrar cuenta, página de privacidad
 
 **Pantalla**
 
@@ -227,7 +227,7 @@ que se puede escribir sin bloquear nada.
 
 - [x] 16 · Los 9 módulos del temario, lección a lección — **41 lecciones**, todas validadas contra el motor
 - [x] 17 · Estadísticas, logros, reto diario y repaso espaciado de errores
-- [~] 18 · Instalable y sin conexión (PWA) hecho · falta el repaso final
+- [~] 18 · Instalable y sin conexión (PWA) hecho · queda el repaso final
 
 ---
 
@@ -317,3 +317,10 @@ que se puede escribir sin bloquear nada.
   corrección, que es la parte que enseña—; ponía "Módulo 0" en el reto y en el repaso, que no son
   del curso; y el aviso de "esa jugada está entera en la mesa" salía también con carta alta, donde
   no significa nada. Los tres corregidos.
+- **21/09/2026** — Cuentas hechas (D11, D30, D31): registrarse, entrar, recuperar contraseña, cerrar
+  sesión, borrar la cuenta y página de «qué guardamos de ti», más sincronización al abrir y al
+  recuperar la conexión. **Queda pendiente algo que no puedo hacer yo**: crear el proyecto gratuito
+  de Supabase y poner sus dos claves en `.env`. Mientras no estén, el juego arranca en modo local y
+  se juega igual — eso es a propósito, para que nada dependa de tener el servidor montado.
+  Instrucciones completas en `docs/servidor.md`, con el SQL de la tabla y las cuatro políticas que
+  impiden que nadie lea el progreso de otro.

@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { guardarProgreso, leerProgreso } from '../almacen/local'
+import { almacenDeLaCuenta, hayServidor, usuarioActual } from '../almacen/cuenta'
+import { guardarProgreso, hayCambiosSinSincronizar, leerProgreso, marcarSincronizado } from '../almacen/local'
+import { sincronizar } from '../almacen/sincronizacion'
 import type { Progreso } from '../juego/progreso'
 
 /**
@@ -13,12 +15,16 @@ import type { Progreso } from '../juego/progreso'
 interface Contexto {
   progreso: Progreso
   actualizar: (cambio: (anterior: Progreso) => Progreso) => void
+  /** Sube y baja el progreso de la cuenta. No falla nunca: sin red, no hace nada. */
+  sincronizarAhora: () => Promise<void>
+  sincronizando: boolean
 }
 
 const ContextoProgreso = createContext<Contexto | null>(null)
 
 export function ProveedorDeProgreso({ children }: { children: ReactNode }) {
   const [progreso, setProgreso] = useState<Progreso>(() => leerProgreso())
+  const [sincronizando, setSincronizando] = useState(false)
 
   const actualizar = useCallback((cambio: (anterior: Progreso) => Progreso) => {
     setProgreso((anterior) => {
@@ -28,7 +34,35 @@ export function ProveedorDeProgreso({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const valor = useMemo(() => ({ progreso, actualizar }), [progreso, actualizar])
+  const sincronizarAhora = useCallback(async () => {
+    if (!hayServidor) return
+    if (!(await usuarioActual())) return
+    setSincronizando(true)
+    const actual = leerProgreso()
+    const { progreso: fusionado, sincronizado } = await sincronizar(actual, almacenDeLaCuenta)
+    if (sincronizado) {
+      guardarProgreso(fusionado)
+      marcarSincronizado()
+      setProgreso(fusionado)
+    }
+    setSincronizando(false)
+  }, [])
+
+  // Al abrir y al recuperar la conexión. Nunca bloquea el juego: si falla, se
+  // sigue jugando con lo del aparato y ya se subirá (D31).
+  useEffect(() => {
+    void sincronizarAhora()
+    const alVolverLaRed = () => {
+      if (hayCambiosSinSincronizar()) void sincronizarAhora()
+    }
+    window.addEventListener('online', alVolverLaRed)
+    return () => window.removeEventListener('online', alVolverLaRed)
+  }, [sincronizarAhora])
+
+  const valor = useMemo(
+    () => ({ progreso, actualizar, sincronizarAhora, sincronizando }),
+    [progreso, actualizar, sincronizarAhora, sincronizando],
+  )
   return <ContextoProgreso.Provider value={valor}>{children}</ContextoProgreso.Provider>
 }
 

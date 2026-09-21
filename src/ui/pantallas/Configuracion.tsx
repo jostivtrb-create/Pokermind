@@ -1,12 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Pantalla } from '../App'
+import { borrarCuenta, hayServidor, salir, usuarioActual } from '../../almacen/cuenta'
 import { borrarTodo } from '../../almacen/local'
 import { progresoNuevo } from '../../juego/progreso'
 import { useProgreso } from '../estado'
 
 export function Configuracion({ ir }: { ir: (p: Pantalla) => void }) {
-  const { progreso, actualizar } = useProgreso()
+  const { progreso, actualizar, sincronizarAhora, sincronizando } = useProgreso()
   const [confirmando, setConfirmando] = useState(false)
+  const [correo, setCorreo] = useState<string | null>(null)
+  const [borrandoCuenta, setBorrandoCuenta] = useState(false)
+  const [avisoCuenta, setAvisoCuenta] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (hayServidor) void usuarioActual().then((u) => setCorreo(u?.correo ?? null))
+  }, [])
 
   const cambiar = (clave: 'sonido' | 'animaciones') =>
     actualizar((p) => ({ ...p, ajustes: { ...p.ajustes, [clave]: !p.ajustes[clave] } }))
@@ -17,11 +25,28 @@ export function Configuracion({ ir }: { ir: (p: Pantalla) => void }) {
 
       <div className="tarjeta">
         <span className="etiqueta">Tu cuenta</span>
-        <p className="suave" style={{ fontSize: 14, margin: '8px 0 0' }}>
-          Ahora mismo tu progreso se guarda <strong>en este aparato</strong>. Las cuentas con correo
-          y contraseña están decididas y se conectarán cuando el servidor esté montado: hará falta
-          internet solo la primera vez, y después podrás jugar sin conexión.
-        </p>
+        {hayServidor && correo ? (
+          <>
+            <p className="suave" style={{ fontSize: 14, margin: '8px 0' }}>
+              Sesión iniciada como <strong>{correo}</strong>. Tu progreso se guarda en este aparato y
+              se sube a tu cuenta cuando hay conexión, así que puedes jugar sin internet.
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="boton" disabled={sincronizando} onClick={() => void sincronizarAhora()}>
+                {sincronizando ? 'Sincronizando…' : 'Sincronizar ahora'}
+              </button>
+              <button className="boton" onClick={() => void salir().then(() => location.reload())}>
+                Cerrar sesión
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="suave" style={{ fontSize: 14, margin: '8px 0 0' }}>
+            Ahora mismo tu progreso se guarda <strong>solo en este aparato</strong>. En cuanto se
+            configure el servidor de cuentas, podrás entrar con correo y contraseña y llevarte el
+            progreso a cualquier sitio — con internet solo la primera vez.
+          </p>
+        )}
       </div>
 
       <div className="tarjeta" style={{ display: 'grid', gap: 4 }}>
@@ -66,6 +91,7 @@ export function Configuracion({ ir }: { ir: (p: Pantalla) => void }) {
       </div>
 
       <button className="boton ancho" onClick={() => ir('guia')}>📖 Guía y glosario</button>
+      <button className="boton ancho" onClick={() => ir('privacidad')}>🔒 Qué guardamos de ti</button>
 
       <div className="tarjeta">
         <span className="etiqueta">Borrar mi progreso</span>
@@ -92,6 +118,37 @@ export function Configuracion({ ir }: { ir: (p: Pantalla) => void }) {
           </div>
         )}
       </div>
+
+      {hayServidor && correo && (
+        <div className="tarjeta">
+          <span className="etiqueta">Borrar mi cuenta</span>
+          <p className="suave" style={{ fontSize: 14, margin: '6px 0 12px' }}>
+            Borra tu cuenta y todo lo que tenemos guardado de ti. No se puede deshacer.
+          </p>
+          {avisoCuenta && <div className="aviso info" style={{ padding: 12, marginBottom: 10 }}>{avisoCuenta}</div>}
+          {!borrandoCuenta ? (
+            <button className="boton" onClick={() => setBorrandoCuenta(true)}>Borrar mi cuenta</button>
+          ) : (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                className="boton"
+                style={{ background: 'var(--rojo-tenue)', color: 'var(--rojo)', borderColor: 'var(--rojo)' }}
+                onClick={async () => {
+                  const resultado = await borrarCuenta()
+                  setAvisoCuenta(resultado.mensaje ?? null)
+                  if (resultado.ok) {
+                    borrarTodo()
+                    setTimeout(() => location.reload(), 1800)
+                  }
+                }}
+              >
+                Sí, borrar mi cuenta
+              </button>
+              <button className="boton" onClick={() => setBorrandoCuenta(false)}>Mejor no</button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
