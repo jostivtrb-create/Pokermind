@@ -124,6 +124,8 @@ El usuario publicó el juego, lo probó y trajo dos cosas. Las dos cambian decis
 | D45 | Las explicaciones **enseñan las dos partes y el total** («−42 ahora, −23 más de las calles siguientes, total −65»), y las subidas dicen **cuánto pones en total** («subir 220, pones 400») | Las dos IA hicieron la cuenta a mano y no llegaron al número de la pantalla; una entendió además «subir 220» como subir *hasta* 220 y la dio por ilegal. Los números estaban bien: la redacción, no |
 | D47 | **El jugador elige el tamaño de la subida** (½ bote, ¾, bote, y todo-in con fichas cortas), y el motor juzga el tamaño elegido | En el entrenador se aguantaba un tamaño fijo, pero en una partida el tamaño **es** la decisión |
 | D48 | **El todo-in solo se ofrece con fichas cortas** (hasta 2,5 veces el bote más lo que cuesta igualar) | Honestidad sobre lo que el motor sabe: calcula muy bien una calle, pero aproxima el dinero de las siguientes. Con 900 fichas en un bote de 100 esa aproximación sobrevalora el todo-in frente a apostar tres veces seguidas, que es lo que haría un buen jugador |
+| D50 | Al terminar una lección, el botón grande es **la siguiente lección por su nombre**, no volver a la lista | Probándolo en el móvil: *"al terminar una lección me bota acá sin saber nada, es enredado"*. Aprender se para en seco cada vez que hay que decidir dónde hacer clic |
+| D51 | En la pantalla del curso, **lo primero es lo que toca ahora** y después las lecciones; el reto diario, el repaso y el modo libre van debajo | Antes lo primero eran tres tarjetas que casi nunca te tocan y las lecciones quedaban abajo del todo |
 | D49 | Los bots juegan **de uno en uno**, con pausa, y se ve lo que hace cada uno | Antes jugaban los tres de golpe y aparecía el resultado ya hecho: no se veía quién subía ni quién se iba, que es justo lo que hay que mirar |
 | D46 | Lo que tienes en la mano **incluye los proyectos**: «carta alta: rey, y proyecto de color» | Decir solo «carta alta: rey» con cuatro tréboles es cierto y engaña, y encima contradice lo que enseña el módulo 2 |
 | D43 | **Ninguna pantalla puede ser solo texto.** Todo lo que se explica se dibuja: cartas, porcentajes, montones de fichas, la mesa desde arriba, la rejilla de rangos. Como mucho **un** paso de texto suelto por lección, y eso es un test que falla si se incumple | *"cualquier pantalla que sea solo texto aburre (...) si es un reguero de texto, hasta a mí me aburrió, y eso que estaba probando la idea"*. Se convirtieron las 38 lecciones que quedaban |
@@ -424,3 +426,10 @@ preparado), otros idiomas (D12) y el mazo de cuatro colores.
   que es cuando no hay futuro que valorar — y es justo la situación del módulo 8.
   De paso, la lección «al que lo paga todo, se le cobra» repartía mesas secas donde hasta el que
   paga todo se retira: ahora exige una mesa que le dé algo con lo que pagar.
+- **22/09/2026 (noche)** — Probándolo en el móvil aparece un problema de recorrido, no de contenido:
+  al terminar una lección el juego devolvía a la lista del curso, y lo primero de esa lista eran el
+  reto del día, el repaso y el modo libre (bloqueado). O sea, terminabas de aprender y lo primero
+  que veías eran tres cosas que no te tocaban, con las lecciones abajo del todo. Arreglado por los
+  dos lados (D50 y D51): el fin de lección encadena con la siguiente por su nombre, y la pantalla
+  del curso pone arriba lo que toca ahora. De paso, las tres cifras del final de lección van en una
+  fila: apiladas empujaban el botón de seguir fuera de la pantalla del móvil.

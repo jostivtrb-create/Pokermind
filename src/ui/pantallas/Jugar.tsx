@@ -23,7 +23,16 @@ export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
   const [extra, setExtra] = useState<'reto' | 'repaso' | null>(null)
 
   if (enCurso) {
-    return <Entrenador leccion={enCurso} alSalir={() => setEnCurso(null)} />
+    return (
+      <Entrenador
+        // La clave hace que al encadenar con la siguiente lección empiece de cero
+        // en vez de reaprovechar el estado de la anterior.
+        key={enCurso.id}
+        leccion={enCurso}
+        alSalir={() => setEnCurso(null)}
+        alSiguienteLeccion={(siguiente) => setEnCurso(siguiente)}
+      />
+    )
   }
   if (extra === 'reto') return <RetoDelDia alSalir={() => setExtra(null)} />
   if (extra === 'repaso') return <RepasoDeErrores alSalir={() => setExtra(null)} />
@@ -37,64 +46,35 @@ export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <div>
-        <h1>Entrenador</h1>
-        <p className="suave">
-          Una idea por lección, y a practicarla enseguida. No se avanza por pulsar «siguiente»:
-          se avanza cuando aciertas seguido.
-        </p>
+        <h1 style={{ marginBottom: 6 }}>Entrenador</h1>
         <div className="progreso-fino"><div style={{ width: `${Math.round(avance * 100)}%` }} /></div>
       </div>
 
-      <div className="rejilla dos">
+      {/*
+        Lo primero de la pantalla es lo que tienes que hacer ahora. Antes lo
+        primero eran tres tarjetas que casi nunca te tocan y las lecciones
+        quedaban abajo del todo: al terminar una lección aterrizabas aquí sin
+        saber por dónde seguir.
+      */}
+      {siguiente && (
         <button
           className="tarjeta"
-          style={{ textAlign: 'left', cursor: 'pointer' }}
-          onClick={() => setExtra('reto')}
+          style={{
+            textAlign: 'left', cursor: 'pointer', display: 'grid', gap: 6,
+            borderColor: 'var(--morado)', background: 'linear-gradient(135deg, #1b2145, #151a34)',
+          }}
+          onClick={() => setEnCurso(siguiente)}
         >
-          <span className="etiqueta">Reto del día</span>
-          <h3 style={{ margin: '4px 0' }}>
-            {progreso.retoDiario?.fecha === fechaDeHoy() ? '✓ Ya jugado hoy' : 'Una mano difícil'}
-          </h3>
-          <p className="suave" style={{ fontSize: 13.5, margin: 0 }}>
-            La misma para todo el mundo, sin ayudas. Cambia cada día.
-          </p>
+          <span className="etiqueta">
+            {Object.keys(progreso.lecciones).length > 0 ? 'Continúa por aquí' : 'Empieza por aquí'}
+          </span>
+          <strong style={{ fontSize: 18 }}>{siguiente.titulo}</strong>
+          <span className="suave" style={{ fontSize: 14 }}>{siguiente.idea}</span>
+          <span className="boton principal" style={{ marginTop: 6, justifySelf: 'start' }}>
+            {Object.keys(progreso.lecciones).length > 0 ? 'Seguir' : 'Empezar'} →
+          </span>
         </button>
-
-        <button
-          className="tarjeta"
-          style={{ textAlign: 'left', cursor: 'pointer' }}
-          onClick={() => setExtra('repaso')}
-        >
-          <span className="etiqueta">Repaso de errores</span>
-          <h3 style={{ margin: '4px 0' }}>
-            {erroresParaRepasar(progreso).length > 0
-              ? `${erroresParaRepasar(progreso).length} manos esperando`
-              : 'Nada pendiente'}
-          </h3>
-          <p className="suave" style={{ fontSize: 13.5, margin: 0 }}>
-            Manos que fallaste hace días, cambiadas de palo para que no valga memorizar.
-          </p>
-        </button>
-      </div>
-
-      <div className="tarjeta" style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ flex: '1 1 260px' }}>
-          <span className="etiqueta">Modo libre</span>
-          <h3 style={{ margin: '4px 0' }}>Torneo contra tres bots</h3>
-          <p className="suave" style={{ fontSize: 14, margin: 0 }}>
-            {libreAbierto
-              ? 'Una partida de verdad, con fichas y ciegas que suben. Los puntos siguen premiando las decisiones, ganes o pierdas.'
-              : 'Se abre al terminar el módulo 1. Sentarse en una mesa sin saber qué es una ciega no enseña nada.'}
-          </p>
-        </div>
-        <button
-          className={`boton ${libreAbierto ? 'principal' : ''}`}
-          disabled={!libreAbierto}
-          onClick={() => ir('libre')}
-        >
-          {libreAbierto ? 'Jugar torneo →' : '🔒 Bloqueado'}
-        </button>
-      </div>
+      )}
 
       {TEMARIO.map((modulo) => (
         <section
@@ -155,6 +135,57 @@ export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
           </div>
         </section>
       ))}
+
+      <div className="rejilla dos">
+        <button
+          className="tarjeta"
+          style={{ textAlign: 'left', cursor: 'pointer' }}
+          onClick={() => setExtra('reto')}
+        >
+          <span className="etiqueta">Reto del día</span>
+          <h3 style={{ margin: '4px 0' }}>
+            {progreso.retoDiario?.fecha === fechaDeHoy() ? '✓ Ya jugado hoy' : 'Una mano difícil'}
+          </h3>
+          <p className="suave" style={{ fontSize: 13.5, margin: 0 }}>
+            La misma para todo el mundo, sin ayudas. Cambia cada día.
+          </p>
+        </button>
+
+        <button
+          className="tarjeta"
+          style={{ textAlign: 'left', cursor: 'pointer' }}
+          onClick={() => setExtra('repaso')}
+        >
+          <span className="etiqueta">Repaso de errores</span>
+          <h3 style={{ margin: '4px 0' }}>
+            {erroresParaRepasar(progreso).length > 0
+              ? `${erroresParaRepasar(progreso).length} manos esperando`
+              : 'Nada pendiente'}
+          </h3>
+          <p className="suave" style={{ fontSize: 13.5, margin: 0 }}>
+            Manos que fallaste hace días, cambiadas de palo para que no valga memorizar.
+          </p>
+        </button>
+      </div>
+
+      <div className="tarjeta" style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 260px' }}>
+          <span className="etiqueta">Modo libre</span>
+          <h3 style={{ margin: '4px 0' }}>Torneo contra tres bots</h3>
+          <p className="suave" style={{ fontSize: 14, margin: 0 }}>
+            {libreAbierto
+              ? 'Una partida de verdad, con fichas y ciegas que suben. Los puntos siguen premiando las decisiones, ganes o pierdas.'
+              : 'Se abre al terminar el módulo 1. Sentarse en una mesa sin saber qué es una ciega no enseña nada.'}
+          </p>
+        </div>
+        <button
+          className={`boton ${libreAbierto ? 'principal' : ''}`}
+          disabled={!libreAbierto}
+          onClick={() => ir('libre')}
+        >
+          {libreAbierto ? 'Jugar torneo →' : '🔒 Bloqueado'}
+        </button>
+      </div>
 
       <section className="tarjeta tenue">
         <span className="etiqueta">Lo que viene después</span>

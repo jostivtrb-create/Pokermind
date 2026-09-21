@@ -14,7 +14,7 @@ import {
   siguienteMano, terminarEjemplo,
 } from '../../juego/sesion'
 import type { ManoDePractica } from '../../juego/practica'
-import { moduloTerminado } from '../../contenido/temario'
+import { moduloTerminado, siguienteLeccion } from '../../contenido/temario'
 import { useProgreso } from '../estado'
 import { sonar } from '../sonido'
 import { FilaDeCartas } from '../componentes/Carta'
@@ -34,11 +34,14 @@ import { parsearRango } from '../../motor/rangos'
 export function Entrenador({
   leccion,
   alSalir,
+  alSiguienteLeccion,
   manoSuelta,
   alTerminarManoSuelta,
 }: {
   leccion: Leccion
   alSalir: () => void
+  /** Encadenar con la lección siguiente sin pasar por la lista. */
+  alSiguienteLeccion?: (leccion: Leccion) => void
   /** Para el reto diario y el repaso de errores: una mano concreta, sin lección. */
   manoSuelta?: ManoDePractica
   alTerminarManoSuelta?: (acertada: boolean, puntos: number) => void
@@ -125,7 +128,9 @@ export function Entrenador({
         <Jugada sesion={sesion} alDecidir={decidir} alSeguir={avanzar} manoSuelta={!!manoSuelta} />
       )}
 
-      {sesion.fase === 'terminada' && <Terminada sesion={sesion} alSalir={alSalir} />}
+      {sesion.fase === 'terminada' && (
+        <Terminada sesion={sesion} alSalir={alSalir} alSiguienteLeccion={alSiguienteLeccion} />
+      )}
     </div>
   )
 }
@@ -445,28 +450,79 @@ function Test({
   )
 }
 
-function Terminada({ sesion, alSalir }: { sesion: EstadoSesion; alSalir: () => void }) {
+/**
+ * Fin de lección.
+ *
+ * Lo importante es el botón: **la siguiente lección, por su nombre**. Antes
+ * devolvía a la lista del curso y el jugador aterrizaba sin saber qué tocaba
+ * —lo dijo él probándolo en el móvil—. Aprender se para en seco cada vez que
+ * hay que decidir dónde hacer clic.
+ */
+function Terminada({
+  sesion,
+  alSalir,
+  alSiguienteLeccion,
+}: {
+  sesion: EstadoSesion
+  alSalir: () => void
+  alSiguienteLeccion?: (leccion: Leccion) => void
+}) {
+  const { progreso } = useProgreso()
   const media = sesion.manosJugadas > 0 ? Math.round(sesion.puntos / sesion.manosJugadas) : 0
+  const siguiente = siguienteLeccion(progreso)
+  const cambiaDeModulo = siguiente && siguiente.modulo !== sesion.leccion.modulo
+
   return (
-    <div className="tarjeta" style={{ textAlign: 'center', padding: 28 }}>
+    <div className="tarjeta" style={{ textAlign: 'center', padding: 24 }}>
       <div style={{ fontSize: 34 }}>✓</div>
       <h2>Lección dominada</h2>
-      <p className="suave">{sesion.leccion.idea}</p>
-      <div className="rejilla tres" style={{ margin: '18px 0' }}>
-        <div className="tarjeta tenue">
-          <div className="numerote">{sesion.puntos}</div>
-          <span className="etiqueta">Puntos</span>
-        </div>
-        <div className="tarjeta tenue">
-          <div className="numerote">{sesion.manosJugadas}</div>
-          <span className="etiqueta">Manos</span>
-        </div>
-        <div className="tarjeta tenue">
-          <div className="numerote">{media}</div>
-          <span className="etiqueta">Media</span>
-        </div>
+      <p className="suave" style={{ marginBottom: 4 }}>{sesion.leccion.idea}</p>
+
+      {/* En una fila y pequeñas: apiladas empujaban el botón de seguir fuera de
+          la pantalla del móvil, que es justo el botón que hay que ver. */}
+      <div
+        className="tarjeta tenue"
+        style={{ display: 'flex', justifyContent: 'space-around', margin: '16px 0', padding: '12px 8px' }}
+      >
+        {([
+          [sesion.puntos, 'Puntos'],
+          [sesion.manosJugadas, 'Manos'],
+          [media, 'Media'],
+        ] as const).map(([valor, nombre]) => (
+          <div key={nombre}>
+            <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.1 }}>{valor}</div>
+            <span className="etiqueta">{nombre}</span>
+          </div>
+        ))}
       </div>
-      <button className="boton principal" onClick={alSalir}>Seguir con el curso →</button>
+
+      {siguiente && alSiguienteLeccion ? (
+        <>
+          {cambiaDeModulo && (
+            <div className="aviso info" style={{ textAlign: 'left', marginBottom: 12 }}>
+              <div className="titulo">🎉 Módulo {sesion.leccion.modulo} terminado</div>
+              <p className="suave" style={{ margin: 0, fontSize: 14 }}>
+                Empiezas el módulo {siguiente.modulo}.
+              </p>
+            </div>
+          )}
+          <button
+            className="boton principal ancho"
+            style={{ display: 'grid', gap: 2, borderRadius: 16, padding: '14px 18px' }}
+            onClick={() => alSiguienteLeccion(siguiente)}
+          >
+            <span style={{ fontSize: 12, opacity: 0.85, fontWeight: 500 }}>Siguiente lección</span>
+            <span>{siguiente.titulo} →</span>
+          </button>
+          <button className="boton" style={{ marginTop: 9 }} onClick={alSalir}>
+            Ver todo el curso
+          </button>
+        </>
+      ) : (
+        <button className="boton principal ancho" onClick={alSalir}>
+          {siguiente ? 'Seguir con el curso →' : '¡Has terminado el curso!'}
+        </button>
+      )}
     </div>
   )
 }
