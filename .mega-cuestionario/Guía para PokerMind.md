@@ -5,7 +5,7 @@
 
 - **Tarea:** Crear PokerMind, un juego que enseña a tomar buenas decisiones en póker usando probabilidades, con tutorial desde cero y modo libre contra bots.
 - **Inicio:** 21 de septiembre de 2026
-- **Estado:** 🟡 Ronda 3 (última) entregada, esperando respuestas
+- **Estado:** 🔵 Construyendo (rondas cerradas, no se pregunta más)
 - **Proyecto:** `/home/user/Pokermind` · rama `claude/poker-learning-game-xh7r22`
 
 ---
@@ -110,6 +110,19 @@ No se vuelven a preguntar. Cada una con su **porqué**.
 | D29 | **Reto diario**: una mano difícil al día, la misma para todos, con su explicación | S4 → Sí |
 | D30 | Se construyen las pantallas de **recuperar contraseña, borrar cuenta y política de privacidad** | S5 → Sí. No son opcionales si el juego sale a internet |
 
+### De la ronda 3
+
+| # | Decisión | Por qué |
+|---|----------|---------|
+| D31 | **Choque resuelto: manda jugar sin conexión.** Cuenta obligatoria, pero internet solo hace falta la primera vez; después se juega sin conexión y se sincroniza al volver | Respuesta 1. D18 (jugable sin conexión) sigue en pie; D11 se matiza: la cuenta es obligatoria, la conexión permanente no |
+| D32 | Cada lección decide su formato: las primeras son **decisiones sueltas**, las avanzadas **manos completas** hasta el river | Respuesta 2. El entrenador acompaña al contenido en vez de forzarlo |
+| D33 | **Entrenador corrige al instante; modo libre, al terminar la mano** | Respuesta 3. Cada modo hace lo que mejor sabe |
+| D34 | El **modo libre se desbloquea al terminar el módulo 1** (reglas y palabras del póker) | Respuesta 4. Nadie se sienta en una mesa sin saber qué es una ciega |
+| D35 | **Temario aprobado tal cual**: los 9 módulos en el orden propuesto | Respuesta 5 |
+| D36 | El jugador objetivo **también es él**: jugador casual que quiere aprender bien, no solo el que no ha visto una carta | Respuesta 5. Refuerza D37: el que ya sabe algo no puede aburrirse |
+| D37 | **Avanzar rápido acertando**: sin saltarse lecciones, pero quien acierta seguido termina la lección con menos manos | S2 → Sí |
+| D38 | **Botón de "¿por qué?" permanente** durante la mano, con la explicación larga a demanda | S3 → Sí |
+
 ---
 
 ## 4. Suposiciones del agente
@@ -169,40 +182,52 @@ Cosas que decidí yo porque las deduje del material entregado. **Válidas mientr
 
 - **Ronda 1 — VISIÓN GENERAL** ✅ respondida · `Cuestionario-1-Vision-General.html`
 - **Ronda 2 — CÓMO FUNCIONA POR DENTRO** ✅ respondida · `Cuestionario-2-Como-Funciona.html`
-- **Ronda 3 — ÚLTIMOS CABOS** 🟡 entregada, esperando · `Cuestionario-3-Ultimos-Cabos.html`
-- **Ronda 4** ❌ no se hace: con la ronda 3 respondida no me queda nada que adivinar.
+- **Ronda 3 — ÚLTIMOS CABOS** ✅ respondida · `Cuestionario-3-Ultimos-Cabos.html`
+- **Ronda 4** ❌ **no se hace.** Con la ronda 3 respondida puedo escribirlo todo sin inventarme nada.
+  Una ronda más "por si acaso" sería justo el relleno que esta skill prohíbe.
 
 ---
 
 ## 7. Incógnitas abiertas
 
-Lo que todavía me haría **adivinar**. Cuando esta lista queda vacía → se construye.
-
-1. **El choque de la respuesta 3** (ver abajo): cuenta obligatoria con internet vs. jugar sin
-   conexión, que ya estaba cerrado *(ronda 3, P1)*
-2. Unidad de práctica del entrenador: situación suelta o mano completa *(ronda 3, P2)*
-3. Cuándo corrige el juego: en cada decisión o al acabar la mano *(ronda 3, P3)*
-4. Si el modo libre está abierto desde el principio o se desbloquea *(ronda 3, P4)*
-5. Si el temario propuesto le sobra o le falta algo *(ronda 3, P5)*
-
-### ⚠️ CHOQUE ABIERTO — respuesta 3 de la ronda 2 contra D18
-
-- **Ya estaba cerrado (D18, ronda 1):** el juego es **instalable y jugable sin conexión**.
-- **Respondió en la ronda 2:** *"Cuenta obligatoria siempre, con internet"*.
-
-No pueden convivir: si hace falta internet para entrar, no se juega sin conexión. Lo aviso ANTES de
-construir nada, porque cambia la arquitectura entera (guardar en el dispositivo y sincronizar, o
-hablar siempre con el servidor). **No lo decido yo**: va como P1 de la ronda 3.
-
-### Lo que ya NO se pregunta (resuelto en la ronda 2)
-
-El criterio de decisión queda cerrado en D20 y **no se vuelve a tocar**: un solo motor de valor
-esperado contra rangos, con la exigencia subiendo por nivel. Es exactamente lo que hacía falta para
-que "esconder una mano fuerte y exprimirla" salga puntuado como la mejor jugada cuando lo es.
+**Ninguna.** El choque de las cuentas quedó resuelto en D31 y el temario aprobado en D35.
+Lo que aparezca a partir de aquí se decide sobre la marcha y se anota en la bitácora (sección 9).
 
 ## 8. Plan de implementación
 
-*(se escribe al cerrar las rondas, antes de tocar código)*
+Orden pensado para que lo de abajo sostenga lo de arriba: primero el motor (lo usan los cuatro
+modos y los bots), luego la mesa, luego la pantalla, y el contenido al final porque es lo único
+que se puede escribir sin bloquear nada.
+
+**Motor y base**
+
+- [x] 1 · Andamiaje: React + TypeScript + Vite, tests con Vitest, formato y lint
+- [x] 2 · Cartas y manos: baraja, evaluador de la mejor mano de 5 entre 7, comparación y empates
+- [x] 3 · Probabilidades: equity exacta cuando es barata, simulación cuando no; outs y regla del 2 y el 4
+- [x] 4 · Rangos: representar un rango de manos, estrecharlo calle a calle según cómo apuesta el rival
+- [ ] 5 · Evaluación de decisiones: valor esperado de retirarse / pagar / subir contra el rango, puntuación graduada y exigencia por nivel (D20)
+- [ ] 6 · Mesa: turnos, ciegas, botón que rota, apuestas, todo-in, botes paralelos, reparto
+- [ ] 7 · Torneo corto: 4 jugadores, ciegas que suben, eliminación, guardar a medias
+- [ ] 8 · Bots: parámetros sorteados (agresividad, disciplina, farol, lectura) sobre el mismo motor
+
+**Datos y cuentas**
+
+- [ ] 9 · Guardado local primero (juega sin conexión) y sincronización con el servidor al volver
+- [ ] 10 · Cuentas: registro, entrar, recuperar contraseña, borrar cuenta, página de privacidad
+
+**Pantalla**
+
+- [ ] 11 · Esqueleto visual: tema oscuro, acento morado, navegación (Inicio · Jugar · Estadísticas · Logros · Configuración · Guía) según `docs/identidad/`
+- [ ] 12 · La mesa en pantalla: cartas, bote, fichas, los tres botones, barras de probabilidad
+- [ ] 13 · Entrenador: lecciones, manos generadas con condiciones, corrección al instante, dominio y avance rápido acertando
+- [ ] 14 · Modo libre: torneo, corrección al terminar la mano, revelación de los estilos de los bots
+- [ ] 15 · Rebobinar la mano · botón "¿por qué?" · rango del rival al terminar
+
+**Contenido y vueltas de tuerca**
+
+- [ ] 16 · Los 9 módulos del temario, lección a lección (35–45 lecciones)
+- [ ] 17 · Estadísticas, logros, reto diario y repaso espaciado de errores
+- [ ] 18 · Instalable y sin conexión (PWA), pulido visual y repaso final
 
 ---
 
@@ -224,3 +249,13 @@ que "esconder una mano fuerte y exprimirla" salga puntuado como la mejor jugada 
   una decisión ya cerrada**: pidió cuenta obligatoria con internet, pero jugar sin conexión estaba
   cerrado en la ronda 1 (D18). Me paro y se lo devuelvo en vez de decidirlo yo. Entregada la ronda 3
   (ÚLTIMOS CABOS, 5 preguntas + 3 sugerencias), que es la última: después se construye.
+- **21/09/2026** — Ronda 3 respondida: el choque se resuelve a favor de jugar sin conexión (D31), el
+  temario se aprueba tal cual (D35) y se confirma que él mismo es jugador objetivo (D36). **Se
+  cierran las preguntas**: no hay ronda 4. Escrito el plan de 18 pasos y empieza la construcción.
+- **21/09/2026** — Pasos 1–4 hechos. Motor de cartas, evaluador de manos, probabilidades y rangos,
+  con 35 tests en verde. Dos cosas que decidí sobre la marcha: (a) el evaluador se comprueba contra
+  fuerza bruta (las 21 combinaciones de 5 cartas entre 7) en 2.000 manos al azar, porque si el
+  evaluador miente miente todo el juego; (b) la tabla de fuerza de las 169 manos iniciales se
+  **genera** con el propio motor (`scripts/generar-fuerza-preflop.ts`) en vez de copiarse de una
+  lista de internet, para que la tabla y el juego nunca se contradigan. Los números salen clavados
+  a las calculadoras de referencia (AA 85,0% · KK 82,2% · 22 50,5% · 32o 32,5%).
