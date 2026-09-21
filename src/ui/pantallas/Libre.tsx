@@ -8,11 +8,12 @@ import { Categoria, categoriaDe, describirMano, evaluar } from '../../motor/eval
 import { fraseDeTuMano, usaTusCartas } from '../../juego/practica'
 import { rangoEstimado, rivalPrincipal } from '../../motor/lectura'
 import type { AccionMesa, EstadoMesa } from '../../motor/mesa'
-import { aplicar, boteTotal, opcionesDisponibles, paraPagar } from '../../motor/mesa'
+import type { Rango } from '../../motor/rangos'
+import { aplicar, boteTotal, jugadoresEnJuego, opcionesDisponibles, paraPagar } from '../../motor/mesa'
 import { decidirBot } from '../../motor/bot'
 import { describirPerfil } from '../../motor/perfiles'
 import type { Torneo } from '../../motor/torneo'
-import { cerrarMano, ciegasActuales, crearTorneo, siguienteMano } from '../../motor/torneo'
+import { cerrarMano, ciegasActuales, crearTorneo, elTorneoSigue, siguienteMano } from '../../motor/torneo'
 import { anotarMano } from '../../juego/progreso'
 import { useProgreso } from '../estado'
 import { sonar } from '../sonido'
@@ -42,6 +43,8 @@ interface Apunte {
   mesa: Carta[]
   /** A qué te enfrentabas: "te suben", "te vuelven a subir", "van con todo". */
   situacion: string
+  /** Contra quién se calculó, y con qué rango: sirve para el panel del final. */
+  rival: { nombre: string; rango: Rango } | null
 }
 
 /**
@@ -72,7 +75,11 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
   // a medias: al volver se reparte la siguiente. Sin esto, volver a un torneo
   // guardado dejaba una pantalla sin mesa y sin forma de continuar.
   useEffect(() => {
-    if (torneo && !torneo.terminado && !mesa && !pensando) repartir(torneo)
+    if (!torneo || torneo.terminado || mesa || pensando) return
+    // Un torneo guardado por una versión anterior puede venir con el jugador ya
+    // sin fichas. Se cierra en vez de repartirle una mano que no puede jugar.
+    if (!elTorneoSigue(torneo)) setTorneo({ ...torneo, terminado: true, mesa: null })
+    else repartir(torneo)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -128,6 +135,9 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
     // Se juzga la decisión con el mismo motor del entrenador, pero el jugador no
     // lo ve hasta que la mano termina: en una partida, corregir a mitad rompe el juego.
     const rival = rivalPrincipal(mesa, humano)
+    const rangoDelRival = rival
+      ? rangoEstimado(mesa, rival, [...humano.cartas, ...mesa.comunitarias])
+      : rangoEstimado(mesa, humano)
     const juicio = juzgar(
       {
         mano: humano.cartas,
@@ -137,8 +147,10 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
         paraPagar: paraPagar(mesa, humano),
         tusFichas: humano.fichas,
         fichasRival: rival?.fichas ?? humano.fichas,
-        rangoRival: rival ? rangoEstimado(mesa, rival, [...humano.cartas, ...mesa.comunitarias]) : rangoEstimado(mesa, humano),
+        rangoRival: rangoDelRival,
         perfilRival: rival?.perfil,
+        nombreDelRival: rival?.nombre,
+        rivalesVivos: jugadoresEnJuego(mesa).filter((j) => !j.esHumano).length,
       },
       accion,
       'intermedia',
@@ -180,6 +192,7 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
       accion: traducida,
       mesa: [...mesa.comunitarias],
       situacion: aQueTeEnfrentas(mesa, humano, cuestaSeguir),
+      rival: rival ? { nombre: rival.nombre, rango: rangoDelRival } : null,
     }
     setJuicios((lista) => [...lista, apunte])
 
@@ -250,7 +263,7 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
     const cerrado = cerrarMano({ ...torneo, mesa })
     setTorneo(cerrado)
     setMesa(null)
-    if (!cerrado.terminado) repartir(cerrado)
+    if (elTorneoSigue(cerrado)) repartir(cerrado)
   }
 
   if (!torneo || (torneo.terminado && !mesa)) {
@@ -263,6 +276,23 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
     <div style={{ display: 'grid', gap: 14 }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <button className="boton" style={{ padding: '8px 14px' }} onClick={() => ir('jugar')}>← Salir</button>
+        {/*
+          Una salida siempre a mano. Da igual en qué estado se quede la partida:
+          desde la mesa se puede empezar otra sin tener que cerrar la app.
+        */}
+        <button
+          className="boton"
+          style={{ padding: '8px 14px' }}
+          onClick={() => {
+            if (temporizador.current) clearTimeout(temporizador.current)
+            setPensando(false)
+            setMesa(null)
+            setJuicios([])
+            empezar()
+          }}
+        >
+          Nuevo torneo
+        </button>
         <span className="chip">Mano {torneo.manosJugadas + 1}</span>
         <span className="chip">Ciegas {ciegas.ciegaPequena}/{ciegas.ciegaGrande}</span>
         {mesa && !mesa.manoTerminada && <span className="chip morado">Bote {boteTotal(mesa)}</span>}
@@ -356,13 +386,27 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
 
                 {(() => {
                   const humanoMesa = mesa.jugadores.find((j) => j.esHumano)
-                  const rival = humanoMesa ? rivalPrincipal(mesa, humanoMesa) : null
-                  if (!rival || !humanoMesa?.cartas) return null
+                  if (!humanoMesa?.cartas) return null
+                  /*
+                    Si te retiraste, el rango que importa es el de quien te
+                    apostó CUANDO decidiste, no el de quien acabó ganando: eso
+                    es lo que tenías delante al elegir.
+                  */
+                  const teRetiraste = humanoMesa.estado === 'retirado'
+                  const ultima = [...juicios].reverse().find((a) => a.rival)
+                  const rival = teRetiraste ? null : rivalPrincipal(mesa, humanoMesa)
+                  const nombre = rival?.nombre ?? ultima?.rival?.nombre
+                  const rango =
+                    rival && !teRetiraste
+                      ? rangoEstimado(mesa, rival, [...humanoMesa.cartas, ...mesa.comunitarias])
+                      : ultima?.rival?.rango
+                  if (!rango || !nombre) return null
                   return (
                     <RangoDelRival
-                      rango={rangoEstimado(mesa, rival, [...humanoMesa.cartas, ...mesa.comunitarias])}
-                      mesa={mesa.comunitarias}
-                      vistas={[...humanoMesa.cartas, ...mesa.comunitarias]}
+                      nombre={nombre}
+                      rango={rango}
+                      mesa={teRetiraste ? (ultima?.mesa ?? []) : mesa.comunitarias}
+                      vistas={[...humanoMesa.cartas, ...(teRetiraste ? (ultima?.mesa ?? []) : mesa.comunitarias)]}
                     />
                   )
                 })()}
@@ -395,8 +439,18 @@ function Portada({ torneo, alEmpezar, ir }: { torneo: Torneo | null; alEmpezar: 
         <div className="tarjeta">
           <span className="etiqueta">Torneo terminado</span>
           <h2 style={{ marginTop: 6 }}>
-            {humano.puesto === 1 ? '¡Ganaste el torneo!' : `Quedaste ${humano.puesto}º de 4`}
+            {humano.puesto === 1
+              ? '¡Ganaste el torneo!'
+              : humano.puesto
+                ? `Quedaste ${humano.puesto}º de 4`
+                : 'Te quedaste sin fichas'}
           </h2>
+          {humano.puesto !== 1 && (
+            <p className="suave" style={{ fontSize: 14, margin: '4px 0 12px' }}>
+              Mira tu nota antes que el puesto: se puede caer el primero habiendo decidido mejor que
+              nadie, y eso a la larga gana torneos.
+            </p>
+          )}
           {/* Los estilos de los bots se revelan al final, nunca durante la partida (D24). */}
           <span className="etiqueta">Cómo jugaba cada uno</span>
           <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
@@ -471,14 +525,17 @@ function ultimaJugada(mesa: EstadoMesa, jugador: number): string {
   const suyas = mesa.historial.filter((h) => h.jugador === jugador && h.calle === mesa.calle)
   const ultima = suyas[suyas.length - 1]
   if (!ultima) return ''
-  if (ultima.accion === 'pasar') return 'pasa'
-  if (ultima.accion === 'pagar') return 'paga'
-  if (ultima.accion === 'retirarse') return 'se retira'
+  // La fila del humano se lee "Tú pagas", no "Tú paga".
+  const tu = mesa.jugadores.find((j) => j.id === jugador)?.esHumano ?? false
+  if (ultima.accion === 'pasar') return tu ? 'pasas' : 'pasa'
+  if (ultima.accion === 'pagar') return tu ? 'pagas' : 'paga'
+  if (ultima.accion === 'retirarse') return tu ? 'te retiras' : 'se retira'
   // Si nadie había puesto fichas en esta calle, no está subiendo: está apostando.
   const habiaApuesta = suyas.length > 1 || mesa.historial.some(
     (h) => h.calle === mesa.calle && h.accion === 'subir' && h.jugador !== jugador,
   )
-  return `${habiaApuesta ? 'sube' : 'apuesta'} ${ultima.cantidad}`
+  const verbo = habiaApuesta ? (tu ? 'subes' : 'sube') : tu ? 'apuestas' : 'apuesta'
+  return `${verbo} ${ultima.cantidad}`
 }
 
 const NOMBRE_DE_CALLE: Record<string, string> = {

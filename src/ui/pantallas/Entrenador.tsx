@@ -351,6 +351,7 @@ function Jugada({
               </div>
               {analisis && <Rebobinar analisis={analisis} elegida={juicio.elegida.accion} />}
               <RangoDelRival
+                nombre={mano.perfilRival?.nombre ? `el rival (${mano.perfilRival.nombre})` : 'el rival'}
                 rango={parsearRango(mano.rangoRival)}
                 mesa={mano.mesa}
                 vistas={[...mano.mano, ...mano.mesa]}

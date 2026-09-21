@@ -12,10 +12,13 @@ import { quitarBloqueadas, repartirEnTramos } from '../../motor/rangos'
  * gratis — y es justo el salto de "juego mis cartas" a "juego la partida".
  */
 export function RangoDelRival({
+  nombre,
   rango,
   mesa,
   vistas,
 }: {
+  /** De quién es el rango: con tres rivales, "su rango" no dice nada. */
+  nombre: string
   rango: Rango
   mesa: readonly Carta[]
   vistas: readonly Carta[]
@@ -72,10 +75,10 @@ export function RangoDelRival({
 
   return (
     <div className="tarjeta">
-      <span className="etiqueta">Qué podía tener</span>
+      <span className="etiqueta">Qué podía tener {nombre}</span>
       <p className="suave" style={{ fontSize: 13.5, margin: '6px 0 12px' }}>
-        Por cómo jugó la mano, su rango eran {rango.descripcion}. Repartido por lo bien que le viene
-        esta mesa:
+        Por cómo jugó la mano, el rango de {nombre} eran {rango.descripcion}. Repartido por lo bien
+        que le viene esta mesa:
       </p>
 
       {([
@@ -101,7 +104,7 @@ export function RangoDelRival({
 
       {tramos.fuerte.muestra.length > 0 && mesa.length > 0 && (
         <p className="tenue" style={{ fontSize: 12.5, margin: '10px 0 0' }}>
-          Lo mejor que podía llevar aquí era algo como {textoCartas([tramos.fuerte.muestra[0].a, tramos.fuerte.muestra[0].b])}.
+          Lo mejor que podía llevar {nombre} aquí era algo como {textoCartas([tramos.fuerte.muestra[0].a, tramos.fuerte.muestra[0].b])}.
         </p>
       )}
     </div>

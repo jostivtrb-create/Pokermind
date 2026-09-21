@@ -105,10 +105,22 @@ export function jugadoresVivos(torneo: Torneo): JugadorTorneo[] {
   return torneo.jugadores.filter((j) => j.fichas > 0)
 }
 
+/** ¿Sigue teniendo sentido repartir? Con el jugador fuera, no. */
+export function elTorneoSigue(torneo: Torneo): boolean {
+  const humano = torneo.jugadores.find((j) => j.esHumano)
+  return jugadoresVivos(torneo).length > 1 && (!humano || humano.fichas > 0)
+}
+
 /** Reparte la siguiente mano del torneo. */
 export function siguienteMano(torneo: Torneo, azar: Aleatorio): Torneo {
-  const vivos = jugadoresVivos(torneo)
-  if (vivos.length <= 1) {
+  /*
+    Nunca se reparte una mano que el jugador no puede jugar.
+
+    Sin esto, un torneo guardado con el humano a cero se seguía repartiendo al
+    volver: se quedaba mirando a dos bots jugar entre ellos, sin cartas, sin
+    botones y sin manera de salir de ahí.
+  */
+  if (!elTorneoSigue(torneo)) {
     return { ...torneo, terminado: true, mesa: null }
   }
 

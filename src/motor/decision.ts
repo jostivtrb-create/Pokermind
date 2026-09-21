@@ -77,6 +77,15 @@ const CURVA_DE_LA_NOTA = 1.6
 
 export interface Situacion {
   mano: readonly [Carta, Carta]
+  /**
+   * Cuántos rivales siguen en la mano. El motor calcula contra UNO —el rival
+   * principal—, así que con más gente viva tu porcentaje real es menor y hay
+   * que decirlo: 9♦2♠ gana el 28% contra un rango, el 17% contra dos manos de
+   * ese rango y el 12% contra tres (medido, D79).
+   */
+  rivalesVivos?: number
+  /** Nombre del rival contra el que se calcula, para poder decirlo. */
+  nombreDelRival?: string
   mesa: readonly Carta[]
   calle: Calle
   /** Fichas que ya hay en el bote, incluida la apuesta del rival. */
@@ -479,7 +488,7 @@ export function juzgar(
     veredicto,
     puntos,
     exigencia,
-    porQue: explicacionCorta(analisis, elegida, veredicto, perdida, situacion.paraPagar === 0),
+    porQue: explicacionCorta(analisis, elegida, veredicto, perdida, perdidaEnBotes, situacion.paraPagar === 0),
     porQueLargo: explicacionLarga(situacion, analisis, elegida),
   }
 }
@@ -515,32 +524,60 @@ function elegirAccionComparable(analisis: Analisis, accion: Accion, tamano?: num
   )
 }
 
+/**
+ * Por debajo de esta diferencia —medida en botes— dos jugadas son la misma.
+ *
+ * Sin un margen así salían frases que se contradicen: 100 puntos, "apostar gana
+ * fichas" y a continuación "aun así, pasar habría sacado algo más". Si la
+ * diferencia son tres fichas en un bote de ciento veinte, no hay nada que
+ * corregir: las dos jugadas están bien y eso es lo que hay que decir (D78).
+ */
+const EMPATE_TECNICO = 0.03
+
 function explicacionCorta(
   analisis: Analisis,
   elegida: ValorDeAccion,
   veredicto: Veredicto,
   perdida: number,
+  perdidaEnBotes: number,
   gratis: boolean,
 ): string {
   const eq = pc(analisis.equity.equity)
+  const mejor = etiquetaDeAccion(analisis.mejor, gratis)
+  const casiIguales = elegida !== analisis.mejor && perdidaEnBotes <= EMPATE_TECNICO
+
   // Cuando la jugada es buena pero había otra mejor, se dice: si no, el jugador
   // se queda con "hice lo correcto" y no aprende la jugada que sí tocaba.
   // "Aun así" solo cabe cuando lo que hiciste ganaba fichas y había algo mejor.
   // Si tu jugada pierde, no es un "aun así": es un "por eso".
-  const matiz =
-    elegida !== analisis.mejor && perdida > 0.5
+  const matiz = casiIguales
+    ? ` ${mayuscula(mejor)} habría dado casi lo mismo: las dos están bien.`
+    : elegida !== analisis.mejor && perdida > 0.5
       ? elegida.valorEsperado > 0
-        ? ` Aun así, ${etiquetaDeAccion(analisis.mejor, gratis)} habría sacado algo más.`
-        : ` Por eso lo mejor era ${etiquetaDeAccion(analisis.mejor, gratis)}.`
+        ? ` Aun así, ${mejor} habría sacado algo más.`
+        : ` Por eso lo mejor era ${mejor}.`
       : ''
 
   if (veredicto === 'optima' || veredicto === 'buena') {
     if (elegida.accion === 'retirarse') {
-      return `Ganabas solo el ${eq} de las veces y seguir costaba demasiado: retirarte te ahorra fichas a la larga.${matiz}`
+      /*
+        Esta frase defiende la jugada, así que solo se dice cuando retirarse ERA
+        lo mejor. Antes salía siempre, y quedaba "retirarte te ahorra fichas a la
+        larga. Por eso lo mejor era pagar", que se contradice sola.
+      */
+      if (elegida === analisis.mejor) {
+        return `Ganabas solo el ${eq} de las veces y seguir costaba demasiado: retirarte te ahorra fichas a la larga.`
+      }
+      if (casiIguales) {
+        return `Ganabas el ${eq} de las veces: retirarte y ${mejor} daban casi lo mismo, las dos están bien.`
+      }
+      return `Ganabas el ${eq} de las veces: retirarte no es ningún desastre, pero ${mejor} sacaba algo más.`
     }
     if (elegida.accion === 'subir') {
       if (elegida.valorEsperado <= 0) {
-        return `Con el ${eq} de probabilidad, subir pierde ${redondear(-elegida.valorEsperado)} fichas de media: poco, pero pierde.${matiz}`
+        return casiIguales || elegida === analisis.mejor
+          ? `Con el ${eq} de probabilidad, ${gratis ? 'apostar' : 'subir'} pierde ${redondear(-elegida.valorEsperado)} fichas de media.${matiz}`
+          : `Con el ${eq} de probabilidad, ${gratis ? 'apostar' : 'subir'} pierde ${redondear(-elegida.valorEsperado)} fichas de media. Es un error pequeño, pero lo mejor era ${mejor}.`
       }
       return (
         `Con el ${eq} de probabilidad de ganar, ${gratis ? 'apostar' : 'subir'} gana fichas: ` +
@@ -560,7 +597,9 @@ function explicacionCorta(
       algo más". Si retirarse —que vale cero— saca más, pagar pierde.
     */
     if (elegida.valorEsperado <= 0) {
-      return `Con el ${eq} de probabilidad, pagar pierde ${redondear(-elegida.valorEsperado)} fichas de media: poco, y por eso no es un error grave, pero pierde.${matiz}`
+      return casiIguales || elegida === analisis.mejor
+        ? `Con el ${eq} de probabilidad, pagar pierde ${redondear(-elegida.valorEsperado)} fichas de media.${matiz}`
+        : `Con el ${eq} de probabilidad, pagar pierde ${redondear(-elegida.valorEsperado)} fichas de media. Es un error pequeño, pero lo mejor era ${mejor}.`
     }
     return `Con el ${eq} de probabilidad, pagar sale a cuenta${analisis.mejor.accion === 'pagar' ? ' y es mejor que subir: subiendo espantas justo a las manos que te iban a pagar' : ''}.${matiz}`
   }
@@ -571,7 +610,7 @@ function explicacionCorta(
 function explicacionLarga(situacion: Situacion, analisis: Analisis, elegida: ValorDeAccion): string {
   const lineas: string[] = []
   lineas.push(
-    `Tu mano gana el ${pc(analisis.equity.equity)} de las veces contra ${situacion.rangoRival.descripcion}` +
+    `Tu mano gana el ${pc(analisis.equity.equity)} de las veces contra ${situacion.nombreDelRival ? `${situacion.nombreDelRival}, con ` : ''}${situacion.rangoRival.descripcion}` +
       (analisis.equity.exacto ? ' (calculado exacto, sin simular).' : ` (simulado ${analisis.equity.repeticiones.toLocaleString('es')} veces).`),
   )
   /*
@@ -582,6 +621,15 @@ function explicacionLarga(situacion: Situacion, analisis: Analisis, elegida: Val
     outs con una carta por salir son un 8%". Eso es la regla del 2 y el 4 del
     módulo 2, y es lo que convierte el juego en un entrenador.
   */
+  const rivales = situacion.rivalesVivos ?? 1
+  if (rivales > 1) {
+    lineas.push(
+      `Ojo: ese porcentaje es contra ${situacion.nombreDelRival ?? 'un rival'}. Quedabais ` +
+        `${rivales + 1} en la mano, y contra ${rivales} rivales a la vez hay que ganarles a todos: ` +
+        'tu porcentaje real es bastante menor.',
+    )
+  }
+
   const outs = outsContra(situacion.mano, situacion.mesa, situacion.rangoRival)
   if (outs.cuantas > 0) {
     const porSalir = 5 - situacion.mesa.length
@@ -669,6 +717,8 @@ export function etiquetaDeAccion(accion: ValorDeAccion, gratis = false): string 
   if (gratis) return `apostar ${redondear(accion.tamano ?? 0)}`
   return `subir ${redondear(accion.tamano ?? 0)} (pones ${redondear(accion.pones ?? 0)})`
 }
+
+const mayuscula = (t: string) => `${t[0].toUpperCase()}${t.slice(1)}`
 
 // Ayudas de formato, en español y sin decimales inútiles.
 const pc = (x: number) => `${Math.round(x * 100)}%`

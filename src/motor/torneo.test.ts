@@ -6,7 +6,7 @@ import type { Carta } from './cartas'
 import { aplicar, repartirMano } from './mesa'
 import { PERFILES_CON_NOMBRE } from './perfiles'
 import {
-  ESTRUCTURA_CIEGAS, FICHAS_INICIALES, cerrarMano, ciegasActuales, crearTorneo,
+  ESTRUCTURA_CIEGAS, FICHAS_INICIALES, cerrarMano, ciegasActuales, crearTorneo, elTorneoSigue,
   jugarHastaElHumano, jugadoresVivos, siguienteMano,
 } from './torneo'
 import type { Torneo } from './torneo'
@@ -201,5 +201,35 @@ describe('el torneo se acaba cuando se te acaban las fichas', () => {
     mesa.manoTerminada = true
     const cerrado = cerrarMano({ ...t, mesa })
     expect(cerrado.terminado).toBe(false)
+  })
+})
+
+describe('nunca se reparte una mano que el jugador no puede jugar', () => {
+  /*
+    Un torneo guardado con el humano a cero se seguía repartiendo al volver: el
+    jugador se quedaba mirando a dos bots jugar entre ellos, sin cartas, sin
+    botones y sin forma de salir. "No tengo modo de reiniciar el torneo cuando
+    ya perdí".
+  */
+  const sinFichas = (): Torneo => {
+    const t = crearTorneo({ semilla: 11 })
+    t.jugadores = t.jugadores.map((j) => (j.esHumano ? { ...j, fichas: 0 } : { ...j, fichas: 1500 }))
+    return t
+  }
+
+  it('con el jugador a cero, el torneo no sigue', () => {
+    expect(elTorneoSigue(sinFichas())).toBe(false)
+  })
+
+  it('y pedir la siguiente mano lo cierra en vez de repartir', () => {
+    const cerrado = siguienteMano(sinFichas(), crearAleatorio(3))
+    expect(cerrado.mesa).toBeNull()
+    expect(cerrado.terminado).toBe(true)
+  })
+
+  it('con fichas, sigue repartiendo como siempre', () => {
+    const t = crearTorneo({ semilla: 11 })
+    expect(elTorneoSigue(t)).toBe(true)
+    expect(siguienteMano(t, crearAleatorio(3)).mesa).not.toBeNull()
   })
 })

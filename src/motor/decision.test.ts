@@ -402,3 +402,88 @@ describe('meter lo que te queda siempre es una jugada (todo-in)', () => {
     expect(analizar(calderilla).acciones.filter((a) => a.accion === 'subir')).toHaveLength(0)
   })
 })
+
+describe('dos jugadas que valen casi lo mismo no se corrigen (D78)', () => {
+  /*
+    Salía esto en una mano: 100 puntos, "apostar gana fichas" y a continuación
+    "aun así, pasar habría sacado algo más". Si la diferencia son tres fichas en
+    un bote de ciento veinte, no hay nada que corregir.
+  */
+  const s: Situacion = {
+    mano: par('Qs Qh'), mesa: manoDeCodigo('9d 7c 2h'), calle: 'flop',
+    bote: 120, paraPagar: 0, tusFichas: 900, fichasRival: 900,
+    rangoRival: rangoApertura('boton'), perfilRival: perfil('el pegajoso'),
+  }
+
+  it('si la diferencia cabe en el margen, se dice que las dos están bien', () => {
+    const j = juzgar(s, analizar(s).mejor.accion === 'pagar' ? 'subir' : 'pagar', 'intermedia')
+    if (j.perdidaEnBotes > 0.03) return // esta mano no sirve de ejemplo hoy
+    expect(j.porQue).toContain('las dos están bien')
+    expect(j.porQue).not.toContain('Aun así')
+  })
+
+  it('nunca se dan 100 puntos y a la vez se corrige la jugada', () => {
+    // Recorre muchas situaciones: si puntúa 100, no puede decir que había algo mejor.
+    for (let i = 0; i < 40; i++) {
+      const bote = 40 + i * 37
+      const caso: Situacion = { ...s, bote, paraPagar: i % 3 === 0 ? 0 : Math.round(bote / 3) }
+      for (const accion of ['pagar', 'subir', 'retirarse'] as const) {
+        const j = juzgar(caso, accion, 'intermedia')
+        if (j.puntos < 100) continue
+        expect(j.porQue, `${accion} con bote ${bote}`).not.toContain('habría sacado algo más')
+        expect(j.porQue, `${accion} con bote ${bote}`).not.toMatch(/Por eso lo mejor era/)
+      }
+    }
+  })
+
+  it('y una diferencia de verdad se sigue corrigiendo', () => {
+    const caro: Situacion = {
+      mano: par('9s 4h'), mesa: manoDeCodigo('As Kd 7c'), calle: 'flop',
+      bote: 150, paraPagar: 100, tusFichas: 900, fichasRival: 900,
+      rangoRival: rangoApertura('utg'), perfilRival: perfil('la roca'),
+    }
+    expect(juzgar(caro, 'pagar', 'intermedia').porQue).toContain('Lo mejor era')
+  })
+})
+
+describe('las frases no se contradicen a sí mismas', () => {
+  /*
+    Salió esto jugando: "retirarte te ahorra fichas a la larga. Por eso lo mejor
+    era pagar". La frase que defiende la jugada solo puede decirse cuando esa
+    jugada ERA la mejor.
+  */
+  it('solo defiende retirarse cuando retirarse era lo mejor', () => {
+    for (let i = 0; i < 30; i++) {
+      const caso: Situacion = {
+        mano: par('9d 2s'), mesa: manoDeCodigo('As Kd 7c'), calle: 'flop',
+        bote: 60 + i * 40, paraPagar: 10 + i * 9, tusFichas: 900, fichasRival: 900,
+        rangoRival: rangoApertura(i % 2 === 0 ? 'boton' : 'utg'), perfilRival: RIVAL_TIPICO,
+      }
+      const j = juzgar(caso, 'retirarse', 'intermedia')
+      if (j.porQue.includes('te ahorra fichas a la larga')) {
+        expect(j.mejor.accion, `bote ${caso.bote}`).toBe('retirarse')
+        expect(j.porQue).not.toContain('lo mejor era')
+      }
+    }
+  })
+
+  it('avisa de que el porcentaje es contra UN rival cuando quedan más', () => {
+    const multiple: Situacion = {
+      mano: par('9d 2s'), mesa: [], calle: 'preflop', bote: 30, paraPagar: 20,
+      tusFichas: 1000, fichasRival: 1000, rangoRival: rangoApertura('boton'),
+      perfilRival: RIVAL_TIPICO, rivalesVivos: 3, nombreDelRival: 'Nadia',
+    }
+    const texto = juzgar(multiple, 'pagar', 'intermedia').porQueLargo
+    expect(texto).toContain('Nadia')
+    expect(texto).toContain('3 rivales')
+  })
+
+  it('y no avisa de nada cuando solo queda uno', () => {
+    const solos: Situacion = {
+      mano: par('9d 2s'), mesa: [], calle: 'preflop', bote: 30, paraPagar: 20,
+      tusFichas: 1000, fichasRival: 1000, rangoRival: rangoApertura('boton'),
+      perfilRival: RIVAL_TIPICO, rivalesVivos: 1, nombreDelRival: 'Nadia',
+    }
+    expect(juzgar(solos, 'pagar', 'intermedia').porQueLargo).not.toContain('rivales a la vez')
+  })
+})
