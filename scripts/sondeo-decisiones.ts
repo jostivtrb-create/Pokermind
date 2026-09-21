@@ -41,7 +41,7 @@ mostrar('Basura ante una apuesta grande (debería ser retirarse)', {
   rangoRival: rangoApertura('utg'), perfilRival: roca,
 })
 
-mostrar('Proyecto de color con buen precio (debería ser pagar)', {
+mostrar('Proyecto de color con buen precio (pagar y subir poco valen casi lo mismo)', {
   mano: par('Jh Th'), mesa: manoDeCodigo('Ah 7h 2c'), calle: 'flop',
   bote: 200, paraPagar: 40, tusFichas: 900, fichasRival: 900,
   rangoRival: rangoApertura('utg'), perfilRival: RIVAL_TIPICO,

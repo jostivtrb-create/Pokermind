@@ -120,6 +120,9 @@ El usuario publicó el juego, lo probó y trajo dos cosas. Las dos cambian decis
 | D40 | **La explicación va en pasos de una frase con cartas a la vista**, uno por pantalla, en vez de párrafos seguidos | *"siento que de entrada tiene muchísimo texto y aburre"*. Cuatro párrafos no se leen, se saltan |
 | D41 | El módulo 1 empieza por **las cartas** (trece valores, el as manda) y sigue por **las jugadas** (pareja, trío, escalera, color, full… con cartas delante), cada una con su pregunta, antes de enseñar una mano de siete cartas | *"empieza como que muy de golpe, ya directo un montón de texto y luego listo, que tienes en la mesa, que gana… falta una transición ahí"*. Faltaban dos escalones enteros |
 | D42 | Quien elige un nivel distinto de «no sé nada» **tiene el modo libre abierto desde el principio** | Se le está creyendo que sabe las reglas; pedirle que lo demuestre para poder sentarse a una mesa sobra |
+| D44 | **El porcentaje de retiradas del rival depende del tamaño de la apuesta.** Antes el tope por «con nada no se paga» ignoraba el precio y salía el mismo 47% para una subida pequeña que para un todo-in | Lo encontró el usuario pasando una mano por dos IA. Era un fallo de verdad del motor |
+| D45 | Las explicaciones **enseñan las dos partes y el total** («−42 ahora, −23 más de las calles siguientes, total −65»), y las subidas dicen **cuánto pones en total** («subir 220, pones 400») | Las dos IA hicieron la cuenta a mano y no llegaron al número de la pantalla; una entendió además «subir 220» como subir *hasta* 220 y la dio por ilegal. Los números estaban bien: la redacción, no |
+| D46 | Lo que tienes en la mano **incluye los proyectos**: «carta alta: rey, y proyecto de color» | Decir solo «carta alta: rey» con cuatro tréboles es cierto y engaña, y encima contradice lo que enseña el módulo 2 |
 | D43 | **Ninguna pantalla puede ser solo texto.** Todo lo que se explica se dibuja: cartas, porcentajes, montones de fichas, la mesa desde arriba, la rejilla de rangos. Como mucho **un** paso de texto suelto por lección, y eso es un test que falla si se incumple | *"cualquier pantalla que sea solo texto aburre (...) si es un reguero de texto, hasta a mí me aburrió, y eso que estaba probando la idea"*. Se convirtieron las 38 lecciones que quedaban |
 
 ### De la ronda 3
@@ -387,3 +390,20 @@ preparado), otros idiomas (D12) y el mazo de cuatro colores.
   señaló 38 lecciones; ahora no señala ninguna.
   De paso salió un fallo de dibujo: el texto que iba dentro del óvalo de la mesa lo tapaban las
   sillas de los lados. Ahora va debajo.
+- **22/09/2026** — El usuario pasó una mano del reto diario por dos IA y trajo su análisis. Revisado
+  con el código delante: **de seis objeciones, tres eran ciertas y tres no**, y las tres ciertas
+  valían mucho.
+  · CIERTA y grave: el rival se retiraba **exactamente el mismo 47%** ante una subida de 220 que
+    ante un todo-in de 1.200. El tope de «con la mano vacía no se paga» no miraba el precio.
+    Corregido (D44): ahora va del 56% al 63% según el tamaño, con suelo en las manos fuertes, que
+    esas no se tiran por mucho que apuestes.
+  · CIERTA: los tramos del rango repetían manos (QQ en fuertes y en medias). Es correcto por dentro
+    —QQ con un trébol vale más que QQ sin él en una mesa con dos tréboles— pero en pantalla
+    confunde. Ahora cada mano se enseña solo donde tiene más combinaciones.
+  · CIERTA: «carta alta: rey» ocultaba el proyecto de color, que era toda la mano (D46).
+  · FALSA: «el EV de pagar debería ser −44, no −65». El −65 ya incluía los −23 de las calles
+    siguientes. Pero **las dos IA se equivocaron en lo mismo**, así que la redacción era el
+    problema: ahora se desglosa (D45).
+  · FALSA: «subir 220 es ilegal, el mínimo es 360». Era subir 220 *por encima* de su apuesta, o sea
+    400 en total: legal. Otra vez, culpa de cómo estaba escrito (D45).
+  · FALSA: «+7 no cuadra». Sí cuadraba; se comprobó término a término con `scripts/auditoria.ts`.

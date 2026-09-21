@@ -4,7 +4,7 @@ import { aleatorioLibre } from '../../motor/aleatorio'
 import type { Accion, Juicio } from '../../motor/decision'
 import { juzgar } from '../../motor/decision'
 import { Categoria, categoriaDe, describirMano, evaluar } from '../../motor/evaluador'
-import { usaTusCartas } from '../../juego/practica'
+import { describirTuMano, usaTusCartas } from '../../juego/practica'
 import { rangoEstimado, rivalPrincipal } from '../../motor/lectura'
 import type { AccionMesa, EstadoMesa } from '../../motor/mesa'
 import { aplicar, boteTotal, opcionesDisponibles, paraPagar } from '../../motor/mesa'
@@ -176,7 +176,7 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
                 <div style={{ marginTop: 6 }}><FilaDeCartas cartas={humano.cartas} /></div>
                 {mesa.comunitarias.length > 0 && (
                   <p className="tenue" style={{ fontSize: 13, margin: '6px 0 0' }}>
-                    Tienes {describirMano([...humano.cartas, ...mesa.comunitarias])}
+                    Tienes {describirTuMano(humano.cartas, mesa.comunitarias)}
                     {categoriaDe(evaluar([...humano.cartas, ...mesa.comunitarias])) >= Categoria.Pareja &&
                     !usaTusCartas(humano.cartas, mesa.comunitarias)
                       ? ', pero está entera en la mesa: eso lo tiene todo el mundo.'

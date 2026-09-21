@@ -1,4 +1,5 @@
 import type { Analisis } from '../../motor/decision'
+import { etiquetaDeAccion } from '../../motor/decision'
 
 /**
  * Rebobinar la mano (D27): qué habría pasado con cada una de las tres
@@ -20,7 +21,7 @@ export function Rebobinar({ analisis, elegida }: { analisis: Analisis; elegida: 
 
       <div style={{ display: 'grid', gap: 8 }}>
         {analisis.acciones.map((accion, i) => {
-          const etiqueta = accion.accion === 'subir' ? `Subir ${accion.tamano}` : accion.accion === 'pagar' ? 'Pagar o pasar' : 'Retirarse'
+          const etiqueta = mayuscula(etiquetaDeAccion(accion))
           const esLaTuya = accion.accion === elegida
           const esLaMejor = accion === analisis.mejor
           const diferencia = accion.valorEsperado - mejor
@@ -54,4 +55,8 @@ export function Rebobinar({ analisis, elegida }: { analisis: Analisis; elegida: 
       </div>
     </div>
   )
+}
+
+function mayuscula(texto: string): string {
+  return texto[0].toUpperCase() + texto.slice(1)
 }

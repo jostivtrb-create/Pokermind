@@ -2,11 +2,11 @@ import { useMemo, useState } from 'react'
 import { aleatorioLibre } from '../../motor/aleatorio'
 import type { Accion } from '../../motor/decision'
 import { NOMBRES_CALLE, analizar } from '../../motor/decision'
-import { Categoria, categoriaDe, describirMano, evaluar } from '../../motor/evaluador'
+import { Categoria, categoriaDe, evaluar } from '../../motor/evaluador'
 import { GLOSARIO_POR_CLAVE } from '../../contenido/glosario'
 import type { Leccion } from '../../juego/lecciones'
 import { pasosDeLaLeccion } from '../../juego/lecciones'
-import { aSituacion, usaTusCartas } from '../../juego/practica'
+import { aSituacion, describirTuMano, usaTusCartas } from '../../juego/practica'
 import { anotarDecision } from '../../juego/progreso'
 import type { EstadoSesion } from '../../juego/sesion'
 import {
@@ -230,7 +230,7 @@ function Mesa({ mano }: { mano: NonNullable<EstadoSesion['mano']> }) {
           </div>
           {mano.mesa.length > 0 && (
             <p className="tenue" style={{ fontSize: 13, margin: '6px 0 0' }}>
-              Ahora mismo tienes {describirMano([...mano.mano, ...mano.mesa])}
+              Ahora mismo tienes {describirTuMano(mano.mano, mano.mesa)}
               {hayQueAvisarDeLaMesa(mano.mano, mano.mesa)
                 ? ', pero está entera en la mesa: eso lo tiene todo el mundo.'
                 : '.'}

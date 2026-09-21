@@ -116,7 +116,16 @@ export function fraccionQueContinua(
   // Nadie paga con la mano vacía, por bueno que sea el precio. Este tope es el
   // que hace que en una mesa que no le sirve a nadie, apostar se lleve el bote
   // sin más... y que, por lo mismo, a veces convenga no apostar y dejarle farolear.
-  const tope = conexionConLaMesa * (0.75 + 0.5 * (1 - perfil.disciplina)) + perfil.farol * 0.08
+  //
+  // Pero el tope TAMBIÉN tiene que apretarse con el tamaño de la apuesta. Antes
+  // no lo hacía, y el resultado era absurdo: el rival se retiraba exactamente el
+  // mismo porcentaje de veces ante una subida pequeña que ante un todo-in. Lo
+  // que cambia con una apuesta grande no son las manos fuertes —esas no se
+  // tiran— sino las marginales: el que va con una pareja floja o medio proyecto
+  // paga una apuesta pequeña y suelta una enorme.
+  const aguantaElPrecio = Math.max(0.25, 1.15 - 1.3 * precio)
+  const tope =
+    conexionConLaMesa * (0.75 + 0.5 * (1 - perfil.disciplina)) * aguantaElPrecio + perfil.farol * 0.08
 
   // Suelo: con pareja alta o mejor nadie se retira ante una apuesta normal, por
   // muy disciplinado que sea. Sin este suelo el motor creía que puede echar de la

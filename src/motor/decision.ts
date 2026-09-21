@@ -80,8 +80,10 @@ export interface ValorDeAccion {
   accion: Accion
   /** Fichas que gana o pierde de media, contando desde ahora. */
   valorEsperado: number
-  /** Tamaño de la subida, cuando la acción es subir. */
+  /** Tamaño de la subida POR ENCIMA de lo que cuesta igualar. */
   tamano?: number
+  /** Fichas que pones en total con esta acción. "Subir 220" pone 400 si igualar costaba 180. */
+  pones?: number
   /** Parte del rango del rival que se retira ante esa subida. */
   seRetiran?: number
   /** Probabilidad de ganar contra las manos que seguirían en la mano. */
@@ -131,17 +133,32 @@ export function analizar(situacion: Situacion): Analisis {
   const futuroPagando = valorDeLasCallesSiguientes(
     equity.equity, bote + paraPagar * 2, perfil, callesQueQuedan, 1, true,
   )
-  const valorPagar = equity.equity * (bote + paraPagar) - paraPagar + futuroPagando
+  const valorAhoraPagando = equity.equity * (bote + paraPagar) - paraPagar
+  const valorPagar = valorAhoraPagando + futuroPagando
+
+  // La explicación desglosa las DOS partes y el total. Antes enseñaba el total
+  // y luego el término de calles siguientes por separado, y parecía que uno
+  // contradecía al otro: cualquiera que hiciera la cuenta a mano no llegaba al
+  // número de la pantalla.
+  const trozos: string[] = []
+  trozos.push(
+    paraPagar > 0
+      ? `Ganas el ${pc(equity.equity)} de las veces un bote de ${redondear(bote + paraPagar)} y pagas ${redondear(paraPagar)}: ${conSigno(valorAhoraPagando)} de media.`
+      : `Pasas sin pagar nada y ganas el ${pc(equity.equity)} de un bote de ${redondear(bote)}: ${conSigno(valorAhoraPagando)} de media.`,
+  )
+  if (Math.abs(futuroPagando) >= 1) {
+    trozos.push(
+      `${conSigno(futuroPagando)} más por lo que todavía se apuesta en las calles siguientes.`,
+    )
+    trozos.push(`En total: ${conSigno(valorPagar)}.`)
+  }
+
   acciones.push({
     accion: 'pagar',
     valorEsperado: valorPagar,
+    pones: paraPagar,
     equitySiSigue: equity.equity,
-    desglose:
-      paraPagar > 0
-        ? `Ganas el ${pc(equity.equity)} de las veces un bote de ${redondear(bote + paraPagar)} y pagas ${redondear(paraPagar)}.` +
-          (futuroPagando !== 0 ? ` Contando lo que el rival aún pondrá en las calles siguientes: ${conSigno(futuroPagando)}.` : '')
-        : `Pasas sin pagar nada y ganas el ${pc(equity.equity)} de un bote de ${redondear(bote)}.` +
-          (futuroPagando !== 0 ? ` Dejar al rival dentro vale ${conSigno(futuroPagando)} en las calles siguientes.` : ''),
+    desglose: trozos.join(' '),
   })
 
   // ── Subir ────────────────────────────────────────────────────────────────
@@ -202,11 +219,13 @@ function valorDeSubir(
   return {
     accion: 'subir',
     tamano,
+    pones: inversion,
     seRetiran,
     equitySiSigue,
     valorEsperado,
     desglose:
-      `Subiendo ${redondear(tamano)}, el ${pc(seRetiran)} de sus manos se retira y te llevas ${redondear(bote)} sin ver más cartas. ` +
+      `Subes ${redondear(tamano)} por encima de su apuesta: pones ${redondear(inversion)} en total. ` +
+      `El ${pc(seRetiran)} de sus manos se retira y te llevas ${redondear(bote)} sin ver más cartas. ` +
       `El ${pc(continua)} restante sigue, y contra esa parte —que es la fuerte— ganas el ${pc(equitySiSigue)}.`,
   }
 }
@@ -389,7 +408,7 @@ function explicacionCorta(analisis: Analisis, elegida: ValorDeAccion, veredicto:
   // se queda con "hice lo correcto" y no aprende la jugada que sí tocaba.
   const matiz =
     elegida !== analisis.mejor && perdida > 0.5
-      ? ` Aun así, ${analisis.mejor.accion === 'subir' ? `subir ${redondear(analisis.mejor.tamano ?? 0)}` : NOMBRES_ACCION[analisis.mejor.accion]} habría sacado algo más.`
+      ? ` Aun así, ${etiquetaDeAccion(analisis.mejor)} habría sacado algo más.`
       : ''
 
   if (veredicto === 'optima' || veredicto === 'buena') {
@@ -401,10 +420,7 @@ function explicacionCorta(analisis: Analisis, elegida: ValorDeAccion, veredicto:
     }
     return `Con el ${eq} de probabilidad, pagar sale a cuenta${analisis.mejor.accion === 'pagar' ? ' y es mejor que subir: subiendo espantas justo a las manos que te iban a pagar' : ''}.${matiz}`
   }
-  const mejorTexto =
-    analisis.mejor.accion === 'subir'
-      ? `subir ${redondear(analisis.mejor.tamano ?? 0)}`
-      : NOMBRES_ACCION[analisis.mejor.accion]
+  const mejorTexto = etiquetaDeAccion(analisis.mejor)
   return `Ganabas el ${eq} de las veces. Lo mejor era ${mejorTexto}: eligiendo ${NOMBRES_ACCION[elegida.accion]} dejas ${redondear(perdida)} fichas por el camino de media.`
 }
 
@@ -421,8 +437,7 @@ function explicacionLarga(situacion: Situacion, analisis: Analisis, elegida: Val
     )
   }
   for (const accion of analisis.acciones) {
-    const etiqueta = accion.accion === 'subir' ? `subir ${redondear(accion.tamano ?? 0)}` : NOMBRES_ACCION[accion.accion]
-    lineas.push(`· ${etiqueta}: ${conSigno(accion.valorEsperado)} fichas de media. ${accion.desglose}`)
+    lineas.push(`· ${etiquetaDeAccion(accion)}: ${conSigno(accion.valorEsperado)} fichas de media. ${accion.desglose}`)
   }
   if (analisis.mejor.accion === 'pagar' && elegida.accion === 'subir') {
     lineas.push(
@@ -431,6 +446,18 @@ function explicacionLarga(situacion: Situacion, analisis: Analisis, elegida: Val
     )
   }
   return lineas.join('\n')
+}
+
+/**
+ * Cómo se nombra una acción.
+ *
+ * "Subir 220" es ambiguo: en una mesa, decir 220 puede entenderse como subir
+ * HASTA 220 o subir 220 MÁS. Se dice siempre lo que pones en total, que es lo
+ * único que no se malinterpreta.
+ */
+export function etiquetaDeAccion(accion: ValorDeAccion): string {
+  if (accion.accion !== 'subir') return NOMBRES_ACCION[accion.accion]
+  return `subir ${redondear(accion.tamano ?? 0)} (pones ${redondear(accion.pones ?? 0)})`
 }
 
 // Ayudas de formato, en español y sin decimales inútiles.

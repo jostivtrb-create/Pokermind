@@ -2,7 +2,7 @@ import type { Aleatorio } from '../motor/aleatorio'
 import type { Carta } from '../motor/cartas'
 import { barajaCompleta, barajar } from '../motor/cartas'
 import type { Calle, Exigencia, Situacion } from '../motor/decision'
-import { categoriaDe, evaluar, Categoria } from '../motor/evaluador'
+import { categoriaDe, describirMano, evaluar, Categoria } from '../motor/evaluador'
 import type { PerfilRival } from '../motor/perfiles'
 import { RIVAL_TIPICO } from '../motor/perfiles'
 import type { Posicion } from '../motor/rangos'
@@ -365,4 +365,38 @@ export const mesaSeca: Condicion = {
     }
     return true
   },
+}
+
+/**
+ * Lo que tienes AHORA, contando también lo que puedes llegar a tener.
+ *
+ * Decir "carta alta: rey" cuando llevas cuatro cartas del mismo palo es cierto
+ * y engaña: toda la mano depende de ese proyecto, y el propio juego enseña a
+ * contarlo dos módulos antes. Lo detectaron dos personas mirando la misma
+ * pantalla.
+ */
+export function proyectosDe(mano: readonly Carta[], mesa: readonly Carta[]): string[] {
+  if (mesa.length === 0 || mesa.length >= 5) return []
+  const proyectos: string[] = []
+
+  // Color: cuatro del mismo palo, con al menos una tuya, y sin estar hecho.
+  for (let palo = 0; palo < 4; palo++) {
+    const mias = mano.filter((c) => (c & 3) === palo).length
+    const total = mias + mesa.filter((c) => (c & 3) === palo).length
+    if (total === 4 && mias >= 1) {
+      proyectos.push('proyecto de color')
+      break
+    }
+  }
+
+  if (tenerProyectoDeEscalera.cumple(mano, mesa)) proyectos.push('proyecto de escalera')
+  return proyectos
+}
+
+/** "Carta alta: rey, y proyecto de color". Lo que se enseña encima de la mesa. */
+export function describirTuMano(mano: readonly Carta[], mesa: readonly Carta[]): string {
+  const hecha = describirMano([...mano, ...mesa])
+  const proyectos = proyectosDe(mano, mesa)
+  if (proyectos.length === 0) return hecha
+  return `${hecha}, y ${proyectos.join(' y ')}`
 }
