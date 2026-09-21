@@ -87,7 +87,48 @@ export interface OpcionTest {
 /** Cómo se practica una lección: decidiendo en una mano, o respondiendo. */
 export type Practica =
   | { tipo: 'decision'; mano: (azar: Aleatorio, numero: number) => EspecDeMano }
-  | { tipo: 'test'; pregunta: (azar: Aleatorio, numero: number) => PreguntaTest }
+  | {
+      tipo: 'test'
+      pregunta: (azar: Aleatorio, numero: number) => PreguntaTest
+      /** La lista entera, cuando las preguntas están escritas a mano. */
+      preguntas?: readonly PreguntaTest[]
+    }
+
+/**
+ * Reparte las preguntas de un test como se reparten cartas: barajadas, y sin
+ * repetir ninguna hasta que se acaban todas.
+ *
+ * Antes cada pregunta se sacaba al azar de la lista. Con dos preguntas y tres
+ * aciertos seguidos para dar la lección por dominada, tocaba la MISMA tres
+ * veces seguidas: no enseña nada y parece que la app se ha colgado. Lo cazó un
+ * jugador en el módulo 4.
+ */
+export function testEntre(preguntas: readonly PreguntaTest[]): Practica {
+  let baraja: PreguntaTest[] = []
+  let ultima: PreguntaTest | null = null
+
+  return {
+    tipo: 'test',
+    preguntas,
+    pregunta: (azar) => {
+      if (baraja.length === 0) {
+        baraja = [...preguntas]
+        for (let i = baraja.length - 1; i > 0; i--) {
+          const j = azar.entero(i + 1)
+          ;[baraja[i], baraja[j]] = [baraja[j], baraja[i]]
+        }
+        // Que la primera de la baraja nueva no repita la última de la anterior.
+        const arriba = baraja.length - 1
+        if (baraja.length > 1 && baraja[arriba] === ultima) {
+          const otra = azar.entero(arriba)
+          ;[baraja[arriba], baraja[otra]] = [baraja[otra], baraja[arriba]]
+        }
+      }
+      ultima = baraja.pop()!
+      return ultima
+    },
+  }
+}
 
 export interface Leccion {
   id: string

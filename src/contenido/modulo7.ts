@@ -1,5 +1,5 @@
-import type { Modulo, PreguntaTest } from '../juego/lecciones'
-import { leccion } from '../juego/lecciones'
+import type { Modulo } from '../juego/lecciones'
+import { leccion, testEntre } from '../juego/lecciones'
 import { manoDeCodigo } from '../motor/cartas'
 import type { Carta } from '../motor/cartas'
 
@@ -42,30 +42,32 @@ export const MODULO_7: Modulo = {
         { tipo: 'texto', texto: 'Esto se llama **apostar por valor**, y de ahí sale casi todo el dinero del póker. Los faroles son la parte llamativa; el valor paga las facturas.' },
       ],
       terminos: ['valor'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: 'Tienes una mano muy fuerte. ¿Cuál es la pregunta correcta antes de apostar?',
-              opciones: [
-                { texto: '¿Con qué manos peores me va a pagar?', correcta: true, porQue: 'Si no hay ninguna mano peor que pueda pagarte, esa apuesta no gana nada: solo echa a quien ya iba perdiendo.' },
-                { texto: '¿Cómo le hago retirarse?', porQue: 'Eso es lo que quieres cuando vas perdiendo, no cuando vas ganando.' },
-                { texto: '¿Cuánto tengo en fichas?', porQue: 'Importa, pero después: primero hay que saber si la apuesta tiene a quién cobrarle.' },
-              ],
-            },
-            {
-              enunciado: 'Vas ganando y apuestas tan fuerte que solo te pagan las manos que te ganan. ¿Qué has hecho?',
-              opciones: [
-                { texto: 'Apostar al revés: echo a quien me paga y cobro solo de quien me gana', correcta: true, porQue: 'Es el error clásico. Con una mano buena pero no imbatible, el tamaño tiene que dejar sitio a que te paguen peores.' },
-                { texto: 'Bien: he protegido mi mano', porQue: '"Proteger" suele ser la excusa para apostar de más y ganar menos.' },
-                { texto: 'Bien: he ganado el bote', porQue: 'Has ganado el bote que había, sí. Y has perdido el que podías haber hecho.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: 'Tienes una mano muy fuerte. ¿Cuál es la pregunta correcta antes de apostar?',
+          opciones: [
+            { texto: '¿Con qué manos peores me va a pagar?', correcta: true, porQue: 'Si no hay ninguna mano peor que pueda pagarte, esa apuesta no gana nada: solo echa a quien ya iba perdiendo.' },
+            { texto: '¿Cómo le hago retirarse?', porQue: 'Eso es lo que quieres cuando vas perdiendo, no cuando vas ganando.' },
+            { texto: '¿Cuánto tengo en fichas?', porQue: 'Importa, pero después: primero hay que saber si la apuesta tiene a quién cobrarle.' },
+          ],
         },
-      },
+        {
+          enunciado: 'Vas ganando y apuestas tan fuerte que solo te pagan las manos que te ganan. ¿Qué has hecho?',
+          opciones: [
+            { texto: 'Apostar al revés: echo a quien me paga y cobro solo de quien me gana', correcta: true, porQue: 'Es el error clásico. Con una mano buena pero no imbatible, el tamaño tiene que dejar sitio a que te paguen peores.' },
+            { texto: 'Bien: he protegido mi mano', porQue: '"Proteger" suele ser la excusa para apostar de más y ganar menos.' },
+            { texto: 'Bien: he ganado el bote', porQue: 'Has ganado el bote que había, sí. Y has perdido el que podías haber hecho.' },
+          ],
+        },
+        {
+          enunciado: '¿En qué caso es mejor NO apostar aunque vayas ganando?',
+          opciones: [
+            { texto: 'Cuando ninguna mano peor que la mía puede pagarme', correcta: true, porQue: 'Si solo te paga lo que te gana, esa apuesta pierde fichas. Pasar deja que te farolee él.' },
+            { texto: 'Cuando el bote es pequeño', correcta: false, porQue: 'El bote pequeño se hace grande apostando, que es de lo que va apostar por valor.' },
+            { texto: 'Cuando llevo varias manos ganando', correcta: false, porQue: 'Lo que pasó en las manos anteriores no cambia esta cuenta.' },
+          ],
+        },
+      ]),
       dominio: 3,
       minimoManos: 3,
       maximoManos: 9,
@@ -167,30 +169,32 @@ export const MODULO_7: Modulo = {
         { tipo: 'texto', texto: 'Y una regla que ahorra mucho dinero: **no se farolea a quien no se retira nunca**.' },
       ],
       terminos: ['farol'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: '¿En cuál de estas situaciones tiene más sentido farolear?',
-              opciones: [
-                { texto: 'La mesa es 4-7-2 y el rival solo juega figuras', correcta: true, porQue: 'Su rango casi no liga ahí: se va a retirar muchas veces, que es lo único que necesita un farol.' },
-                { texto: 'La mesa es A-K-Q y el rival solo juega figuras', porQue: 'Esa mesa es justo la suya: va a tener algo casi siempre.' },
-                { texto: 'El rival es de los que paga todo', porQue: 'A quien no se retira nunca no se le farolea. Es la regla que más dinero ahorra.' },
-              ],
-            },
-            {
-              enunciado: 'Apuestas 100 a un bote de 100 como farol. ¿Cuántas veces necesitas que se retire?',
-              opciones: [
-                { texto: 'Más de la mitad', correcta: true, porQue: 'Arriesgas 100 para ganar 100: por encima del 50% de retiradas, el farol gana fichas.' },
-                { texto: 'Una de cada cuatro', porQue: 'Con eso perderías fichas a la larga: te retiran poco y pagas mucho.' },
-                { texto: 'Siempre', porQue: 'No hace falta que funcione siempre; hace falta que funcione más veces de las que falla.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: '¿En cuál de estas situaciones tiene más sentido farolear?',
+          opciones: [
+            { texto: 'La mesa es 4-7-2 y el rival solo juega figuras', correcta: true, porQue: 'Su rango casi no liga ahí: se va a retirar muchas veces, que es lo único que necesita un farol.' },
+            { texto: 'La mesa es A-K-Q y el rival solo juega figuras', porQue: 'Esa mesa es justo la suya: va a tener algo casi siempre.' },
+            { texto: 'El rival es de los que paga todo', porQue: 'A quien no se retira nunca no se le farolea. Es la regla que más dinero ahorra.' },
+          ],
         },
-      },
+        {
+          enunciado: 'Apuestas 100 a un bote de 100 como farol. ¿Cuántas veces necesitas que se retire?',
+          opciones: [
+            { texto: 'Más de la mitad', correcta: true, porQue: 'Arriesgas 100 para ganar 100: por encima del 50% de retiradas, el farol gana fichas.' },
+            { texto: 'Una de cada cuatro', porQue: 'Con eso perderías fichas a la larga: te retiran poco y pagas mucho.' },
+            { texto: 'Siempre', porQue: 'No hace falta que funcione siempre; hace falta que funcione más veces de las que falla.' },
+          ],
+        },
+        {
+          enunciado: 'Ahora faroleas 50 a un bote de 100. ¿Cuántas veces necesitas que se retire?',
+          opciones: [
+            { texto: 'Una de cada tres', correcta: true, porQue: 'Arriesgas 50 para ganar 150: 50 entre 150 es una de cada tres. Cuanto menos apuestas, menos veces tiene que funcionar.' },
+            { texto: 'Más de la mitad', correcta: false, porQue: 'Eso era apostando el bote entero. Apostando la mitad, el farol es más barato.' },
+            { texto: 'Las mismas que apostando 100: da igual el tamaño', correcta: false, porQue: 'El tamaño lo cambia todo: es lo que arriesgas frente a lo que te llevas.' },
+          ],
+        },
+      ]),
       dominio: 3,
       minimoManos: 3,
       maximoManos: 9,

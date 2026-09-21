@@ -1,6 +1,6 @@
 import type { Aleatorio } from '../motor/aleatorio'
 import type { Modulo, PreguntaTest } from '../juego/lecciones'
-import { leccion } from '../juego/lecciones'
+import { leccion, testEntre } from '../juego/lecciones'
 import { alguna, tenerParejaMedia, tenerProyectoDeEscalera } from '../juego/practica'
 import { manoDeCodigo } from '../motor/cartas'
 import type { Carta } from '../motor/cartas'
@@ -57,30 +57,32 @@ export const MODULO_3: Modulo = {
         { tipo: 'texto', texto: 'Esa es la regla entera: **si tu porcentaje es mayor que el precio, se paga; si es menor, se suelta.**' },
       ],
       terminos: ['precioDelBote', 'bote'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: 'Hay 100 en el bote y te piden 50. Ganas el 45% de las veces. ¿Qué haces?',
-              opciones: [
-                { texto: 'Pagar: necesito un 33% y tengo un 45%', correcta: true, porQue: 'Pones 50 para optar a 150: te basta con ganar una de cada tres. Con un 45% ganas fichas a la larga.' },
-                { texto: 'Retirarme: pierdo más veces de las que gano', porQue: 'Perder más veces de las que ganas no es el criterio. Lo que importa es cuánto cobras cuando ganas.' },
-                { texto: 'Depende de mis cartas', porQue: 'Tus cartas ya están dentro del 45%. Lo que falta es compararlo con el precio.' },
-              ],
-            },
-            {
-              enunciado: 'Hay 100 en el bote y te piden 300. Ganas el 45% de las veces. ¿Qué haces?',
-              opciones: [
-                { texto: 'Retirarme: necesito un 75% y solo tengo un 45%', correcta: true, porQue: 'Pones 300 para optar a 400: hace falta ganar tres de cada cuatro veces. Con un 45% es tirar fichas.' },
-                { texto: 'Pagar: tengo casi la mitad', porQue: 'La mitad no basta cuando te cobran el triple del bote. Es la misma mano que antes y ahora es un error.' },
-                { texto: 'Subir para asustarle', porQue: 'Subir con menos de la mitad y sin plan es cómo se pierden torneos enteros.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: 'Hay 100 en el bote y te piden 50. Ganas el 45% de las veces. ¿Qué haces?',
+          opciones: [
+            { texto: 'Pagar: necesito un 33% y tengo un 45%', correcta: true, porQue: 'Pones 50 para optar a 150: te basta con ganar una de cada tres. Con un 45% ganas fichas a la larga.' },
+            { texto: 'Retirarme: pierdo más veces de las que gano', porQue: 'Perder más veces de las que ganas no es el criterio. Lo que importa es cuánto cobras cuando ganas.' },
+            { texto: 'Depende de mis cartas', porQue: 'Tus cartas ya están dentro del 45%. Lo que falta es compararlo con el precio.' },
+          ],
         },
-      },
+        {
+          enunciado: 'Hay 100 en el bote y te piden 300. Ganas el 45% de las veces. ¿Qué haces?',
+          opciones: [
+            { texto: 'Retirarme: necesito un 75% y solo tengo un 45%', correcta: true, porQue: 'Pones 300 para optar a 400: hace falta ganar tres de cada cuatro veces. Con un 45% es tirar fichas.' },
+            { texto: 'Pagar: tengo casi la mitad', porQue: 'La mitad no basta cuando te cobran el triple del bote. Es la misma mano que antes y ahora es un error.' },
+            { texto: 'Subir para asustarle', porQue: 'Subir con menos de la mitad y sin plan es cómo se pierden torneos enteros.' },
+          ],
+        },
+        {
+          enunciado: 'Hay 150 en el bote y te piden 50 para seguir. ¿Cuántas veces de cada cien te basta con ganar?',
+          opciones: [
+            { texto: 'Una de cada cuatro: 25', correcta: true, porQue: 'Pones 50 para optar a 200. Esa cuenta, 50 entre 200, es el precio: 25%.' },
+            { texto: 'La mitad: 50', correcta: false, porQue: 'La mitad solo hace falta cuando te cobran lo mismo que hay en el bote. Aquí te cobran mucho menos.' },
+            { texto: 'Una de cada tres: 33', correcta: false, porQue: 'Eso sería con 100 en el bote. Cuanto más grande es el bote, menos veces necesitas ganar.' },
+          ],
+        },
+      ]),
       dominio: 3,
       minimoManos: 3,
       maximoManos: 9,
@@ -200,30 +202,24 @@ export const MODULO_3: Modulo = {
         { tipo: 'texto', texto: 'Por eso, a «¿pagarías con esto?», la respuesta honesta siempre es: **depende de cuánto me pidan**.' },
       ],
       terminos: ['precioDelBote', 'proyecto'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: 'Tienes proyecto de color (36%). Hay 200 en el bote. ¿Con cuál de estas apuestas te sale a cuenta seguir?',
-              opciones: [
-                { texto: 'Te piden 40', correcta: true, porQue: '40 ÷ 240 = 17%. Con un 36% es pagar con los ojos cerrados.' },
-                { texto: 'Te piden 400', porQue: '400 ÷ 600 = 67%. Necesitarías ganar dos de cada tres veces y solo ganas una.' },
-                { texto: 'Da igual: el proyecto siempre se paga', porQue: 'Ese es justo el error que arruina a los que empiezan. El proyecto vale lo que cueste seguir.' },
-              ],
-            },
-            {
-              enunciado: 'El rival apuesta muy grande. ¿Qué es lo más sensato pensar?',
-              opciones: [
-                { texto: 'Que me está poniendo un precio que casi ninguna mano puede pagar', correcta: true, porQue: 'Apostar grande no es solo fuerza: también es quitarte el precio. Por eso ante una apuesta enorme se juega mucho más apretado.' },
-                { texto: 'Que seguro que va de farol', porQue: 'Puede ir de farol, pero suponerlo siempre es carísimo.' },
-                { texto: 'Que seguro que tiene la mejor mano', porQue: 'Suponerlo siempre es el otro extremo, y te convierte en alguien a quien se le echa de cualquier bote.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: 'Tienes proyecto de color (36%). Hay 200 en el bote. ¿Con cuál de estas apuestas te sale a cuenta seguir?',
+          opciones: [
+            { texto: 'Te piden 40', correcta: true, porQue: '40 ÷ 240 = 17%. Con un 36% es pagar con los ojos cerrados.' },
+            { texto: 'Te piden 400', porQue: '400 ÷ 600 = 67%. Necesitarías ganar dos de cada tres veces y solo ganas una.' },
+            { texto: 'Da igual: el proyecto siempre se paga', porQue: 'Ese es justo el error que arruina a los que empiezan. El proyecto vale lo que cueste seguir.' },
+          ],
         },
-      },
+        {
+          enunciado: 'El rival apuesta muy grande. ¿Qué es lo más sensato pensar?',
+          opciones: [
+            { texto: 'Que me está poniendo un precio que casi ninguna mano puede pagar', correcta: true, porQue: 'Apostar grande no es solo fuerza: también es quitarte el precio. Por eso ante una apuesta enorme se juega mucho más apretado.' },
+            { texto: 'Que seguro que va de farol', porQue: 'Puede ir de farol, pero suponerlo siempre es carísimo.' },
+            { texto: 'Que seguro que tiene la mejor mano', porQue: 'Suponerlo siempre es el otro extremo, y te convierte en alguien a quien se le echa de cualquier bote.' },
+          ],
+        },
+      ]),
       dominio: 2,
       minimoManos: 2,
       maximoManos: 7,

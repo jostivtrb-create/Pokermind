@@ -1,5 +1,5 @@
-import type { Modulo, PreguntaTest } from '../juego/lecciones'
-import { leccion } from '../juego/lecciones'
+import type { Modulo } from '../juego/lecciones'
+import { leccion, testEntre } from '../juego/lecciones'
 import { manoDeCodigo } from '../motor/cartas'
 import type { Carta } from '../motor/cartas'
 
@@ -40,30 +40,32 @@ export const MODULO_9: Modulo = {
         { tipo: 'texto', texto: 'Por eso hay que apostar a veces sin nada y pasar a veces con algo bueno: para que **apostar siga significando poco**.' },
       ],
       terminos: ['farol', 'valor'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: 'Un rival apuesta SOLO cuando tiene una mano muy buena. ¿Cómo se le gana?',
-              opciones: [
-                { texto: 'Retirándome cuando apuesta y apostándole yo cuando pasa', correcta: true, porQue: 'Sus manos buenas ganan botes minúsculos y sus manos flojas pierden todos los botes. No hace falta más.' },
-                { texto: 'Pagándole siempre para pillarle un farol', porQue: 'Si nunca farolea, pagarle es regalarle fichas.' },
-                { texto: 'No se le puede ganar: siempre tiene buena mano cuando apuesta', porQue: 'Precisamente por eso se le gana: porque lo sabes de antemano.' },
-              ],
-            },
-            {
-              enunciado: '¿Para qué sirve farolear de vez en cuando aunque a veces pierda fichas?',
-              opciones: [
-                { texto: 'Para que mis apuestas buenas también me las paguen', correcta: true, porQue: 'Un farol que falla a veces es lo que hace que tus manos buenas cobren el resto de las veces.' },
-                { texto: 'Para divertirme', porQue: 'Divierte, pero el motivo de verdad es que hace ganar dinero a tus manos buenas.' },
-                { texto: 'Para que el rival se enfade', porQue: 'Eso es un efecto secundario, no una estrategia.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: 'Un rival apuesta SOLO cuando tiene una mano muy buena. ¿Cómo se le gana?',
+          opciones: [
+            { texto: 'Retirándome cuando apuesta y apostándole yo cuando pasa', correcta: true, porQue: 'Sus manos buenas ganan botes minúsculos y sus manos flojas pierden todos los botes. No hace falta más.' },
+            { texto: 'Pagándole siempre para pillarle un farol', porQue: 'Si nunca farolea, pagarle es regalarle fichas.' },
+            { texto: 'No se le puede ganar: siempre tiene buena mano cuando apuesta', porQue: 'Precisamente por eso se le gana: porque lo sabes de antemano.' },
+          ],
         },
-      },
+        {
+          enunciado: '¿Para qué sirve farolear de vez en cuando aunque a veces pierda fichas?',
+          opciones: [
+            { texto: 'Para que mis apuestas buenas también me las paguen', correcta: true, porQue: 'Un farol que falla a veces es lo que hace que tus manos buenas cobren el resto de las veces.' },
+            { texto: 'Para divertirme', porQue: 'Divierte, pero el motivo de verdad es que hace ganar dinero a tus manos buenas.' },
+            { texto: 'Para que el rival se enfade', porQue: 'Eso es un efecto secundario, no una estrategia.' },
+          ],
+        },
+        {
+          enunciado: 'Los tres rivales se han dado cuenta de que solo apuestas con manos buenas. ¿Qué pierdes exactamente?',
+          opciones: [
+            { texto: 'El dinero de mis manos buenas: apuesto y todos se van', correcta: true, porQue: 'Ligas la mano del año y ganas las ciegas. El daño no se ve en una mano suelta, se ve al final del torneo.' },
+            { texto: 'Nada, mientras siga ligando manos buenas', correcta: false, porQue: 'Ligar no basta: hay que cobrar. Y no cobras si nadie te paga.' },
+            { texto: 'Pierdo los faroles que ya no me creen', correcta: false, porQue: 'Si no faroleas nunca, no tienes faroles que perder. Lo que pierdes es el valor de las buenas.' },
+          ],
+        },
+      ]),
       dominio: 3,
       minimoManos: 3,
       maximoManos: 9,
@@ -91,30 +93,32 @@ export const MODULO_9: Modulo = {
         { tipo: 'texto', texto: 'Nadie lleva la cuenta exacta en la mesa. Basta con la idea: **si apuestas mucho, que no sea todo humo; si apuestas poco, que no sea todo oro**.' },
       ],
       terminos: ['farol', 'valor'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: 'Faroleas mucho más de lo que apuestas con manos buenas. ¿Qué hará un rival que se dé cuenta?',
-              opciones: [
-                { texto: 'Pagarme siempre', correcta: true, porQue: 'Si la mayoría de tus apuestas son humo, pagarte le sale rentable, y entonces pierdes cada farol.' },
-                { texto: 'Retirarse siempre', porQue: 'Retirarse le saldría bien contra quien NO farolea nunca, no contra quien farolea de más.' },
-                { texto: 'Nada: no se puede saber', porQue: 'Se nota en pocas manos, y en cuanto se nota, se aprovecha.' },
-              ],
-            },
-            {
-              enunciado: '¿Qué significa que una estrategia esté "equilibrada"?',
-              opciones: [
-                { texto: 'Que al rival le da igual pagar o retirarse: no gana con ninguna de las dos', correcta: true, porQue: 'Esa es la definición útil. No es que juegues perfecto: es que no se te puede explotar.' },
-                { texto: 'Que gano el mismo número de manos que pierdo', porQue: 'El número de manos ganadas no dice nada: importa cuánto se gana en cada una.' },
-                { texto: 'Que apuesto siempre la misma cantidad', porQue: 'Apostar siempre igual es justo lo contrario: es previsible.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: 'Faroleas mucho más de lo que apuestas con manos buenas. ¿Qué hará un rival que se dé cuenta?',
+          opciones: [
+            { texto: 'Pagarme siempre', correcta: true, porQue: 'Si la mayoría de tus apuestas son humo, pagarte le sale rentable, y entonces pierdes cada farol.' },
+            { texto: 'Retirarse siempre', porQue: 'Retirarse le saldría bien contra quien NO farolea nunca, no contra quien farolea de más.' },
+            { texto: 'Nada: no se puede saber', porQue: 'Se nota en pocas manos, y en cuanto se nota, se aprovecha.' },
+          ],
         },
-      },
+        {
+          enunciado: '¿Qué significa que una estrategia esté "equilibrada"?',
+          opciones: [
+            { texto: 'Que al rival le da igual pagar o retirarse: no gana con ninguna de las dos', correcta: true, porQue: 'Esa es la definición útil. No es que juegues perfecto: es que no se te puede explotar.' },
+            { texto: 'Que gano el mismo número de manos que pierdo', porQue: 'El número de manos ganadas no dice nada: importa cuánto se gana en cada una.' },
+            { texto: 'Que apuesto siempre la misma cantidad', porQue: 'Apostar siempre igual es justo lo contrario: es previsible.' },
+          ],
+        },
+        {
+          enunciado: 'En el river apuestas medio bote en vez del bote entero. ¿Caben más faroles o menos?',
+          opciones: [
+            { texto: 'Menos: al apostar poco le das mejor precio para pagarte', correcta: true, porQue: 'Con medio bote le basta con acertar una de cada cuatro veces, así que solo aguantas un farol por cada tres manos de valor.' },
+            { texto: 'Más: como arriesgo menos, puedo farolear más veces', correcta: false, porQue: 'Arriesgas menos, pero él también paga más barato: puede pagarte más a menudo.' },
+            { texto: 'Los mismos: el tamaño no entra en esa cuenta', correcta: false, porQue: 'El tamaño es justo lo que fija la cuenta, porque es lo que le cuesta a él pagar.' },
+          ],
+        },
+      ]),
       dominio: 3,
       minimoManos: 3,
       maximoManos: 9,
@@ -138,30 +142,32 @@ export const MODULO_9: Modulo = {
         { tipo: 'texto', texto: 'La regla: **si has detectado un error, aprovéchalo; si no sabes nada del rival, juega equilibrado**.' },
       ],
       terminos: ['rango'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: 'Has visto que un rival se retira casi siempre que le apuestas. ¿Qué haces?',
-              opciones: [
-                { texto: 'Farolearle más a menudo', correcta: true, porQue: 'Cuando alguien comete un error concreto, lo rentable es apretar justo ahí, no jugar "correcto".' },
-                { texto: 'Jugar equilibrado por si acaso', porQue: 'El equilibrio protege, pero renuncia a lo que te está regalando.' },
-                { texto: 'Apostar solo con manos buenas', porQue: 'Contra alguien que se retira mucho, eso es dejar de ganar los botes que suelta.' },
-              ],
-            },
-            {
-              enunciado: 'Te sientas con tres desconocidos y no sabes nada de ellos. ¿Cómo empiezas?',
-              opciones: [
-                { texto: 'Equilibrado, y voy ajustando según lo que vea', correcta: true, porQue: 'Sin información, el equilibrio te protege mientras recoges datos. Después ya explotas.' },
-                { texto: 'Faroleando mucho desde el principio', porQue: 'Sin saber quién se retira y quién no, es tirar fichas al aire.' },
-                { texto: 'Esperando ases', porQue: 'Mientras esperas, las ciegas te comen y todos aprenden a leerte.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: 'Has visto que un rival se retira casi siempre que le apuestas. ¿Qué haces?',
+          opciones: [
+            { texto: 'Farolearle más a menudo', correcta: true, porQue: 'Cuando alguien comete un error concreto, lo rentable es apretar justo ahí, no jugar "correcto".' },
+            { texto: 'Jugar equilibrado por si acaso', porQue: 'El equilibrio protege, pero renuncia a lo que te está regalando.' },
+            { texto: 'Apostar solo con manos buenas', porQue: 'Contra alguien que se retira mucho, eso es dejar de ganar los botes que suelta.' },
+          ],
         },
-      },
+        {
+          enunciado: 'Te sientas con tres desconocidos y no sabes nada de ellos. ¿Cómo empiezas?',
+          opciones: [
+            { texto: 'Equilibrado, y voy ajustando según lo que vea', correcta: true, porQue: 'Sin información, el equilibrio te protege mientras recoges datos. Después ya explotas.' },
+            { texto: 'Faroleando mucho desde el principio', porQue: 'Sin saber quién se retira y quién no, es tirar fichas al aire.' },
+            { texto: 'Esperando ases', porQue: 'Mientras esperas, las ciegas te comen y todos aprenden a leerte.' },
+          ],
+        },
+        {
+          enunciado: 'Contra el rival que lo paga absolutamente todo, ¿qué es lo que NO hay que hacer?',
+          opciones: [
+            { texto: 'Farolearle', correcta: true, porQue: 'Un farol solo gana si el otro se retira. Al que no se retira nunca se le cobran las manos buenas y punto.' },
+            { texto: 'Apostar fuerte con mis manos buenas', correcta: false, porQue: 'Eso es exactamente lo que hay que hacer: es el rival que más paga por verte.' },
+            { texto: 'Entrar con manos que puedan ligar mucho', correcta: false, porQue: 'Al contrario: contra alguien que paga siempre, las manos que ligan fuerte cobran el doble.' },
+          ],
+        },
+      ]),
       dominio: 3,
       minimoManos: 3,
       maximoManos: 9,

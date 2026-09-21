@@ -1,6 +1,6 @@
 import type { Aleatorio } from '../motor/aleatorio'
 import type { Modulo, PreguntaTest } from '../juego/lecciones'
-import { leccion } from '../juego/lecciones'
+import { leccion, testEntre } from '../juego/lecciones'
 import { manoPremium, manoSolida } from '../juego/practica'
 import { FUERZA_PREFLOP } from '../motor/datos/fuerzaPreflop'
 
@@ -87,30 +87,32 @@ export const MODULO_5: Modulo = {
         { tipo: 'texto', texto: 'Contra un rango puedes calcular. Contra una corazonada, no. Todo este juego se apoya en esa diferencia.' },
       ],
       terminos: ['rango'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: 'El rival sube desde primera posición. ¿Qué es lo más útil que puedes pensar?',
-              opciones: [
-                { texto: 'Que tiene una de unas veinte manos fuertes', correcta: true, porQue: 'Eso es un rango, y con un rango se puede calcular tu porcentaje de verdad.' },
-                { texto: 'Que tiene ases', porQue: 'Los ases son solo una de las manos posibles, y de las más raras: salen una de cada 221 veces.' },
-                { texto: 'Que va de farol', porQue: 'Desde primera posición casi nadie abre de farol. Suponerlo sale carísimo.' },
-              ],
-            },
-            {
-              enunciado: '¿Por qué es mejor pensar en rangos que en manos concretas?',
-              opciones: [
-                { texto: 'Porque contra un conjunto de manos se puede calcular un porcentaje', correcta: true, porQue: 'Y con ese porcentaje ya puedes compararlo con el precio del bote.' },
-                { texto: 'Porque así aciertas siempre lo que tiene', porQue: 'Nunca aciertas lo que tiene: aciertas el conjunto, que es lo que hace falta.' },
-                { texto: 'Porque los rangos son más fáciles de recordar', porQue: 'No es cuestión de memoria, es que permiten calcular.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: 'El rival sube desde primera posición. ¿Qué es lo más útil que puedes pensar?',
+          opciones: [
+            { texto: 'Que tiene una de unas veinte manos fuertes', correcta: true, porQue: 'Eso es un rango, y con un rango se puede calcular tu porcentaje de verdad.' },
+            { texto: 'Que tiene ases', porQue: 'Los ases son solo una de las manos posibles, y de las más raras: salen una de cada 221 veces.' },
+            { texto: 'Que va de farol', porQue: 'Desde primera posición casi nadie abre de farol. Suponerlo sale carísimo.' },
+          ],
         },
-      },
+        {
+          enunciado: '¿Por qué es mejor pensar en rangos que en manos concretas?',
+          opciones: [
+            { texto: 'Porque contra un conjunto de manos se puede calcular un porcentaje', correcta: true, porQue: 'Y con ese porcentaje ya puedes compararlo con el precio del bote.' },
+            { texto: 'Porque así aciertas siempre lo que tiene', porQue: 'Nunca aciertas lo que tiene: aciertas el conjunto, que es lo que hace falta.' },
+            { texto: 'Porque los rangos son más fáciles de recordar', porQue: 'No es cuestión de memoria, es que permiten calcular.' },
+          ],
+        },
+        {
+          enunciado: 'El mismo rival abre desde el botón en vez de desde primera posición. ¿Qué cambia?',
+          opciones: [
+            { texto: 'Que su rango es mucho más ancho, así que mi mano media vale más', correcta: true, porQue: 'Desde el botón se abre con muchas manos flojas. Contra ese conjunto, lo que era insuficiente pasa a ser jugable.' },
+            { texto: 'Nada: sube igual, así que tiene lo mismo', correcta: false, porQue: 'La misma acción desde otra silla significa otra cosa. Ahí está casi toda la lectura del póker.' },
+            { texto: 'Que seguro que va de farol', correcta: false, porQue: 'Más ancho no es lo mismo que vacío: sigue teniendo manos buenas dentro, solo que menos a menudo.' },
+          ],
+        },
+      ]),
       dominio: 3,
       minimoManos: 3,
       maximoManos: 9,

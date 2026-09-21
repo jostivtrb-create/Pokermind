@@ -3,7 +3,7 @@ import { barajaCompleta, barajar, crearCarta, manoDeCodigo, VALORES } from '../m
 import type { Carta } from '../motor/cartas'
 import { categoriaDe, describirMano, evaluar, mejoresCinco } from '../motor/evaluador'
 import type { Modulo, PreguntaTest } from '../juego/lecciones'
-import { leccion } from '../juego/lecciones'
+import { leccion, testEntre } from '../juego/lecciones'
 import { dosJugadasDistintas, nombreDeJugada } from './generador'
 import { compararManos } from '../motor/comparar'
 
@@ -263,38 +263,32 @@ export const MODULO_1: Modulo = {
           pie: 'Eso es exactamente lo que vas a entrenar aquí.' },
       ],
       terminos: ['retirarse', 'pagar', 'pasar', 'subir'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: 'El rival apuesta 50 y tú no tienes nada. ¿Qué haces?',
-              opciones: [
-                { texto: 'Retirarme', correcta: true, porQue: 'Sueltas la mano y no pones ni una ficha más.' },
-                { texto: 'Pagar', porQue: 'Sería poner 50 para seguir en una mano que crees perdida.' },
-                { texto: 'Subir', porQue: 'Subir sin nada es farolear, y eso se aprende mucho más adelante.' },
-              ],
-            },
-            {
-              enunciado: 'Nadie ha apostado y tú tampoco quieres. ¿Cómo se llama seguir sin poner nada?',
-              opciones: [
-                { texto: 'Pasar', correcta: true, porQue: 'Eso es. Sigues dentro y gratis.' },
-                { texto: 'Retirarme', porQue: '¡Podías seguir gratis! Es el error más caro de los principiantes.' },
-                { texto: 'Pagar', porQue: 'Pagar es igualar una apuesta, y aquí no hay ninguna.' },
-              ],
-            },
-            {
-              enunciado: 'Tienes la mejor mano y quieres que el rival ponga más fichas. ¿Qué haces?',
-              opciones: [
-                { texto: 'Subir', correcta: true, porQue: 'Subes para que el bote crezca mientras vas ganando.' },
-                { texto: 'Retirarme', porQue: 'Retirarte con la mejor mano es regalar el bote.' },
-                { texto: 'Pasar siempre', porQue: 'A veces pasar es lo mejor, pero por norma con la mejor mano se apuesta.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: 'El rival apuesta 50 y tú no tienes nada. ¿Qué haces?',
+          opciones: [
+            { texto: 'Retirarme', correcta: true, porQue: 'Sueltas la mano y no pones ni una ficha más.' },
+            { texto: 'Pagar', porQue: 'Sería poner 50 para seguir en una mano que crees perdida.' },
+            { texto: 'Subir', porQue: 'Subir sin nada es farolear, y eso se aprende mucho más adelante.' },
+          ],
         },
-      },
+        {
+          enunciado: 'Nadie ha apostado y tú tampoco quieres. ¿Cómo se llama seguir sin poner nada?',
+          opciones: [
+            { texto: 'Pasar', correcta: true, porQue: 'Eso es. Sigues dentro y gratis.' },
+            { texto: 'Retirarme', porQue: '¡Podías seguir gratis! Es el error más caro de los principiantes.' },
+            { texto: 'Pagar', porQue: 'Pagar es igualar una apuesta, y aquí no hay ninguna.' },
+          ],
+        },
+        {
+          enunciado: 'Tienes la mejor mano y quieres que el rival ponga más fichas. ¿Qué haces?',
+          opciones: [
+            { texto: 'Subir', correcta: true, porQue: 'Subes para que el bote crezca mientras vas ganando.' },
+            { texto: 'Retirarme', porQue: 'Retirarte con la mejor mano es regalar el bote.' },
+            { texto: 'Pasar siempre', porQue: 'A veces pasar es lo mejor, pero por norma con la mejor mano se apuesta.' },
+          ],
+        },
+      ]),
       dominio: 3,
       minimoManos: 3,
       maximoManos: 9,
@@ -321,38 +315,32 @@ export const MODULO_1: Modulo = {
           pie: 'Es la mejor silla de la mesa, y en el módulo 4 verás por qué.' },
       ],
       terminos: ['ciegas', 'boton', 'posicion'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: '¿Cuándo se ponen las ciegas?',
-              opciones: [
-                { texto: 'Antes de repartir las cartas', correcta: true, porQue: 'Son a ciegas, de ahí el nombre: se pone sin saber qué te van a dar.' },
-                { texto: 'Después de ver tus dos cartas', porQue: 'Si fuera así, nadie las pondría nunca con una mano mala.' },
-                { texto: 'Solo cuando alguien apuesta', porQue: 'Son obligatorias, no dependen de nadie.' },
-              ],
-            },
-            {
-              enunciado: 'El botón está en tu silla. En la mano siguiente, ¿dónde estará?',
-              opciones: [
-                { texto: 'En la silla de tu izquierda', correcta: true, porQue: 'Rota una silla en cada mano, y las ciegas van con él.' },
-                { texto: 'Se queda donde está', porQue: 'Entonces el mismo jugador tendría siempre la mejor posición.' },
-                { texto: 'Va a quien ganó la mano', porQue: 'El botón no premia a nadie: solo marca el turno.' },
-              ],
-            },
-            {
-              enunciado: '¿Por qué es bueno hablar el último?',
-              opciones: [
-                { texto: 'Porque decides sabiendo lo que han hecho los demás', correcta: true, porQue: 'Información gratis en cada decisión. Es la ventaja más grande del póker.' },
-                { texto: 'Porque te dan mejores cartas', porQue: 'Las cartas son las mismas en todas las sillas.' },
-                { texto: 'Porque pagas menos ciegas', porQue: 'Todos pagan las mismas a lo largo de la vuelta.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: '¿Cuándo se ponen las ciegas?',
+          opciones: [
+            { texto: 'Antes de repartir las cartas', correcta: true, porQue: 'Son a ciegas, de ahí el nombre: se pone sin saber qué te van a dar.' },
+            { texto: 'Después de ver tus dos cartas', porQue: 'Si fuera así, nadie las pondría nunca con una mano mala.' },
+            { texto: 'Solo cuando alguien apuesta', porQue: 'Son obligatorias, no dependen de nadie.' },
+          ],
         },
-      },
+        {
+          enunciado: 'El botón está en tu silla. En la mano siguiente, ¿dónde estará?',
+          opciones: [
+            { texto: 'En la silla de tu izquierda', correcta: true, porQue: 'Rota una silla en cada mano, y las ciegas van con él.' },
+            { texto: 'Se queda donde está', porQue: 'Entonces el mismo jugador tendría siempre la mejor posición.' },
+            { texto: 'Va a quien ganó la mano', porQue: 'El botón no premia a nadie: solo marca el turno.' },
+          ],
+        },
+        {
+          enunciado: '¿Por qué es bueno hablar el último?',
+          opciones: [
+            { texto: 'Porque decides sabiendo lo que han hecho los demás', correcta: true, porQue: 'Información gratis en cada decisión. Es la ventaja más grande del póker.' },
+            { texto: 'Porque te dan mejores cartas', porQue: 'Las cartas son las mismas en todas las sillas.' },
+            { texto: 'Porque pagas menos ciegas', porQue: 'Todos pagan las mismas a lo largo de la vuelta.' },
+          ],
+        },
+      ]),
       dominio: 3,
       minimoManos: 3,
       maximoManos: 9,
@@ -375,32 +363,26 @@ export const MODULO_1: Modulo = {
         { tipo: 'texto', texto: 'Cada carta nueva cambia quién va ganando. Una decisión buena en el flop puede ser malísima en el river.' },
       ],
       terminos: ['calle', 'flop', 'turn', 'river'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: 'Hay tres cartas en la mesa. ¿En qué calle estás?',
-              mesa: m('As 7h 2d'),
-              opciones: [
-                { texto: 'El flop', correcta: true, porQue: 'El flop son las tres primeras cartas comunes, que salen a la vez.' },
-                { texto: 'El turn', porQue: 'El turn es la cuarta: habría cuatro en la mesa.' },
-                { texto: 'El river', porQue: 'El river es la quinta y última.' },
-              ],
-            },
-            {
-              enunciado: 'Hay cinco cartas en la mesa y ya se ha apostado. ¿Qué viene ahora?',
-              mesa: m('As 7h 2d Kc 9s'),
-              opciones: [
-                { texto: 'Se enseñan las cartas y se ve quién gana', correcta: true, porQue: 'Después del river ya no sale ninguna carta más.' },
-                { texto: 'Sale una sexta carta', porQue: 'Nunca hay más de cinco cartas comunes.' },
-                { texto: 'Se reparte otra vez', porQue: 'La mano se resuelve antes de repartir la siguiente.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: 'Hay tres cartas en la mesa. ¿En qué calle estás?',
+          mesa: m('As 7h 2d'),
+          opciones: [
+            { texto: 'El flop', correcta: true, porQue: 'El flop son las tres primeras cartas comunes, que salen a la vez.' },
+            { texto: 'El turn', porQue: 'El turn es la cuarta: habría cuatro en la mesa.' },
+            { texto: 'El river', porQue: 'El river es la quinta y última.' },
+          ],
         },
-      },
+        {
+          enunciado: 'Hay cinco cartas en la mesa y ya se ha apostado. ¿Qué viene ahora?',
+          mesa: m('As 7h 2d Kc 9s'),
+          opciones: [
+            { texto: 'Se enseñan las cartas y se ve quién gana', correcta: true, porQue: 'Después del river ya no sale ninguna carta más.' },
+            { texto: 'Sale una sexta carta', porQue: 'Nunca hay más de cinco cartas comunes.' },
+            { texto: 'Se reparte otra vez', porQue: 'La mano se resuelve antes de repartir la siguiente.' },
+          ],
+        },
+      ]),
       dominio: 2,
       minimoManos: 2,
       maximoManos: 6,

@@ -1,5 +1,5 @@
-import type { Modulo, PreguntaTest } from '../juego/lecciones'
-import { leccion } from '../juego/lecciones'
+import type { Modulo } from '../juego/lecciones'
+import { leccion, testEntre } from '../juego/lecciones'
 import { manoSolida } from '../juego/practica'
 
 /**
@@ -41,30 +41,32 @@ export const MODULO_8: Modulo = {
         { tipo: 'texto', texto: 'Por eso con fichas cortas se juegan **más** manos, no menos. Es lo contrario de lo que pide el instinto.' },
       ],
       terminos: ['ciegas', 'todoIn'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: 'Te quedan 8 veces la ciega grande. ¿Qué haces?',
-              opciones: [
-                { texto: 'Jugar más manos, buscando meter mis fichas con algo decente', correcta: true, porQue: 'Cada vuelta te come fichas. Con pocas, hay que elegir un buen momento pronto, no el momento perfecto tarde.' },
-                { texto: 'Esperar a una mano muy buena', porQue: 'Mientras esperas, las ciegas te dejan sin nada que apostar cuando por fin llegue.' },
-                { texto: 'Pagar muchas manos baratas para ver flops', porQue: 'Con fichas cortas no hay "barato": pagar y soltar es la forma más rápida de desaparecer.' },
-              ],
-            },
-            {
-              enunciado: '¿Por qué con fichas cortas se prefiere subir a todo-in antes que pagar?',
-              opciones: [
-                { texto: 'Porque así puedo ganar el bote sin ver más cartas', correcta: true, porQue: 'Con pocas fichas, que se retiren ya es una victoria: recuperas las ciegas sin jugarte nada más.' },
-                { texto: 'Porque es más emocionante', porQue: 'La emoción no es un criterio; el valor esperado sí.' },
-                { texto: 'Porque pagando nunca se gana', porQue: 'Pagar está bien en muchas situaciones, pero con fichas cortas te deja jugando a ciegas el resto de la mano.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: 'Te quedan 8 veces la ciega grande. ¿Qué haces?',
+          opciones: [
+            { texto: 'Jugar más manos, buscando meter mis fichas con algo decente', correcta: true, porQue: 'Cada vuelta te come fichas. Con pocas, hay que elegir un buen momento pronto, no el momento perfecto tarde.' },
+            { texto: 'Esperar a una mano muy buena', porQue: 'Mientras esperas, las ciegas te dejan sin nada que apostar cuando por fin llegue.' },
+            { texto: 'Pagar muchas manos baratas para ver flops', porQue: 'Con fichas cortas no hay "barato": pagar y soltar es la forma más rápida de desaparecer.' },
+          ],
         },
-      },
+        {
+          enunciado: '¿Por qué con fichas cortas se prefiere subir a todo-in antes que pagar?',
+          opciones: [
+            { texto: 'Porque así puedo ganar el bote sin ver más cartas', correcta: true, porQue: 'Con pocas fichas, que se retiren ya es una victoria: recuperas las ciegas sin jugarte nada más.' },
+            { texto: 'Porque es más emocionante', porQue: 'La emoción no es un criterio; el valor esperado sí.' },
+            { texto: 'Porque pagando nunca se gana', porQue: 'Pagar está bien en muchas situaciones, pero con fichas cortas te deja jugando a ciegas el resto de la mano.' },
+          ],
+        },
+        {
+          enunciado: 'Con 50 veces la ciega grande puedes esperar y con 8 no. ¿Por qué?',
+          opciones: [
+            { texto: 'Porque cada vuelta cuesta lo mismo y con 8 eso ya es una parte enorme de lo que tengo', correcta: true, porQue: 'Las ciegas no suben ni bajan por lo que tú tengas: lo que cambia es cuánto pesan sobre tu montón.' },
+            { texto: 'Porque con pocas fichas te reparten peores cartas', correcta: false, porQue: 'Las cartas no saben cuántas fichas tienes.' },
+            { texto: 'Porque con pocas fichas hay que jugar más apretado todavía', correcta: false, porQue: 'Es justo al revés, y es lo que más cuesta creerse: con pocas fichas se juegan más manos.' },
+          ],
+        },
+      ]),
       dominio: 3,
       minimoManos: 3,
       maximoManos: 9,
@@ -92,30 +94,32 @@ export const MODULO_8: Modulo = {
           pie: 'Se reparten las cartas que falten y se ve quién gana. Por eso esa decisión hay que pensarla antes.' },
       ],
       terminos: ['todoIn', 'botePartido'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: 'Vas todo-in con 100. Otros dos siguen apostando y meten 400 más cada uno. ¿A cuánto puedes aspirar?',
-              opciones: [
-                { texto: 'A 300: mis 100 y 100 de cada uno de ellos', correcta: true, porQue: 'Solo se gana lo que se arriesgó. El resto va a un bote paralelo entre los dos que sí lo pusieron.' },
-                { texto: 'A todo el bote, porque tengo la mejor mano', porQue: 'La mejor mano gana lo que haya en tu parte, no lo que apostaron otros después de que te quedaras sin fichas.' },
-                { texto: 'A nada: quedarse sin fichas es quedar eliminado', porQue: 'No: sigues en la mano hasta el final. Lo que no puedes es apostar más.' },
-              ],
-            },
-            {
-              enunciado: 'Estás todo-in y quedan dos calles por salir. ¿Qué decisiones te quedan?',
-              opciones: [
-                { texto: 'Ninguna: solo se reparten las cartas', correcta: true, porQue: 'Con todas tus fichas dentro ya no hay nada que decidir. Por eso la decisión de ir todo-in hay que pensarla bien antes.' },
-                { texto: 'Puedo retirarme si sale mal el turn', porQue: 'No se puede retirar lo ya apostado: esas fichas están en el bote.' },
-                { texto: 'Puedo pedir más fichas', porQue: 'En un torneo no se recompra a mitad de mano.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: 'Vas todo-in con 100. Otros dos siguen apostando y meten 400 más cada uno. ¿A cuánto puedes aspirar?',
+          opciones: [
+            { texto: 'A 300: mis 100 y 100 de cada uno de ellos', correcta: true, porQue: 'Solo se gana lo que se arriesgó. El resto va a un bote paralelo entre los dos que sí lo pusieron.' },
+            { texto: 'A todo el bote, porque tengo la mejor mano', porQue: 'La mejor mano gana lo que haya en tu parte, no lo que apostaron otros después de que te quedaras sin fichas.' },
+            { texto: 'A nada: quedarse sin fichas es quedar eliminado', porQue: 'No: sigues en la mano hasta el final. Lo que no puedes es apostar más.' },
+          ],
         },
-      },
+        {
+          enunciado: 'Estás todo-in y quedan dos calles por salir. ¿Qué decisiones te quedan?',
+          opciones: [
+            { texto: 'Ninguna: solo se reparten las cartas', correcta: true, porQue: 'Con todas tus fichas dentro ya no hay nada que decidir. Por eso la decisión de ir todo-in hay que pensarla bien antes.' },
+            { texto: 'Puedo retirarme si sale mal el turn', porQue: 'No se puede retirar lo ya apostado: esas fichas están en el bote.' },
+            { texto: 'Puedo pedir más fichas', porQue: 'En un torneo no se recompra a mitad de mano.' },
+          ],
+        },
+        {
+          enunciado: 'Vas todo-in con 100, ganas la mano, y los otros dos habían metido 400 más cada uno. ¿Quién se lleva esos 800?',
+          opciones: [
+            { texto: 'El mejor de esos dos: ese bote se lo juegan entre ellos', correcta: true, porQue: 'Tú te llevas el bote principal, que es hasta donde llegaste a poner. El paralelo no era tuyo.' },
+            { texto: 'Yo, porque tenía la mejor mano de los tres', correcta: false, porQue: 'La mejor mano gana el bote en el que estaba. Al paralelo no llegaste a entrar.' },
+            { texto: 'Se reparte entre los tres', correcta: false, porQue: 'No se reparte: cada bote tiene su ganador entre los que lo pusieron.' },
+          ],
+        },
+      ]),
       dominio: 3,
       minimoManos: 3,
       maximoManos: 9,
@@ -182,30 +186,32 @@ export const MODULO_8: Modulo = {
         { tipo: 'texto', texto: 'Es la única parte del juego donde la cuenta de fichas no manda sola. Lo vas a notar en el modo libre cuando queden dos.' },
       ],
       terminos: [],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: 'Quedan tres jugadores y tú eres el que más fichas tiene. ¿Cómo cambia eso tu juego?',
-              opciones: [
-                { texto: 'Puedo presionar más: para ellos cada mano es su torneo, para mí no', correcta: true, porQue: 'Tus fichas aguantan un error; las suyas no. Esa diferencia vale dinero.' },
-                { texto: 'Debo jugar muy apretado para conservar la ventaja', porQue: 'Jugar a no perder con la mayor pila es la forma de acabar siendo el que va corto.' },
-                { texto: 'Da igual: las fichas son fichas', porQue: 'En un torneo no: las últimas valen mucho más que las primeras, porque con ellas te vas.' },
-              ],
-            },
-            {
-              enunciado: 'Vas segundo en fichas y te ofrecen jugarte todo con una ventaja mínima. ¿Qué es lo sensato?',
-              opciones: [
-                { texto: 'Pensármelo: una ventaja mínima no compensa arriesgar el torneo entero', correcta: true, porQue: 'Es lo único del póker donde la cuenta de fichas no decide sola: perder todas tiene un coste extra.' },
-                { texto: 'Siempre sí: si tengo ventaja, adelante', porQue: 'A la larga sí, pero en un torneo no hay larga: si te vas, se acabó.' },
-                { texto: 'Siempre no: nunca arriesgar todo', porQue: 'Nunca arriesgar también pierde, porque las ciegas te comen igual.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: 'Quedan tres jugadores y tú eres el que más fichas tiene. ¿Cómo cambia eso tu juego?',
+          opciones: [
+            { texto: 'Puedo presionar más: para ellos cada mano es su torneo, para mí no', correcta: true, porQue: 'Tus fichas aguantan un error; las suyas no. Esa diferencia vale dinero.' },
+            { texto: 'Debo jugar muy apretado para conservar la ventaja', porQue: 'Jugar a no perder con la mayor pila es la forma de acabar siendo el que va corto.' },
+            { texto: 'Da igual: las fichas son fichas', porQue: 'En un torneo no: las últimas valen mucho más que las primeras, porque con ellas te vas.' },
+          ],
         },
-      },
+        {
+          enunciado: 'Vas segundo en fichas y te ofrecen jugarte todo con una ventaja mínima. ¿Qué es lo sensato?',
+          opciones: [
+            { texto: 'Pensármelo: una ventaja mínima no compensa arriesgar el torneo entero', correcta: true, porQue: 'Es lo único del póker donde la cuenta de fichas no decide sola: perder todas tiene un coste extra.' },
+            { texto: 'Siempre sí: si tengo ventaja, adelante', porQue: 'A la larga sí, pero en un torneo no hay larga: si te vas, se acabó.' },
+            { texto: 'Siempre no: nunca arriesgar todo', porQue: 'Nunca arriesgar también pierde, porque las ciegas te comen igual.' },
+          ],
+        },
+        {
+          enunciado: '¿Por qué en un torneo las últimas fichas valen más que las primeras?',
+          opciones: [
+            { texto: 'Porque sin ellas te vas, y no hay forma de volver', correcta: true, porQue: 'Ganar fichas te acerca al premio poco a poco; perder las últimas te saca del todo. No es simétrico.' },
+            { texto: 'Porque al final las ciegas son más altas', correcta: false, porQue: 'Las ciegas altas te obligan a jugar antes, pero el motivo de fondo es que quedarte a cero es definitivo.' },
+            { texto: 'No valen más: una ficha es una ficha', correcta: false, porQue: 'En dinero sí sería así. En un torneo, la que te deja dentro vale más que la que te da ventaja.' },
+          ],
+        },
+      ]),
       dominio: 3,
       minimoManos: 3,
       maximoManos: 9,

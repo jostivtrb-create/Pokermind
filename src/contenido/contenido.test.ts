@@ -95,6 +95,42 @@ describe('las preguntas de test son justas', () => {
       }
     }
   })
+
+  /*
+    Un jugador vio la MISMA pregunta tres veces seguidas en el módulo 4: la
+    lección pedía tres aciertos seguidos y solo tenía dos preguntas escritas.
+    Estas dos pruebas son para que no vuelva a pasar al escribir contenido.
+  */
+  it('ninguna lección pide más aciertos seguidos que preguntas tiene', () => {
+    for (const leccion of LECCIONES) {
+      if (leccion.practica.tipo !== 'test' || !leccion.practica.preguntas) continue
+      expect(
+        leccion.practica.preguntas.length,
+        `${leccion.id}: pide ${leccion.dominio} aciertos seguidos con menos preguntas`,
+      ).toBeGreaterThanOrEqual(leccion.dominio)
+    }
+  })
+
+  it('no repite pregunta hasta haberlas gastado todas', () => {
+    for (const leccion of LECCIONES) {
+      if (leccion.practica.tipo !== 'test' || !leccion.practica.preguntas) continue
+      const cuantas = leccion.practica.preguntas.length
+      const azar = crearAleatorio(leccion.id.length * 977 + 3)
+      const salidas = []
+      for (let i = 0; i < cuantas * 3; i++) salidas.push(leccion.practica.pregunta(azar, i + 1))
+      // En tres vueltas tienen que salir todas, y varias veces cada una.
+      for (const pregunta of leccion.practica.preguntas) {
+        const veces = salidas.filter((s) => s === pregunta).length
+        expect(veces, `${leccion.id}: "${pregunta.enunciado}" sale ${veces} veces en tres vueltas`).toBeGreaterThanOrEqual(2)
+      }
+      // Y nunca dos veces seguidas la misma, que es lo que se veía roto.
+      if (cuantas > 1) {
+        for (let i = 1; i < salidas.length; i++) {
+          expect(salidas[i], `${leccion.id}: dos veces seguidas la misma pregunta`).not.toBe(salidas[i - 1])
+        }
+      }
+    }
+  })
 })
 
 describe('las manos de cada lección enseñan lo que dice la lección', () => {

@@ -2,7 +2,7 @@ import type { Aleatorio } from '../motor/aleatorio'
 import { barajaCompleta, barajar } from '../motor/cartas'
 import type { Carta } from '../motor/cartas'
 import type { Modulo, PreguntaTest } from '../juego/lecciones'
-import { leccion } from '../juego/lecciones'
+import { leccion, testEntre } from '../juego/lecciones'
 import { tenerProyectoDeColor, tenerProyectoDeEscalera, alguna } from '../juego/practica'
 import { manoDeCodigo } from '../motor/cartas'
 
@@ -81,38 +81,32 @@ export const MODULO_2: Modulo = {
         { tipo: 'texto', texto: 'Por eso aquí **los puntos van por la decisión, no por el resultado**. Si te crees esto, ya juegas mejor que mucha gente que lleva años.' },
       ],
       terminos: ['equity'],
-      practica: {
-        tipo: 'test',
-        pregunta: (azar) => {
-          const preguntas: PreguntaTest[] = [
-            {
-              enunciado: 'El juego dice que ganas el 70% y pierdes la mano. ¿Qué pasó?',
-              opciones: [
-                { texto: 'Nada raro: el 30% también pasa', correcta: true, porQue: 'Tres de cada diez veces pierdes. Que toque una de esas no cambia que la decisión era buena.' },
-                { texto: 'El cálculo estaba mal', porQue: 'El porcentaje no promete esta mano concreta, dice qué pasa a la larga.' },
-                { texto: 'Tendría que haberme retirado', porQue: 'Retirarte con un 70% es regalar fichas. A la larga esa jugada gana mucho.' },
-              ],
-            },
-            {
-              enunciado: 'Pagas con un 15% de probabilidad y ganas la mano. ¿Fue buena jugada?',
-              opciones: [
-                { texto: 'No: tuve suerte', correcta: true, porQue: 'Con un 15% pierdes 85 de cada 100 veces. Ganar una no arregla la cuenta.' },
-                { texto: 'Sí: gané, que es lo que cuenta', porQue: 'Si juzgas por el resultado, aprendes justo lo contrario de lo que deberías. Es la trampa que este juego intenta quitarte.' },
-                { texto: 'Depende de las cartas que salieran', porQue: 'Las cartas que salieron ya no cambian lo que sabías al decidir.' },
-              ],
-            },
-            {
-              enunciado: '¿Cuál de estas frases es la correcta?',
-              opciones: [
-                { texto: 'Un 26% significa que gano una de cada cuatro veces, más o menos', correcta: true, porQue: 'Eso es exactamente lo que significa.' },
-                { texto: 'Un 26% significa que esta mano la voy a perder', porQue: 'La perderás casi siempre, pero "casi siempre" no es "siempre": ese 26% también llega.' },
-                { texto: 'Un 26% significa que la mano no vale nada', porQue: 'Un 26% puede valer mucho si pagar cuesta poco. Eso es el módulo siguiente.' },
-              ],
-            },
-          ]
-          return preguntas[azar.entero(preguntas.length)]
+      practica: testEntre([
+        {
+          enunciado: 'El juego dice que ganas el 70% y pierdes la mano. ¿Qué pasó?',
+          opciones: [
+            { texto: 'Nada raro: el 30% también pasa', correcta: true, porQue: 'Tres de cada diez veces pierdes. Que toque una de esas no cambia que la decisión era buena.' },
+            { texto: 'El cálculo estaba mal', porQue: 'El porcentaje no promete esta mano concreta, dice qué pasa a la larga.' },
+            { texto: 'Tendría que haberme retirado', porQue: 'Retirarte con un 70% es regalar fichas. A la larga esa jugada gana mucho.' },
+          ],
         },
-      },
+        {
+          enunciado: 'Pagas con un 15% de probabilidad y ganas la mano. ¿Fue buena jugada?',
+          opciones: [
+            { texto: 'No: tuve suerte', correcta: true, porQue: 'Con un 15% pierdes 85 de cada 100 veces. Ganar una no arregla la cuenta.' },
+            { texto: 'Sí: gané, que es lo que cuenta', porQue: 'Si juzgas por el resultado, aprendes justo lo contrario de lo que deberías. Es la trampa que este juego intenta quitarte.' },
+            { texto: 'Depende de las cartas que salieran', porQue: 'Las cartas que salieron ya no cambian lo que sabías al decidir.' },
+          ],
+        },
+        {
+          enunciado: '¿Cuál de estas frases es la correcta?',
+          opciones: [
+            { texto: 'Un 26% significa que gano una de cada cuatro veces, más o menos', correcta: true, porQue: 'Eso es exactamente lo que significa.' },
+            { texto: 'Un 26% significa que esta mano la voy a perder', porQue: 'La perderás casi siempre, pero "casi siempre" no es "siempre": ese 26% también llega.' },
+            { texto: 'Un 26% significa que la mano no vale nada', porQue: 'Un 26% puede valer mucho si pagar cuesta poco. Eso es el módulo siguiente.' },
+          ],
+        },
+      ]),
       dominio: 3,
       minimoManos: 3,
       maximoManos: 9,
