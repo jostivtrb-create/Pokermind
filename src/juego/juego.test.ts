@@ -6,7 +6,11 @@ import { GLOSARIO, GLOSARIO_POR_CLAVE, buscarTermino } from '../contenido/glosar
 import { fusionar } from '../almacen/sincronizacion'
 import { leccionDominada } from './lecciones'
 import { crearManoDePractica, tenerProyectoDeColor, tenerParejaServida, usaTusCartas } from './practica'
-import { anotarDecision, erroresParaRepasar, progresoNuevo, repasarError, variarMano } from './progreso'
+import {
+  MANOS_DE_LA_NOTA, NOTAS_QUE_SE_GUARDAN, anotarDecision, anotarMano, erroresParaRepasar,
+  manosConNota, notaReciente, progresoNuevo, repasarError, tendenciaDeLaNota, variarMano,
+} from './progreso'
+import { LOGROS, logroConseguido } from './logros'
 import { empezarLeccion, empezarPractica, responder, responderTest, siguienteMano } from './sesion'
 import { manoDeCodigo } from '../motor/cartas'
 
@@ -185,5 +189,51 @@ describe('el glosario', () => {
     expect(buscarTermino('foldear').map((t) => t.clave)).toContain('retirarse')
     expect(buscarTermino('pot odds').map((t) => t.clave)).toContain('precioDelBote')
     expect(GLOSARIO.length).toBeGreaterThan(20)
+  })
+})
+
+describe('la nota: lo bien que decides ahora mismo (D63)', () => {
+  const conNotas = (notas: number[]) =>
+    notas.reduce((p, n) => anotarMano(p, n), progresoNuevo())
+
+  it('sin manos jugadas no hay nota que enseñar', () => {
+    expect(manosConNota(progresoNuevo())).toBe(0)
+    expect(notaReciente(progresoNuevo())).toBe(0)
+  })
+
+  it('es la media de las últimas manos, no de todas', () => {
+    // 30 manos malas y luego 20 buenas: la nota tiene que reflejar las buenas.
+    const p = conNotas([...Array(30).fill(10), ...Array(MANOS_DE_LA_NOTA).fill(90)])
+    expect(notaReciente(p)).toBe(90)
+  })
+
+  it('baja cuando el jugador empeora, que es lo que no hacían los puntos', () => {
+    const bien = conNotas(Array(MANOS_DE_LA_NOTA).fill(90))
+    const luegoMal = Array(MANOS_DE_LA_NOTA).fill(20).reduce((p, n) => anotarMano(p, n), bien)
+    expect(notaReciente(luegoMal)).toBeLessThan(notaReciente(bien))
+    // Y los puntos totales, en cambio, solo pueden subir.
+    expect(luegoMal.notas.length).toBeLessThanOrEqual(NOTAS_QUE_SE_GUARDAN)
+  })
+
+  it('no guarda un historial infinito', () => {
+    const p = conNotas(Array(200).fill(50))
+    expect(p.notas).toHaveLength(NOTAS_QUE_SE_GUARDAN)
+  })
+
+  it('la tendencia dice si vas mejorando, y calla mientras no hay datos', () => {
+    expect(tendenciaDeLaNota(conNotas(Array(10).fill(50)))).toBeNull()
+    const mejorando = conNotas([...Array(25).fill(30), ...Array(MANOS_DE_LA_NOTA).fill(80)])
+    expect(tendenciaDeLaNota(mejorando)!).toBeGreaterThan(0)
+    const empeorando = conNotas([...Array(25).fill(80), ...Array(MANOS_DE_LA_NOTA).fill(30)])
+    expect(tendenciaDeLaNota(empeorando)!).toBeLessThan(0)
+  })
+
+  it('los logros de calidad se ganan jugando bien ahora, no acumulando', () => {
+    const logro = LOGROS.find((l) => l.id === 'nota-80')!
+    // Muchísimos puntos acumulados jugando fatal: el logro no se da.
+    const machacado = { ...conNotas(Array(MANOS_DE_LA_NOTA).fill(20)), puntosTotales: 100000 }
+    expect(logroConseguido(logro, machacado)).toBe(false)
+    // Pocas manos pero bien jugadas: sí.
+    expect(logroConseguido(logro, conNotas(Array(MANOS_DE_LA_NOTA).fill(85)))).toBe(true)
   })
 })

@@ -66,6 +66,14 @@ export interface Progreso {
   /** Lecciones terminadas, con lo que se sacó en cada una. */
   lecciones: Record<string, { terminadaEl: string; puntos: number; manos: number }>
   puntosTotales: number
+  /**
+   * La nota de cada mano jugada, de 0 a 100, de la más antigua a la última.
+   *
+   * Es LA medida del juego (D63): los puntos totales solo suben, así que no
+   * dicen si estás jugando mejor. La media de las últimas manos sí. Se guardan
+   * las últimas `NOTAS_QUE_SE_GUARDAN` y nada más: esto no es un historial.
+   */
+  notas: number[]
   decisiones: number
   aciertos: number
   porCalle: Record<Calle, EstadisticasPorCalle>
@@ -86,6 +94,7 @@ export function progresoNuevo(): Progreso {
     nivel: null,
     lecciones: {},
     puntosTotales: 0,
+    notas: [],
     decisiones: 0,
     aciertos: 0,
     porCalle: {
@@ -103,6 +112,48 @@ export function progresoNuevo(): Progreso {
     ajustes: { sonido: true, animaciones: true },
     actualizadoEl: new Date().toISOString(),
   }
+}
+
+/** Cuántas manos se guardan, y sobre cuántas se calcula la nota que se enseña. */
+export const NOTAS_QUE_SE_GUARDAN = 50
+export const MANOS_DE_LA_NOTA = 20
+
+/**
+ * Apunta la nota de una mano terminada.
+ *
+ * Una mano puede tener varias decisiones (en el modo libre son casi siempre
+ * tres o cuatro): la nota de la mano es la media de sus decisiones, para que
+ * una mano larga no pese más que una corta.
+ */
+export function anotarMano(progreso: Progreso, nota: number): Progreso {
+  const notas = [...(progreso.notas ?? []), Math.round(nota)].slice(-NOTAS_QUE_SE_GUARDAN)
+  return { ...progreso, notas, actualizadoEl: new Date().toISOString() }
+}
+
+/** La nota media de las últimas manos, de 0 a 100. Es el número principal. */
+export function notaReciente(progreso: Progreso, cuantas = MANOS_DE_LA_NOTA): number {
+  const notas = (progreso.notas ?? []).slice(-cuantas)
+  if (notas.length === 0) return 0
+  return notas.reduce((t, n) => t + n, 0) / notas.length
+}
+
+/** Manos con nota guardada, para saber si la media ya significa algo. */
+export function manosConNota(progreso: Progreso): number {
+  return (progreso.notas ?? []).length
+}
+
+/**
+ * Si la nota va subiendo o bajando: compara las últimas manos con las
+ * anteriores. Devuelve la diferencia en puntos de nota, o null si aún no hay
+ * bastantes manos para decir nada.
+ */
+export function tendenciaDeLaNota(progreso: Progreso, cuantas = MANOS_DE_LA_NOTA): number | null {
+  const notas = progreso.notas ?? []
+  if (notas.length < cuantas + 5) return null
+  const ultimas = notas.slice(-cuantas)
+  const previas = notas.slice(0, -cuantas)
+  const media = (lista: number[]) => lista.reduce((t, n) => t + n, 0) / lista.length
+  return media(ultimas) - media(previas)
 }
 
 /** Una decisión se considera acierto si el veredicto no es "mala". */

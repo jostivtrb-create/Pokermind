@@ -4,7 +4,7 @@ import type { Carta } from './cartas'
 import { analizar, juzgar } from './decision'
 import type { Situacion } from './decision'
 import { PERFILES_CON_NOMBRE, RIVAL_TIPICO } from './perfiles'
-import { parsearRango, rangoApertura } from './rangos'
+import { estrecharPorFuerza, parsearRango, quitarBloqueadas, rangoApertura } from './rangos'
 
 const par = (t: string) => manoDeCodigo(t) as [Carta, Carta]
 const perfil = (nombre: string) => PERFILES_CON_NOMBRE.find((p) => p.nombre === nombre)!
@@ -250,5 +250,54 @@ describe('las explicaciones no se contradicen', () => {
     const valorPagar = valorDe(floja, 'pagar')
     if (valorPagar <= 0) expect(j.porQue).not.toContain('sale a cuenta')
     else expect(j.porQue).toContain('sale a cuenta')
+  })
+})
+
+describe('lo que se pierde en las calles siguientes se puede declinar', () => {
+  /*
+    Mano real del modo libre: T♥3♣ en A♣6♣J♥8♦, bote 76, te piden 36 y subes 112.
+    La pantalla decía que subir costaba 128 fichas. Haciendo la cuenta a mano
+    —el 22% se retira y te llevas 76; el 78% sigue y pierdes los 148— salen 99.
+    Las 29 de diferencia eran dinero del river cobrado a una mano que gana el 0%:
+    con eso, en el river se pasa y se suelta, no se paga.
+  */
+  const mesaDelTurn = manoDeCodigo('Ac 6c Jh 8d')
+  const suRango = estrecharPorFuerza(
+    // Como lo estrecha el juego cuando el rival apuesta en el turn.
+    quitarBloqueadas(rangoApertura('boton'), [...par('Th 3c'), ...mesaDelTurn]),
+    mesaDelTurn,
+    0.4,
+  )
+  const muerta: Situacion = {
+    mano: par('Th 3c'), mesa: mesaDelTurn, calle: 'turn',
+    bote: 76, paraPagar: 36, tusFichas: 1195, fichasRival: 3000,
+    rangoRival: suRango, perfilRival: RIVAL_TIPICO,
+    tamanoSubida: 112,
+  }
+
+  it('la mano de verdad gana el 0%', () => {
+    expect(analizar(muerta).equity.equity).toBeLessThan(0.005)
+  })
+
+  it('subir pierde exactamente lo que se pone, ni una ficha más', () => {
+    const subida = analizar(muerta).acciones.find((a) => a.accion === 'subir')!
+    const seRetiran = subida.seRetiran!
+    const aMano = seRetiran * 76 - (1 - seRetiran) * (36 + 112)
+    expect(subida.valorEsperado).toBeCloseTo(aMano, 1)
+  })
+
+  it('pagar con una mano muerta pierde justo lo que pagas', () => {
+    const pagar = analizar(muerta).acciones.find((a) => a.accion === 'pagar')!
+    expect(pagar.valorEsperado).toBeCloseTo(-36, 1)
+  })
+
+  it('pero con una mano buena las calles siguientes sí suman', () => {
+    const fuerte: Situacion = {
+      ...muerta, mano: par('Ah Ad'), mesa: manoDeCodigo('As 6c Jh'), calle: 'flop',
+      rangoRival: rangoApertura('boton'), tamanoSubida: undefined,
+    }
+    const pagar = analizar(fuerte).acciones.find((a) => a.accion === 'pagar')!
+    const sinFuturo = analizar(fuerte).equity.equity * (76 + 36) - 36
+    expect(pagar.valorEsperado).toBeGreaterThan(sinFuturo)
   })
 })

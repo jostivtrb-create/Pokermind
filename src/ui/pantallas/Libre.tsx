@@ -13,6 +13,7 @@ import { decidirBot } from '../../motor/bot'
 import { describirPerfil } from '../../motor/perfiles'
 import type { Torneo } from '../../motor/torneo'
 import { cerrarMano, ciegasActuales, crearTorneo, siguienteMano } from '../../motor/torneo'
+import { anotarMano } from '../../juego/progreso'
 import { useProgreso } from '../estado'
 import { sonar } from '../sonido'
 import { FilaDeCartas } from '../componentes/Carta'
@@ -190,7 +191,12 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
     const cerrado = cerrarMano({ ...torneo, mesa })
     // Los puntos del modo libre salen de las decisiones, no de si ganaste (D4).
     const puntos = juicios.reduce((t, j) => t + j.juicio.puntos, 0)
-    actualizar((p) => ({ ...p, puntosTotales: p.puntosTotales + puntos }))
+    const nota = juicios.length > 0 ? puntos / juicios.length : null
+    actualizar((p) => {
+      const conPuntos = { ...p, puntosTotales: p.puntosTotales + puntos }
+      // Una mano con cuatro decisiones no vale más que una con una: cuenta su media.
+      return nota === null ? conPuntos : anotarMano(conPuntos, nota)
+    })
     setTorneo(cerrado)
     setMesa(null)
     if (!cerrado.terminado) repartir(cerrado)

@@ -298,7 +298,23 @@ function valorDeLasCallesSiguientes(
   const ventajaFutura = 0.5 + (equity - 0.5) * 0.75 ** callesQueQuedan
 
   // Ese dinero lo ganas cuando vas por delante y lo pagas cuando vas por detrás.
-  return total * (ventajaFutura - (1 - ventajaFutura) * 0.75)
+  const bruto = total * (ventajaFutura - (1 - ventajaFutura) * 0.75)
+  if (bruto >= 0) return bruto
+
+  /*
+    Ir por detrás NO obliga a pagar las calles siguientes.
+
+    Si vas perdiendo, en el river pasas y sueltas: no pones ni una ficha más. Lo
+    único que se pierde de verdad ahí es lo que uno paga por error, y eso solo
+    pasa cuando tienes algo con lo que dudar. Con una mano muerta no hay duda
+    ninguna, así que no se pierde nada.
+
+    Sin esto, el motor cobraba dinero del river a manos que ganan el 0%: en una
+    mano de verdad decía que subir costaba 128 fichas cuando la cuenta honrada
+    —lo que se retira por lo que se pierde— daba 99. Es el mismo fallo que hacía
+    recomendar retirarse gratis (D60), visto desde el otro lado.
+  */
+  return bruto * Math.min(1, equity * 2)
 }
 
 function calculoCallesRestantes(calle: Calle): number {

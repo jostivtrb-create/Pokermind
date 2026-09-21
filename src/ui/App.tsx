@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { manosConNota, notaReciente } from '../juego/progreso'
 import { hayServidor, usuarioActual } from '../almacen/cuenta'
 import { ProveedorDeProgreso, useProgreso } from './estado'
 import { ajustarSonido } from './sonido'
@@ -126,8 +127,19 @@ function Marco() {
               Poker<span className="marca-mente">Mind</span>
             </span>
           </div>
-          {progreso.puntosTotales > 0 && (
-            <span className="chip morado">★ {progreso.puntosTotales.toLocaleString('es')}</span>
+          {/*
+            En la cabecera va la NOTA, no los puntos (D63): es el número que el
+            jugador mira todo el rato, y tiene que ser el que dice si está
+            jugando bien, no el que solo sube. Los puntos siguen en Estadísticas.
+          */}
+          {manosConNota(progreso) > 0 ? (
+            <span className="chip morado" title="Tu nota en las últimas manos">
+              Nota {Math.round(notaReciente(progreso))}
+            </span>
+          ) : (
+            progreso.puntosTotales > 0 && (
+              <span className="chip morado">★ {progreso.puntosTotales.toLocaleString('es')}</span>
+            )
           )}
         </div>
 

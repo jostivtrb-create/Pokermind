@@ -1,5 +1,5 @@
 import type { Progreso } from './progreso'
-import { porcentajeAciertos } from './progreso'
+import { MANOS_DE_LA_NOTA, manosConNota, notaReciente } from './progreso'
 import { LECCIONES, leccionTerminada } from '../contenido/temario'
 
 /**
@@ -20,6 +20,16 @@ export interface Logro {
 
 const limitar = (x: number) => Math.max(0, Math.min(1, x))
 
+/**
+ * Avance de un logro de nota. Con menos manos de las que hacen falta, la barra
+ * enseña lo que llevas jugado: así se ve que el logro existe y qué falta para
+ * empezar a medirlo, en vez de una barra a cero sin explicación.
+ */
+function avanceDeNota(p: Parameters<Logro['avance']>[0], objetivo: number): number {
+  if (manosConNota(p) < MANOS_DE_LA_NOTA) return limitar(manosConNota(p) / MANOS_DE_LA_NOTA) * 0.5
+  return limitar(notaReciente(p) / objetivo)
+}
+
 export const LOGROS: Logro[] = [
   {
     id: 'primeras-manos', nombre: 'Primeras 10 manos', icono: '🃏', grupo: 'decisiones',
@@ -27,11 +37,18 @@ export const LOGROS: Logro[] = [
     avance: (p) => limitar(p.decisiones / 10),
     marcador: (p) => `${Math.min(p.decisiones, 10)}/10`,
   },
+  /*
+    Los logros de calidad van por NOTA, no por puntos acumulados (D63).
+
+    Acumular puntos solo mide cuánto has jugado: con tiempo suficiente los saca
+    cualquiera, aunque juegue fatal. La nota media de las últimas 20 manos sube
+    y baja contigo, así que un logro de nota se gana jugando bien AHORA.
+  */
   {
-    id: 'racha-5', nombre: 'Decisión correcta', icono: '🎯', grupo: 'decisiones',
-    descripcion: 'Acierta el 80% de tus decisiones con al menos 20 jugadas.',
-    avance: (p) => (p.decisiones < 20 ? limitar(p.decisiones / 20) * 0.5 : limitar(porcentajeAciertos(p) / 0.8)),
-    marcador: (p) => `${Math.round(porcentajeAciertos(p) * 100)}%`,
+    id: 'nota-60', nombre: 'Vas cogiéndolo', icono: '🎯', grupo: 'decisiones',
+    descripcion: `Llega a una nota media de 60 en tus últimas ${MANOS_DE_LA_NOTA} manos.`,
+    avance: (p) => avanceDeNota(p, 60),
+    marcador: (p) => `${Math.round(notaReciente(p))}/60`,
   },
   {
     id: 'mente-fria', nombre: 'Mentalidad fría', icono: '🧊', grupo: 'decisiones',
@@ -51,10 +68,22 @@ export const LOGROS: Logro[] = [
     marcador: (p) => `${Math.min(Object.keys(p.lecciones).length, 10)}/10`,
   },
   {
-    id: 'mil-puntos', nombre: 'Mil puntos', icono: '⭐', grupo: 'constancia',
-    descripcion: 'Acumula 1.000 puntos pensando bien.',
-    avance: (p) => limitar(p.puntosTotales / 1000),
-    marcador: (p) => `${Math.min(p.puntosTotales, 1000)}/1000`,
+    id: 'nota-80', nombre: 'Buen criterio', icono: '⭐', grupo: 'decisiones',
+    descripcion: `Llega a una nota media de 80 en tus últimas ${MANOS_DE_LA_NOTA} manos.`,
+    avance: (p) => avanceDeNota(p, 80),
+    marcador: (p) => `${Math.round(notaReciente(p))}/80`,
+  },
+  {
+    id: 'nota-90', nombre: 'Mente afilada', icono: '🧠', grupo: 'constancia',
+    descripcion: `Llega a una nota media de 90 en tus últimas ${MANOS_DE_LA_NOTA} manos. Eso ya es jugar muy bien.`,
+    avance: (p) => avanceDeNota(p, 90),
+    marcador: (p) => `${Math.round(notaReciente(p))}/90`,
+  },
+  {
+    id: 'constante', nombre: 'Constancia', icono: '📅', grupo: 'constancia',
+    descripcion: `Juega ${MANOS_DE_LA_NOTA} manos, que es lo que hace falta para que tu nota signifique algo.`,
+    avance: (p) => limitar(manosConNota(p) / MANOS_DE_LA_NOTA),
+    marcador: (p) => `${Math.min(manosConNota(p), MANOS_DE_LA_NOTA)}/${MANOS_DE_LA_NOTA}`,
   },
   {
     id: 'repaso', nombre: 'Aprender del error', icono: '🔁', grupo: 'constancia',

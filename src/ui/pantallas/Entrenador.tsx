@@ -7,7 +7,7 @@ import { GLOSARIO_POR_CLAVE } from '../../contenido/glosario'
 import type { Leccion } from '../../juego/lecciones'
 import { pasosDeLaLeccion } from '../../juego/lecciones'
 import { aSituacion, describirTuMano, usaTusCartas } from '../../juego/practica'
-import { anotarDecision } from '../../juego/progreso'
+import { anotarDecision, anotarMano } from '../../juego/progreso'
 import type { EstadoSesion } from '../../juego/sesion'
 import {
   empezarLeccion, empezarPractica, loQueFalta, responder, responderTest, sesionDeUnaMano,
@@ -59,7 +59,9 @@ export function Entrenador({
       const resultado = siguiente.ultimoResultado
       sonar(resultado.veredicto === 'mala' ? 'fallo' : 'acierto')
       const mano = siguiente.mano
-      actualizar((p) => anotarDecision(p, resultado, mano))
+      // En el entrenador cada mano es una decisión, así que su nota es la de esa
+      // decisión. La nota es la medida principal del juego (D63).
+      actualizar((p) => anotarMano(anotarDecision(p, resultado, mano), resultado.puntos))
       alTerminarManoSuelta?.(resultado.veredicto !== 'mala', resultado.puntos)
     }
   }
@@ -70,12 +72,17 @@ export function Entrenador({
     if (siguiente.ultimoResultado) {
       const resultado = siguiente.ultimoResultado
       sonar(resultado.veredicto === 'optima' ? 'acierto' : 'fallo')
-      actualizar((p) => ({
-        ...p,
-        puntosTotales: p.puntosTotales + resultado.puntos,
-        decisiones: p.decisiones + 1,
-        aciertos: p.aciertos + (resultado.veredicto === 'optima' ? 1 : 0),
-      }))
+      actualizar((p) =>
+        anotarMano(
+          {
+            ...p,
+            puntosTotales: p.puntosTotales + resultado.puntos,
+            decisiones: p.decisiones + 1,
+            aciertos: p.aciertos + (resultado.veredicto === 'optima' ? 1 : 0),
+          },
+          resultado.puntos,
+        ),
+      )
     }
   }
 

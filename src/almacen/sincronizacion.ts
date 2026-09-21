@@ -37,10 +37,15 @@ export function fusionar(local: Progreso, remoto: Progreso): Progreso {
 
   const masAvanzado = local.decisiones >= remoto.decisiones ? local : remoto
 
+  // Las notas son un historial corto: se queda el del aparato que más ha jugado,
+  // porque mezclarlas inventaría un orden de manos que nunca existió.
+  const notas = (local.notas ?? []).length >= (remoto.notas ?? []).length ? local.notas : remoto.notas
+
   return {
     ...masAvanzado,
     lecciones,
     porCalle,
+    notas: notas ?? [],
     puntosTotales: Math.max(local.puntosTotales, remoto.puntosTotales),
     decisiones: Math.max(local.decisiones, remoto.decisiones),
     aciertos: Math.max(local.aciertos, remoto.aciertos),

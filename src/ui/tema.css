@@ -166,7 +166,9 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 .barra { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 14px; }
 .barra .nombre { width: 68px; color: var(--texto-suave); flex-shrink: 0; }
 .barra .carril { flex: 1; height: 7px; background: rgba(255, 255, 255, 0.07); border-radius: 999px; overflow: hidden; }
-.barra .relleno { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+/* display:block o el ancho no se aplica: es un span, y los span son en línea.
+   Por eso las barras de "rendimiento por calle" salían siempre vacías. */
+.barra .relleno { display: block; height: 100%; border-radius: 999px; transition: width 0.3s ease; }
 .barra .cifra { width: 42px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 
 /* ── Mesa de juego ──────────────────────────────────────────────────────── */
