@@ -1,7 +1,7 @@
 import type { Carta } from './cartas'
-import { TOTAL_CARTAS, paloDe, valorDe } from './cartas'
+import { NOMBRES_VALOR_PLURAL, TOTAL_CARTAS, paloDe, valorDe } from './cartas'
 import type { Combo } from './equity'
-import { evaluar } from './evaluador'
+import { NOMBRES_CATEGORIA, categoriaDe, evaluar } from './evaluador'
 import type { Rango } from './rangos'
 
 /**
@@ -181,4 +181,89 @@ const PALOS_EN_PLURAL = ['picas', 'corazones', 'diamantes', 'tréboles']
 const VALORES_EN_PLURAL: Record<number, string> = {
   0: 'doses', 1: 'treses', 2: 'cuatros', 3: 'cincos', 4: 'seises', 5: 'sietes',
   6: 'ochos', 7: 'nueves', 8: 'dieces', 9: 'jotas', 10: 'reinas', 11: 'reyes', 12: 'ases',
+}
+
+/**
+ * Las cartas que te salvan cuando no tienes proyecto que contar.
+ *
+ * Con doble pareja de reyes y reinas en una mesa emparejada, no hay "proyecto"
+ * ninguno y sin embargo vas perdiendo: lo que te falta es un rey. Eso también
+ * se cuenta, y decirlo es justo lo que enseña que una doble pareja puede ser
+ * una mano flojísima según la mesa.
+ */
+export function cartasQueTeSalvan(
+  mano: readonly [Carta, Carta],
+  mesa: readonly Carta[],
+  rango: Rango,
+): Outs {
+  if (mesa.length < 3 || mesa.length >= 5 || rango.combos.length === 0) return NADA
+  if (fraccionALaQueGanas(mano, mesa, rango.combos) > 0.5) return NADA
+
+  const vistas = new Uint8Array(TOTAL_CARTAS)
+  for (const c of [...mano, ...mesa]) vistas[c] = 1
+
+  const cartas: Carta[] = []
+  for (let carta = 0; carta < TOTAL_CARTAS; carta++) {
+    if (vistas[carta]) continue
+    if (tePoneDelante(mano, mesa, carta, rango.combos)) cartas.push(carta)
+  }
+  if (cartas.length === 0) return NADA
+
+  return {
+    cuantas: cartas.length,
+    comoSeLlaman: nombrarPorValor(cartas),
+    proyecto: '',
+    probabilidad: Math.min(0.95, cartas.length * 0.02 * (5 - mesa.length)),
+    hayMas: false,
+  }
+}
+
+/** "los dos reyes que quedan", "las jotas y los seises". Vacío si son un revoltijo. */
+function nombrarPorValor(cartas: readonly Carta[]): string {
+  const porValor = new Map<number, number>()
+  for (const c of cartas) porValor.set(valorDe(c), (porValor.get(valorDe(c)) ?? 0) + 1)
+  if (porValor.size > 2) return ''
+  const partes = [...porValor.entries()]
+    .sort((a, b) => b[0] - a[0])
+    .map(([valor, cuantas]) => `${cuantas === 1 ? 'el' : `los ${cuantas}`} ${cuantas === 1 ? NOMBRE_SINGULAR[valor] : NOMBRES_VALOR_PLURAL[valor]} que ${cuantas === 1 ? 'queda' : 'quedan'}`)
+  return partes.join(' y ')
+}
+
+const NOMBRE_SINGULAR: Record<number, string> = {
+  0: 'dos', 1: 'tres', 2: 'cuatro', 3: 'cinco', 4: 'seis', 5: 'siete', 6: 'ocho',
+  7: 'nueve', 8: 'diez', 9: 'jota', 10: 'reina', 11: 'rey', 12: 'as',
+}
+
+/**
+ * Qué le gana a tu mano dentro de su rango, agrupado por jugada.
+ *
+ * "Ganabas el 30%" no enseña nada por sí solo. "Te ganan los tríos de reinas
+ * (18 manos) y los reyes con mejor acompañante (9)" sí: es la explicación que
+ * hace entender que una doble pareja en una mesa emparejada vale poco.
+ */
+export function loQueTeGana(
+  mano: readonly [Carta, Carta],
+  mesa: readonly Carta[],
+  rango: Rango,
+): Array<{ jugada: string; manos: number }> {
+  if (mesa.length < 3) return []
+  const tuya = evaluar([...mano, ...mesa])
+  const tuCategoria = categoriaDe(tuya)
+  const cuenta = new Map<string, number>()
+  for (const combo of rango.combos) {
+    if (chocaConTuMano(combo, mano)) continue
+    const suya = evaluar([combo.a, combo.b, ...mesa])
+    if (suya <= tuya) continue
+    const categoria = categoriaDe(suya)
+    // "Doble pareja" a secas confunde cuando tú TIENES doble pareja: lo que te
+    // gana es una mejor, y decirlo así es media lección.
+    const nombre =
+      categoria === tuCategoria
+        ? `${NOMBRES_CATEGORIA[categoria]} mejor que la tuya`
+        : NOMBRES_CATEGORIA[categoria]
+    cuenta.set(nombre, (cuenta.get(nombre) ?? 0) + combo.peso)
+  }
+  return [...cuenta.entries()]
+    .map(([jugada, manos]) => ({ jugada, manos }))
+    .sort((a, b) => b.manos - a.manos)
 }

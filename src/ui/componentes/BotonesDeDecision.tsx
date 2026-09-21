@@ -54,7 +54,9 @@ export function tamanosParaElegir(
     if (opciones.some((o) => o.cantidad === cantidad)) continue
     opciones.push({ etiqueta, cantidad, pones: cantidad + paraPagar })
   }
-  if (todoInTieneSentido && Math.round(tope) >= minimaDeVerdad) {
+  // Meter lo que te queda siempre es legal, pase o no el mínimo (ver el motor).
+  const esUnTodoInDeVerdad = tope >= referencia * 0.1
+  if (todoInTieneSentido && (Math.round(tope) >= minimaDeVerdad || esUnTodoInDeVerdad)) {
     opciones.push({
       etiqueta: 'Todo-in',
       cantidad: Math.round(tope),
@@ -127,7 +129,7 @@ export function BotonesDeDecision({
         onClick={() => setEligiendoTamano(true)}
       >
         <span>↗ Subir</span>
-        <span className="sub">{opcionesDeSubida.length > 0 ? 'Eliges cuánto' : 'Sin fichas'}</span>
+        <span className="sub">{opcionesDeSubida.length > 0 ? 'Eliges cuánto' : 'No hay a quién'}</span>
       </button>
     </div>
   )

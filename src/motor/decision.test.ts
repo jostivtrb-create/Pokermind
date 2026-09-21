@@ -375,3 +375,30 @@ describe('las explicaciones enseñan a contar, no solo a obedecer', () => {
     expect(texto).not.toContain('subir')
   })
 })
+
+describe('meter lo que te queda siempre es una jugada (todo-in)', () => {
+  /*
+    Jugando salió esto: con 393 fichas y un bote de 1821, el juego no ofrecía
+    apostar nada y ponía "Subir: sin fichas" teniendo fichas. Era el mínimo de
+    subida (D58) comiéndose el todo-in. En una mesa, meter lo que te queda es
+    legal siempre, aunque sea menos que la última apuesta.
+  */
+  const corto: Situacion = {
+    mano: par('9s Kc'), mesa: manoDeCodigo('4h 7s 9h'), calle: 'flop',
+    bote: 1821, paraPagar: 0, tusFichas: 393, fichasRival: 2000,
+    rangoRival: rangoApertura('boton'), perfilRival: RIVAL_TIPICO,
+  }
+
+  it('con fichas cortas frente a un bote enorme, el todo-in se ofrece', () => {
+    const subidas = analizar(corto).acciones.filter((a) => a.accion === 'subir')
+    expect(subidas).toHaveLength(1)
+    expect(subidas[0].tamano).toBe(393)
+  })
+
+  it('pero la calderilla sigue fuera: una ficha suelta no es una jugada', () => {
+    const calderilla: Situacion = {
+      ...corto, mesa: manoDeCodigo('4h 7s 9h'), bote: 2879, paraPagar: 178, tusFichas: 179,
+    }
+    expect(analizar(calderilla).acciones.filter((a) => a.accion === 'subir')).toHaveLength(0)
+  })
+})

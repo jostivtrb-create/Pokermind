@@ -5,7 +5,7 @@ import type { PerfilRival } from './perfiles'
 import { RIVAL_TIPICO, fraccionQueContinua, multiplicadorDeFarol } from './perfiles'
 import type { Rango } from './rangos'
 import { estrecharPorFuerza, fraccionQueLiga, fraccionQueLigaFuerte, quitarBloqueadas } from './rangos'
-import { outsContra } from './proyectos'
+import { cartasQueTeSalvan, loQueTeGana, outsContra } from './proyectos'
 
 /**
  * EL CORAZÓN DEL JUEGO (decisión D20).
@@ -373,8 +373,20 @@ function tamanosHabituales(bote: number, paraPagar: number, tusFichas: number, f
   // sí importa, y entonces el motor sobrevalora el todo-in frente a apostar tres
   // veces seguidas, que es lo que haría un buen jugador. Ofrecer una jugada que
   // el motor juzga peor de lo que la juzgaría un experto sería enseñar mal.
+  /*
+    El todo-in no pasa por el mínimo: en una mesa, meter lo que te queda SIEMPRE
+    es legal, aunque sea menos que la última apuesta. Lo único que se descarta
+    es la calderilla —quedarte con una ficha suelta por encima del pago—, que no
+    mueve nada y en la práctica es pagar.
+
+    Sin esto, con 393 fichas en un bote de 1821 el juego no te dejaba apostar
+    NADA y ponía "Subir: sin fichas" teniendo fichas.
+  */
+  const esUnTodoInDeVerdad = tope > 0 && tope >= referencia * 0.1
   if (tope > 0 && tope <= TOPE_PARA_TODO_IN * referencia) candidatos.push(Math.round(tope))
-  return [...new Set(candidatos)].filter((t) => t >= minimaDeVerdad).sort((a, b) => a - b)
+  return [...new Set(candidatos)]
+    .filter((t) => t >= minimaDeVerdad || (esUnTodoInDeVerdad && t === Math.round(tope)))
+    .sort((a, b) => a - b)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -513,9 +525,13 @@ function explicacionCorta(
   const eq = pc(analisis.equity.equity)
   // Cuando la jugada es buena pero había otra mejor, se dice: si no, el jugador
   // se queda con "hice lo correcto" y no aprende la jugada que sí tocaba.
+  // "Aun así" solo cabe cuando lo que hiciste ganaba fichas y había algo mejor.
+  // Si tu jugada pierde, no es un "aun así": es un "por eso".
   const matiz =
     elegida !== analisis.mejor && perdida > 0.5
-      ? ` Aun así, ${etiquetaDeAccion(analisis.mejor, gratis)} habría sacado algo más.`
+      ? elegida.valorEsperado > 0
+        ? ` Aun así, ${etiquetaDeAccion(analisis.mejor, gratis)} habría sacado algo más.`
+        : ` Por eso lo mejor era ${etiquetaDeAccion(analisis.mejor, gratis)}.`
       : ''
 
   if (veredicto === 'optima' || veredicto === 'buena') {
@@ -580,16 +596,45 @@ function explicacionLarga(situacion: Situacion, analisis: Analisis, elegida: Val
             ? ` Tu ${pc(analisis.equity.equity)} es más bajo porque ligarlo no siempre basta: él también puede mejorar.`
             : ''),
     )
-  } else if (outs.hayMas) {
-    lineas.push(
-      'No tienes ningún proyecto que contar: lo que te queda es ligar pareja y que le valga.',
-    )
+  } else {
+    /*
+      Sin proyecto que contar, lo que enseña es lo contrario: QUÉ te gana y qué
+      poquito te salva. Es el mejor momento de la mano para aprender algo — una
+      doble pareja en una mesa emparejada vale mucho menos de lo que parece— y
+      antes se desperdiciaba enseñando un porcentaje a secas.
+    */
+    const gana = loQueTeGana(situacion.mano, situacion.mesa, situacion.rangoRival)
+    if (gana.length > 0 && analisis.equity.equity < 0.5) {
+      const lista = gana
+        .slice(0, 2)
+        .map((g) => `${g.manos} ${g.manos === 1 ? 'mano' : 'manos'} con ${g.jugada}`)
+        .join(' y ')
+      const salvan = cartasQueTeSalvan(situacion.mano, situacion.mesa, situacion.rangoRival)
+      lineas.push(
+        `Lo que te gana de su rango: ${lista}.` +
+          (salvan.cuantas > 0
+            ? ` Te salvan ${salvan.comoSeLlaman || `${salvan.cuantas} cartas`}: un ${pc(salvan.probabilidad)}.`
+            : ' No queda ninguna carta que te ponga por delante.'),
+      )
+    }
   }
 
   if (situacion.paraPagar > 0) {
+    /*
+      El caso que más confunde: tu probabilidad supera lo que exige el bote y
+      aun así pagar pierde fichas. Pasa porque quedan calles y te van a seguir
+      apostando. Si no se dice, el jugador que acaba de aprender "pago si mi
+      probabilidad supera el precio" cree que el juego está roto — y con razón.
+    */
+    const pagar = analisis.acciones.find((a) => a.accion === 'pagar')
+    const elPrecioSaleYAunAsiPierde =
+      !!pagar && pagar.valorEsperado < 0 && analisis.equity.equity >= analisis.equityNecesaria
     lineas.push(
       `Pagar te cuesta ${redondear(situacion.paraPagar)} para optar a un bote de ${redondear(situacion.bote + situacion.paraPagar)}: ` +
         `necesitas ganar al menos el ${pc(analisis.equityNecesaria)} de las veces para que pagar no pierda fichas.` +
+        (elPrecioSaleYAunAsiPierde
+          ? ` Tu ${pc(analisis.equity.equity)} pasa ese listón, pero pagar aquí no termina la mano: quedan calles y te va a seguir apostando, y ahí pierdes más de lo que ganas ahora. Por eso sale mejor soltarla ya.`
+          : '') +
         (outs.cuantas > 0
           ? outs.probabilidad >= analisis.equityNecesaria
             ? ` Solo con tus ${outs.cuantas} outs ya tienes un ${pc(outs.probabilidad)}: el precio te sale sin contar nada más.`

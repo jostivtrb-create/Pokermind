@@ -181,7 +181,12 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
     setJuicios((lista) => [...lista, apunte])
 
     sonar(traducida === 'retirarse' ? 'repartir' : 'ficha')
-    const siguiente = aplicar(mesa, traducida, Math.min(cantidad, subida?.maximo ?? cantidad))
+    jugar(mesa, traducida, Math.min(cantidad, subida?.maximo ?? cantidad))
+  }
+
+  /** Mueve la mesa y deja seguir a los bots. Sin juzgar nada. */
+  const jugar = (desde: EstadoMesa, accion: AccionMesa, cantidad = 0) => {
+    const siguiente = aplicar(desde, accion, cantidad)
     setMesa(copia(siguiente))
     if (!siguiente.manoTerminada) avanzarBots(siguiente)
   }
@@ -208,6 +213,35 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mesa?.manoTerminada, juicios.length, torneo?.manosJugadas])
 
+  const humano = mesa?.jugadores.find((j) => j.esHumano)
+  const meToca = !!mesa && !mesa.manoTerminada && mesa.jugadores[mesa.turno]?.esHumano && !pensando
+  const opcionesDeSubida =
+    mesa && humano
+      ? tamanosParaElegir(
+          boteTotal(mesa),
+          paraPagar(mesa, humano),
+          humano.fichas,
+          rivalPrincipal(mesa, humano)?.fichas ?? humano.fichas,
+        )
+      : []
+  /*
+    Cuando pasar es lo ÚNICO que puedes hacer, no es una decisión.
+
+    Pasa cuando ya has metido todas tus fichas, o cuando al rival no le quedan:
+    no hay nada que pagar y no hay a quién apostar. El juego te pedía pulsar un
+    botón igualmente y encima te ponía 100 puntos por "acertar" — y con eso la
+    nota de la mano subía sola. Ahora se pasa solo y no se puntúa.
+  */
+  const soloPuedePasar =
+    meToca && !!mesa && !!humano && paraPagar(mesa, humano) === 0 && opcionesDeSubida.length === 0
+
+  useEffect(() => {
+    if (!soloPuedePasar || !mesa) return
+    const t = window.setTimeout(() => jugar(mesa, 'pasar'), 450)
+    return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [soloPuedePasar, mesa])
+
   const terminarMano = () => {
     if (!torneo || !mesa) return
     const cerrado = cerrarMano({ ...torneo, mesa })
@@ -220,8 +254,6 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
     return <Portada torneo={torneo} alEmpezar={empezar} ir={ir} />
   }
 
-  const humano = mesa?.jugadores.find((j) => j.esHumano)
-  const meToca = !!mesa && !mesa.manoTerminada && mesa.jugadores[mesa.turno]?.esHumano && !pensando
   const ciegas = ciegasActuales(torneo)
 
   return (
@@ -284,17 +316,20 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
 
             {pensando && <p className="tenue" style={{ marginTop: 14 }}>Están pensando…</p>}
 
-            {meToca && humano && (
+            {meToca && humano && !soloPuedePasar && (
               <BotonesDeDecision
                 paraPagar={paraPagar(mesa, humano)}
-                opcionesDeSubida={tamanosParaElegir(
-                  boteTotal(mesa),
-                  paraPagar(mesa, humano),
-                  humano.fichas,
-                  rivalPrincipal(mesa, humano)?.fichas ?? humano.fichas,
-                )}
+                opcionesDeSubida={opcionesDeSubida}
                 alDecidir={decidir}
               />
+            )}
+
+            {soloPuedePasar && (
+              <p className="tenue" style={{ marginTop: 14 }}>
+                {humano && humano.fichas === 0
+                  ? 'Ya tienes todas tus fichas dentro: solo quedan cartas por salir.'
+                  : 'Aquí no hay nada que decidir: nadie ha apostado y no queda a quién apostarle.'}
+              </p>
             )}
 
             {mesa.manoTerminada && (
