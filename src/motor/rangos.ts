@@ -1,5 +1,5 @@
 import type { Carta } from './cartas'
-import { TOTAL_CARTAS, deCodigo } from './cartas'
+import { TOTAL_CARTAS, deCodigo, paloDe, valorDe } from './cartas'
 import type { ClasePreflop } from './clases'
 import { CLASES_PREFLOP, claseDeMano, combinacionesDeClase, combosDeClase } from './clases'
 import type { Combo, Probabilidades } from './equity'
@@ -283,3 +283,94 @@ export function equityContra(
 
 /** Todas las clases, para pintar la rejilla. */
 export { CLASES_PREFLOP }
+
+/**
+ * Qué parte del rango ha ligado algo con esta mesa: pareja usando una carta
+ * propia, pareja servida, proyecto de color o de escalera abierto.
+ *
+ * Es la cuenta que explica por qué en una mesa que no le sirve a nadie una
+ * apuesta se lleva el bote: con la mano vacía no se paga aunque el precio sea
+ * bueno. El motor de decisiones lo usa para saber cuánta gente se va a retirar.
+ */
+export function fraccionQueLiga(r: Rango, mesa: readonly Carta[]): number {
+  if (mesa.length === 0 || r.combos.length === 0) return 1
+
+  const valoresMesa = new Uint8Array(13)
+  const palosMesa = new Uint8Array(4)
+  let mascaraMesa = 0
+  for (const c of mesa) {
+    valoresMesa[valorDe(c)]++
+    palosMesa[paloDe(c)]++
+    mascaraMesa |= 1 << valorDe(c)
+  }
+
+  let ligan = 0
+  let peso = 0
+  for (const combo of r.combos) {
+    peso += combo.peso
+    if (ligaAlgo(combo.a, combo.b, valoresMesa, palosMesa, mascaraMesa)) ligan += combo.peso
+  }
+  return peso === 0 ? 1 : ligan / peso
+}
+
+function ligaAlgo(
+  a: Carta,
+  b: Carta,
+  valoresMesa: Uint8Array,
+  palosMesa: Uint8Array,
+  mascaraMesa: number,
+): boolean {
+  const va = valorDe(a)
+  const vb = valorDe(b)
+  if (va === vb) return true // pareja servida
+  if (valoresMesa[va] > 0 || valoresMesa[vb] > 0) return true // emparejó con la mesa
+
+  // Proyecto de color: dos cartas suyas del mismo palo y dos o más en la mesa.
+  const pa = paloDe(a)
+  const pb = paloDe(b)
+  if (pa === pb && palosMesa[pa] >= 2) return true
+  if (palosMesa[pa] >= 3 || palosMesa[pb] >= 3) return true
+
+  // Proyecto de escalera: cuatro valores seguidos entre sus cartas y la mesa.
+  const mascara = mascaraMesa | (1 << va) | (1 << vb)
+  for (let alto = 12; alto >= 3; alto--) {
+    const cuatro = (1 << alto) | (1 << (alto - 1)) | (1 << (alto - 2)) | (1 << (alto - 3))
+    if ((mascara & cuatro) === cuatro && ((1 << va) & cuatro || (1 << vb) & cuatro)) return true
+  }
+  return false
+}
+
+/**
+ * Parte del rango que tiene una mano DE VERDAD en esta mesa: pareja con la carta
+ * más alta de la mesa (o mejor), o pareja servida por encima de la mesa.
+ *
+ * Es distinto de `fraccionQueLiga`: ahí entra cualquier cosa, incluido un
+ * proyecto. Aquí solo lo que no se tira ante una apuesta.
+ */
+export function fraccionQueLigaFuerte(r: Rango, mesa: readonly Carta[]): number {
+  if (mesa.length === 0 || r.combos.length === 0) return 0
+
+  let masAltaMesa = -1
+  const valoresMesa = new Uint8Array(13)
+  for (const c of mesa) {
+    const v = valorDe(c)
+    valoresMesa[v]++
+    if (v > masAltaMesa) masAltaMesa = v
+  }
+
+  let fuertes = 0
+  let peso = 0
+  for (const combo of r.combos) {
+    peso += combo.peso
+    const va = valorDe(combo.a)
+    const vb = valorDe(combo.b)
+    const parejaServidaAlta = va === vb && va > masAltaMesa
+    const ligaLaMasAlta =
+      (valoresMesa[va] > 0 && va === masAltaMesa) || (valoresMesa[vb] > 0 && vb === masAltaMesa)
+    const dosParejasOMejor =
+      valoresMesa[va] > 0 && valoresMesa[vb] > 0
+    const trio = (va === vb && valoresMesa[va] > 0) || valoresMesa[va] > 1 || valoresMesa[vb] > 1
+    if (parejaServidaAlta || ligaLaMasAlta || dosParejasOMejor || trio) fuertes += combo.peso
+  }
+  return peso === 0 ? 0 : fuertes / peso
+}

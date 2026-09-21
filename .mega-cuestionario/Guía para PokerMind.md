@@ -205,7 +205,7 @@ que se puede escribir sin bloquear nada.
 - [x] 2 · Cartas y manos: baraja, evaluador de la mejor mano de 5 entre 7, comparación y empates
 - [x] 3 · Probabilidades: equity exacta cuando es barata, simulación cuando no; outs y regla del 2 y el 4
 - [x] 4 · Rangos: representar un rango de manos, estrecharlo calle a calle según cómo apuesta el rival
-- [ ] 5 · Evaluación de decisiones: valor esperado de retirarse / pagar / subir contra el rango, puntuación graduada y exigencia por nivel (D20)
+- [x] 5 · Evaluación de decisiones: valor esperado de retirarse / pagar / subir contra el rango, puntuación graduada y exigencia por nivel (D20)
 - [ ] 6 · Mesa: turnos, ciegas, botón que rota, apuestas, todo-in, botes paralelos, reparto
 - [ ] 7 · Torneo corto: 4 jugadores, ciegas que suben, eliminación, guardar a medias
 - [ ] 8 · Bots: parámetros sorteados (agresividad, disciplina, farol, lectura) sobre el mismo motor
@@ -259,3 +259,20 @@ que se puede escribir sin bloquear nada.
   **genera** con el propio motor (`scripts/generar-fuerza-preflop.ts`) en vez de copiarse de una
   lista de internet, para que la tabla y el juego nunca se contradigan. Los números salen clavados
   a las calculadoras de referencia (AA 85,0% · KK 82,2% · 22 50,5% · 32o 32,5%).
+- **21/09/2026** — Paso 5 hecho: el motor de decisiones (D20), 50 tests en verde. Cuatro cosas que
+  hubo que resolver sobre la marcha, todas descubiertas porque el motor daba consejos malos y se
+  notó al probarlo (`scripts/sondeo-decisiones.ts`):
+  1. **Con una mano monstruosa decía "sube" siempre.** Faltaban dos piezas: que pasar *invita al
+     rival a farolear* (y eso vale dinero contra un rival agresivo) y que en una mesa que no le
+     sirve a nadie apostar solo consigue llevarse el bote pequeño. Con las dos, el motor ya
+     recomienda esconder la mano justo cuando toca — que es lo que pidió el usuario en la ronda 1.
+  2. **Con ases antes del flop recomendaba pagar en vez de resubir.** Dos errores: los tamaños de
+     subida se medían sobre el bote *antes* de igualar (salían subidas ridículas), y el valor de las
+     calles siguientes usaba la ventaja de hoy como si durara hasta el river. Ahora la ventaja se
+     acerca al 50% por cada calle que falta, que es lo que pasa de verdad: el rival mete dinero
+     cuando le ha mejorado algo, no al azar.
+  3. **El motor creía que podía echar de la mano a alguien que ya tiene pareja alta.** Se añadió un
+     suelo: con una mano de verdad nadie se retira ante una apuesta normal.
+  4. **La puntuación se aplastaba a 0 demasiado pronto** y todos los errores parecían iguales. Curva
+     nueva: 100 si clavas la jugada, 50 en el límite de lo aceptable para tu nivel, 0 a partir de
+     cuatro veces ese límite.
