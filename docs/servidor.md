@@ -129,3 +129,25 @@ Acuérdate de añadir allí las dos variables de entorno, o el juego se publicar
 
 Cambiar de Supabase a otro servicio es tocar `supabase.ts` y `cuenta.ts`: el resto del juego no sabe
 quién guarda los datos.
+
+---
+
+## Publicar en un dominio propio
+
+Lo de arriba sirve para las cuentas. Para que el juego viva en una dirección tuya (por ejemplo
+`pokermind.app`) y se pueda **instalar en el móvil**, hace falta un hosting estático. Con Vercel es
+gratis y son dos comandos:
+
+```bash
+npm i -g vercel
+vercel          # la primera vez: te pide entrar y te hace unas preguntas
+vercel --prod
+```
+
+Vercel detecta Vite solo. Si has configurado las cuentas, añade allí las dos variables
+(`VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`) en *Settings → Environment Variables*, o el juego
+se publicará en modo local.
+
+**Importante para que se pueda instalar y jugar sin conexión:** el service worker solo se registra
+cuando el juego está en la **raíz** del sitio. En una vista previa que cuelgue de una subcarpeta el
+juego funciona igual, pero sin modo sin conexión.

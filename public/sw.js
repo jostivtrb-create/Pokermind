@@ -12,7 +12,7 @@
   Nunca se guarda nada que no sea de este mismo sitio.
 */
 const CACHE = 'pokermind-v1'
-const BASICOS = ['/', '/index.html', '/manifest.webmanifest', '/icono-512.png']
+const BASICOS = ['./', './index.html', './manifest.webmanifest', './icono-512.png']
 
 self.addEventListener('install', (evento) => {
   evento.waitUntil(
@@ -41,10 +41,10 @@ self.addEventListener('fetch', (evento) => {
       fetch(peticion)
         .then((respuesta) => {
           const copia = respuesta.clone()
-          caches.open(CACHE).then((cache) => cache.put('/index.html', copia))
+          caches.open(CACHE).then((cache) => cache.put('./index.html', copia))
           return respuesta
         })
-        .catch(() => caches.match('/index.html').then((r) => r ?? Response.error())),
+        .catch(() => caches.match('./index.html').then((r) => r ?? Response.error())),
     )
     return
   }
