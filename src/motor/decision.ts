@@ -127,11 +127,18 @@ export function analizar(situacion: Situacion): Analisis {
   // ── Retirarse ────────────────────────────────────────────────────────────
   // Vale 0 por definición: lo que ya metiste en el bote ya no es tuyo, así que
   // retirarse no gana ni pierde nada desde ahora. Todo lo demás se compara con esto.
-  acciones.push({
-    accion: 'retirarse',
-    valorEsperado: 0,
-    desglose: 'Retirarse no gana ni pierde nada desde este momento: las fichas que ya pusiste ya no son tuyas.',
-  })
+  //
+  // Pero solo es una jugada cuando hay algo que pagar. Si seguir es gratis, en
+  // la mesa no existe retirarse: se pasa. Ofrecerlo hacía que el juego llegara a
+  // decir "pasaste gratis, pero retirarte habría sacado algo más", que es falso
+  // y además enseña un reflejo pésimo: tirar manos que no cuestan nada.
+  if (paraPagar > 0) {
+    acciones.push({
+      accion: 'retirarse',
+      valorEsperado: 0,
+      desglose: 'Retirarse no gana ni pierde nada desde este momento: las fichas que ya pusiste ya no son tuyas.',
+    })
+  }
 
   // ── Pagar (o pasar, si no hay nada que pagar) ────────────────────────────
   // Al pagar o pasar no se espanta a nadie: sigue vivo todo su rango, faroles
@@ -144,7 +151,19 @@ export function analizar(situacion: Situacion): Analisis {
     ? 0
     : valorDeLasCallesSiguientes(equity.equity, bote + paraPagar * 2, perfil, callesQueQuedan, 1, true)
   const valorAhoraPagando = equity.equity * (bote + paraPagar) - paraPagar
-  const valorPagar = valorAhoraPagando + futuroPagando
+  /*
+    Pasar gratis no puede valer menos que cero.
+
+    El término de las calles siguientes puede ser negativo —sale caro seguir con
+    una mano floja—, pero eso solo pasa si SIGUES pagando más adelante, y eso ya
+    no estás obligado a hacerlo: cuando te apuesten, podrás soltar. La opción de
+    retirarte después es un suelo, así que ver una carta gratis nunca es un
+    error. Sin este suelo, el juego recomendaba tirar manos que no costaban nada.
+  */
+  const valorPagar =
+    paraPagar === 0
+      ? Math.max(0, valorAhoraPagando + futuroPagando)
+      : valorAhoraPagando + futuroPagando
 
   // La explicación desglosa las DOS partes y el total. Antes enseñaba el total
   // y luego el término de calles siguientes por separado, y parecía que uno
@@ -464,12 +483,25 @@ function explicacionCorta(
       return `Ganabas solo el ${eq} de las veces y seguir costaba demasiado: retirarte te ahorra fichas a la larga.${matiz}`
     }
     if (elegida.accion === 'subir') {
+      if (elegida.valorEsperado <= 0) {
+        return `Con el ${eq} de probabilidad, subir pierde ${redondear(-elegida.valorEsperado)} fichas de media: poco, pero pierde.${matiz}`
+      }
       return `Con el ${eq} de probabilidad de ganar, subir te hace ganar fichas: le cobras a sus manos peores y las mejores tuyas se pagan solas.${matiz}`
     }
     // Pasar cuando no cuesta nada no se explica con la cuenta del precio: no hay
     // precio. Lo que se explica es qué ganas mirando otra carta gratis.
     if (gratis) {
       return `Seguir no costaba nada, así que ves la carta siguiente gratis con tu ${eq} de probabilidad.${matiz}`
+    }
+    /*
+      "Sale a cuenta" solo se dice cuando de verdad gana fichas.
+
+      Antes se decía siempre que la jugada era aceptable, y salían frases que se
+      contradicen solas: "pagar sale a cuenta. Aun así, retirarse habría sacado
+      algo más". Si retirarse —que vale cero— saca más, pagar pierde.
+    */
+    if (elegida.valorEsperado <= 0) {
+      return `Con el ${eq} de probabilidad, pagar pierde ${redondear(-elegida.valorEsperado)} fichas de media: poco, y por eso no es un error grave, pero pierde.${matiz}`
     }
     return `Con el ${eq} de probabilidad, pagar sale a cuenta${analisis.mejor.accion === 'pagar' ? ' y es mejor que subir: subiendo espantas justo a las manos que te iban a pagar' : ''}.${matiz}`
   }

@@ -285,7 +285,9 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
                     const jugador = mesa.jugadores.find((j) => j.id === g.jugador)!
                     return (
                       <p key={g.jugador} style={{ margin: 0 }}>
-                        <strong>{jugador.nombre}</strong> se lleva {g.fichas}
+                        {/* "Tú se lleva 224" no lo dice nadie. */}
+                        <strong>{jugador.esHumano ? 'Te llevas' : `${jugador.nombre} se lleva`}</strong>{' '}
+                        {g.fichas.toLocaleString('es')}
                         {g.motivo === 'showdown' && jugador.cartas
                           ? ` con ${describirMano([...jugador.cartas, ...mesa.comunitarias])}`
                           : ' porque se retiraron los demás'}
@@ -409,12 +411,19 @@ function loQueHiciste(a: Apunte): string {
  */
 function ComoFueLaMano({ apuntes }: { apuntes: Apunte[] }) {
   const total = apuntes.reduce((t, a) => t + a.juicio.puntos, 0)
+  /*
+    Los puntos totales solo suben, así que por sí solos no dicen si estás
+    jugando mejor o peor. La nota media de la mano sí: es sobre 100 y se puede
+    comparar con la de la mano anterior.
+  */
+  const media = Math.round(total / apuntes.length)
 
   return (
     <div className="tarjeta">
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
         <span className="etiqueta">Cómo fue la mano</span>
-        <span className="chip morado" style={{ marginLeft: 'auto' }}>+{total} en total</span>
+        <span className="chip" style={{ marginLeft: 'auto' }}>Nota {media} de 100</span>
+        <span className="chip morado">+{total} en total</span>
       </div>
 
       <div style={{ marginTop: 12 }}>

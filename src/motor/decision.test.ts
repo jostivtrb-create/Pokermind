@@ -104,19 +104,24 @@ describe('el precio del bote (módulo 3 del temario)', () => {
 })
 
 describe('puntuación graduada (D22)', () => {
+  // Cuesta 40 seguir a propósito: retirarse solo es una jugada cuando hay algo
+  // que pagar, y aquí hace falta poder medir lo cara que es esa equivocación.
   const s: Situacion = {
     mano: par('7s 7h'), mesa: manoDeCodigo('7d 4c 2h'), calle: 'flop',
-    bote: 100, paraPagar: 0, tusFichas: 900, fichasRival: 900,
+    bote: 100, paraPagar: 40, tusFichas: 900, fichasRival: 900,
     rangoRival: rangoApertura('boton'), perfilRival: perfil('el pegajoso'),
   }
 
   it('un error pequeño resta poco y uno grande resta mucho', () => {
-    const buena = juzgar(s, 'subir', 'intermedia')
-    const regular = juzgar(s, 'pagar', 'intermedia')
+    // Con un trío servido frente a alguien que lo paga todo, lo mejor es
+    // esconderlo y cobrarle: la jugada óptima la decide el motor, no el test.
+    const mejor = juzgar(s, analizar(s).mejor.accion, 'intermedia')
+    const regular = juzgar(s, 'subir', 'intermedia')
     const desastre = juzgar(s, 'retirarse', 'intermedia')
-    expect(buena.puntos).toBe(100)
+    expect(analizar(s).mejor.accion).toBe('pagar')
+    expect(mejor.puntos).toBe(100)
     expect(regular.puntos).toBeGreaterThan(desastre.puntos)
-    expect(regular.puntos).toBeLessThan(buena.puntos)
+    expect(regular.puntos).toBeLessThan(mejor.puntos)
     expect(desastre.puntos).toBe(0) // tirar la mejor mano no vale ni un punto
   })
 
@@ -200,5 +205,50 @@ describe('una subida tiene que ser una subida', () => {
     const tamanos = analizar(holgado).acciones.filter((a) => a.accion === 'subir').map((a) => a.tamano!)
     expect(tamanos.length).toBeGreaterThanOrEqual(3)
     for (const t of tamanos) expect(t).toBeGreaterThanOrEqual(178)
+  })
+})
+
+describe('cuando seguir es gratis', () => {
+  /*
+    Con nada que pagar, en la mesa no existe retirarse: se pasa. El juego llegó a
+    decir "pasaste sin poner nada, pero retirarte habría sacado algo más", que
+    además de imposible enseña el peor reflejo posible: soltar manos gratis.
+  */
+  const gratis: Situacion = {
+    mano: par('Th 3c'), mesa: manoDeCodigo('Ac 6c Jh'), calle: 'flop',
+    bote: 40, paraPagar: 0, tusFichas: 1000, fichasRival: 3000,
+    rangoRival: rangoApertura('boton'), perfilRival: RIVAL_TIPICO,
+  }
+
+  it('retirarse no se ofrece como jugada', () => {
+    expect(analizar(gratis).acciones.map((a) => a.accion)).not.toContain('retirarse')
+  })
+
+  it('pasar nunca vale menos que cero: siempre puedes soltar más adelante', () => {
+    expect(valorDe(gratis, 'pagar')).toBeGreaterThanOrEqual(0)
+  })
+
+  it('con una mano muy floja, lo mejor sigue siendo pasar y ver otra carta', () => {
+    expect(analizar(gratis).mejor.accion).toBe('pagar')
+  })
+
+  it('y la explicación no habla de pagar, sino de pasar gratis', () => {
+    const j = juzgar(gratis, 'pagar', 'intermedia')
+    expect(j.porQue).toContain('gratis')
+    expect(j.porQue).not.toContain('retirarse')
+  })
+})
+
+describe('las explicaciones no se contradicen', () => {
+  it('no dice "sale a cuenta" de una jugada que pierde fichas', () => {
+    const floja: Situacion = {
+      mano: par('Th 3c'), mesa: manoDeCodigo('Ac 6c Jh'), calle: 'flop',
+      bote: 100, paraPagar: 25, tusFichas: 1000, fichasRival: 3000,
+      rangoRival: rangoApertura('utg'), perfilRival: RIVAL_TIPICO,
+    }
+    const j = juzgar(floja, 'pagar', 'basica')
+    const valorPagar = valorDe(floja, 'pagar')
+    if (valorPagar <= 0) expect(j.porQue).not.toContain('sale a cuenta')
+    else expect(j.porQue).toContain('sale a cuenta')
   })
 })
