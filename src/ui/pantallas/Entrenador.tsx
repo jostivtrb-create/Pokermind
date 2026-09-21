@@ -2,19 +2,24 @@ import { useMemo, useState } from 'react'
 import { aleatorioLibre } from '../../motor/aleatorio'
 import type { Accion } from '../../motor/decision'
 import { NOMBRES_CALLE, analizar } from '../../motor/decision'
-import { describirMano } from '../../motor/evaluador'
+import { Categoria, categoriaDe, describirMano, evaluar } from '../../motor/evaluador'
 import { GLOSARIO_POR_CLAVE } from '../../contenido/glosario'
 import type { Leccion } from '../../juego/lecciones'
 import { aSituacion, usaTusCartas } from '../../juego/practica'
 import { anotarDecision } from '../../juego/progreso'
 import type { EstadoSesion } from '../../juego/sesion'
 import {
-  empezarLeccion, empezarPractica, loQueFalta, responder, responderTest, siguienteMano, terminarEjemplo,
+  empezarLeccion, empezarPractica, loQueFalta, responder, responderTest, sesionDeUnaMano,
+  siguienteMano, terminarEjemplo,
 } from '../../juego/sesion'
+import type { ManoDePractica } from '../../juego/practica'
 import { moduloTerminado } from '../../contenido/temario'
 import { useProgreso } from '../estado'
 import { FilaDeCartas } from '../componentes/Carta'
 import { BarrasDeProbabilidad } from '../componentes/BarraProbabilidad'
+import { RangoDelRival } from '../componentes/RangoDelRival'
+import { Rebobinar } from '../componentes/Rebobinar'
+import { parsearRango } from '../../motor/rangos'
 
 /**
  * La pantalla donde se aprende. Sigue el orden del análisis del tutorial:
@@ -22,9 +27,22 @@ import { BarrasDeProbabilidad } from '../componentes/BarraProbabilidad'
  * corrige al instante (D33), que es lo que hace que el error se entienda cuando
  * todavía te acuerdas de por qué lo cometiste.
  */
-export function Entrenador({ leccion, alSalir }: { leccion: Leccion; alSalir: () => void }) {
+export function Entrenador({
+  leccion,
+  alSalir,
+  manoSuelta,
+  alTerminarManoSuelta,
+}: {
+  leccion: Leccion
+  alSalir: () => void
+  /** Para el reto diario y el repaso de errores: una mano concreta, sin lección. */
+  manoSuelta?: ManoDePractica
+  alTerminarManoSuelta?: (acertada: boolean, puntos: number) => void
+}) {
   const azar = useMemo(() => aleatorioLibre(), [])
-  const [sesion, setSesion] = useState<EstadoSesion>(() => empezarLeccion(leccion, azar))
+  const [sesion, setSesion] = useState<EstadoSesion>(() =>
+    manoSuelta ? sesionDeUnaMano(manoSuelta, leccion) : empezarLeccion(leccion, azar),
+  )
   const { actualizar } = useProgreso()
 
   const decidir = (accion: Accion) => {
@@ -34,6 +52,7 @@ export function Entrenador({ leccion, alSalir }: { leccion: Leccion; alSalir: ()
       const resultado = siguiente.ultimoResultado
       const mano = siguiente.mano
       actualizar((p) => anotarDecision(p, resultado, mano))
+      alTerminarManoSuelta?.(resultado.veredicto !== 'mala', resultado.puntos)
     }
   }
 
@@ -52,6 +71,10 @@ export function Entrenador({ leccion, alSalir }: { leccion: Leccion; alSalir: ()
   }
 
   const avanzar = () => {
+    if (manoSuelta) {
+      alSalir()
+      return
+    }
     const siguiente = siguienteMano(sesion, azar)
     setSesion(siguiente)
     if (siguiente.fase === 'terminada') {
@@ -93,7 +116,7 @@ export function Entrenador({ leccion, alSalir }: { leccion: Leccion; alSalir: ()
       )}
 
       {(sesion.fase === 'jugando' || sesion.fase === 'resultado') && sesion.mano && (
-        <Jugada sesion={sesion} alDecidir={decidir} alSeguir={avanzar} />
+        <Jugada sesion={sesion} alDecidir={decidir} alSeguir={avanzar} manoSuelta={!!manoSuelta} />
       )}
 
       {sesion.fase === 'terminada' && <Terminada sesion={sesion} alSalir={alSalir} />}
@@ -107,7 +130,7 @@ function Cabecera({ sesion, alSalir }: { sesion: EstadoSesion; alSalir: () => vo
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
       <button className="boton" style={{ padding: '8px 14px' }} onClick={alSalir}>← Salir</button>
       <div style={{ flex: 1, minWidth: 140 }}>
-        <div className="etiqueta">Módulo {sesion.leccion.modulo}</div>
+        {sesion.leccion.modulo > 0 && <div className="etiqueta">Módulo {sesion.leccion.modulo}</div>}
         <strong>{sesion.leccion.titulo}</strong>
       </div>
       {sesion.fase !== 'explicacion' && sesion.fase !== 'terminada' && (
@@ -202,9 +225,9 @@ function Mesa({ mano }: { mano: NonNullable<EstadoSesion['mano']> }) {
           {mano.mesa.length > 0 && (
             <p className="tenue" style={{ fontSize: 13, margin: '6px 0 0' }}>
               Ahora mismo tienes {describirMano([...mano.mano, ...mano.mesa])}
-              {usaTusCartas(mano.mano, mano.mesa)
-                ? '.'
-                : ', pero está entera en la mesa: eso lo tiene todo el mundo.'}
+              {hayQueAvisarDeLaMesa(mano.mano, mano.mesa)
+                ? ', pero está entera en la mesa: eso lo tiene todo el mundo.'
+                : '.'}
             </p>
           )}
         </div>
@@ -222,10 +245,12 @@ function Jugada({
   sesion,
   alDecidir,
   alSeguir,
+  manoSuelta,
 }: {
   sesion: EstadoSesion
   alDecidir: (accion: Accion) => void
   alSeguir: () => void
+  manoSuelta?: boolean
 }) {
   const mano = sesion.mano!
   const [verPorQue, setVerPorQue] = useState(false)
@@ -301,19 +326,29 @@ function Jugada({
             {verPorQue ? 'Ocultar el detalle' : '¿Por qué? Enséñame los números'}
           </button>
           {verPorQue && (
-            <div className="tarjeta tenue">
-              <pre
-                style={{
-                  whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: 13.5,
-                  color: 'var(--texto-suave)', margin: 0,
-                }}
-              >
-                {juicio.porQueLargo}
-              </pre>
-            </div>
+            <>
+              <div className="tarjeta tenue">
+                <pre
+                  style={{
+                    whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: 13.5,
+                    color: 'var(--texto-suave)', margin: 0,
+                  }}
+                >
+                  {juicio.porQueLargo}
+                </pre>
+              </div>
+              {analisis && <Rebobinar analisis={analisis} elegida={juicio.elegida.accion} />}
+              <RangoDelRival
+                rango={parsearRango(mano.rangoRival)}
+                mesa={mano.mesa}
+                vistas={[...mano.mano, ...mano.mesa]}
+              />
+            </>
           )}
 
-          <button className="boton principal ancho" onClick={alSeguir}>Siguiente mano →</button>
+          <button className="boton principal ancho" onClick={alSeguir}>
+            {manoSuelta ? 'Terminar' : 'Siguiente mano'} →
+          </button>
         </div>
       )}
     </div>
@@ -419,6 +454,16 @@ function Terminada({ sesion, alSalir }: { sesion: EstadoSesion; alSalir: () => v
       <button className="boton principal" onClick={alSalir}>Seguir con el curso →</button>
     </div>
   )
+}
+
+/**
+ * El aviso de "esa jugada está en la mesa" solo tiene sentido con pareja o
+ * mejor. Con carta alta no hay nada que avisar: no tienes jugada, y decir que
+ * "está en la mesa" confunde en vez de aclarar.
+ */
+function hayQueAvisarDeLaMesa(mano: readonly number[], mesa: readonly number[]): boolean {
+  if (categoriaDe(evaluar([...mano, ...mesa])) < Categoria.Pareja) return false
+  return !usaTusCartas(mano, mesa)
 }
 
 function textoVeredicto(veredicto: string): string {

@@ -1,0 +1,17 @@
+{
+  "name": "PokerMind — Piensa. Decide. Mejora.",
+  "short_name": "PokerMind",
+  "description": "Un juego para aprender a tomar buenas decisiones en el póker usando probabilidades. Sin dinero. Sin suerte.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0e1a",
+  "theme_color": "#0b0e1a",
+  "lang": "es",
+  "categories": ["education", "games"],
+  "icons": [
+    { "src": "/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

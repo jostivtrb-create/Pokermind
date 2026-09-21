@@ -385,14 +385,21 @@ function elegirAccionComparable(analisis: Analisis, accion: Accion, tamano?: num
 
 function explicacionCorta(analisis: Analisis, elegida: ValorDeAccion, veredicto: Veredicto, perdida: number): string {
   const eq = pc(analisis.equity.equity)
+  // Cuando la jugada es buena pero había otra mejor, se dice: si no, el jugador
+  // se queda con "hice lo correcto" y no aprende la jugada que sí tocaba.
+  const matiz =
+    elegida !== analisis.mejor && perdida > 0.5
+      ? ` Aun así, ${analisis.mejor.accion === 'subir' ? `subir ${redondear(analisis.mejor.tamano ?? 0)}` : NOMBRES_ACCION[analisis.mejor.accion]} habría sacado algo más.`
+      : ''
+
   if (veredicto === 'optima' || veredicto === 'buena') {
     if (elegida.accion === 'retirarse') {
-      return `Ganabas solo el ${eq} de las veces y seguir costaba demasiado: retirarte te ahorra fichas a la larga.`
+      return `Ganabas solo el ${eq} de las veces y seguir costaba demasiado: retirarte te ahorra fichas a la larga.${matiz}`
     }
     if (elegida.accion === 'subir') {
-      return `Con el ${eq} de probabilidad de ganar, subir te hace ganar fichas: le cobras a sus manos peores y las mejores tuyas se pagan solas.`
+      return `Con el ${eq} de probabilidad de ganar, subir te hace ganar fichas: le cobras a sus manos peores y las mejores tuyas se pagan solas.${matiz}`
     }
-    return `Con el ${eq} de probabilidad, pagar sale a cuenta${analisis.mejor.accion === 'pagar' ? ' y es mejor que subir: subiendo espantas justo a las manos que te iban a pagar' : ''}.`
+    return `Con el ${eq} de probabilidad, pagar sale a cuenta${analisis.mejor.accion === 'pagar' ? ' y es mejor que subir: subiendo espantas justo a las manos que te iban a pagar' : ''}.${matiz}`
   }
   const mejorTexto =
     analisis.mejor.accion === 'subir'

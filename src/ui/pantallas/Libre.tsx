@@ -3,7 +3,7 @@ import type { Pantalla } from '../App'
 import { aleatorioLibre } from '../../motor/aleatorio'
 import type { Accion, Juicio } from '../../motor/decision'
 import { juzgar } from '../../motor/decision'
-import { describirMano } from '../../motor/evaluador'
+import { Categoria, categoriaDe, describirMano, evaluar } from '../../motor/evaluador'
 import { usaTusCartas } from '../../juego/practica'
 import { rangoEstimado, rivalPrincipal } from '../../motor/lectura'
 import type { AccionMesa, EstadoMesa } from '../../motor/mesa'
@@ -13,6 +13,7 @@ import type { Torneo } from '../../motor/torneo'
 import { cerrarMano, ciegasActuales, crearTorneo, jugarHastaElHumano, siguienteMano } from '../../motor/torneo'
 import { useProgreso } from '../estado'
 import { FilaDeCartas } from '../componentes/Carta'
+import { RangoDelRival } from '../componentes/RangoDelRival'
 
 /**
  * El modo libre: torneo corto contra tres bots (D21).
@@ -167,9 +168,10 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
                 {mesa.comunitarias.length > 0 && (
                   <p className="tenue" style={{ fontSize: 13, margin: '6px 0 0' }}>
                     Tienes {describirMano([...humano.cartas, ...mesa.comunitarias])}
-                    {usaTusCartas(humano.cartas, mesa.comunitarias)
-                      ? '.'
-                      : ', pero está entera en la mesa: eso lo tiene todo el mundo.'}
+                    {categoriaDe(evaluar([...humano.cartas, ...mesa.comunitarias])) >= Categoria.Pareja &&
+                    !usaTusCartas(humano.cartas, mesa.comunitarias)
+                      ? ', pero está entera en la mesa: eso lo tiene todo el mundo.'
+                      : '.'}
                   </p>
                 )}
               </div>
@@ -211,6 +213,19 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
                     )
                   })}
                 </div>
+
+                {(() => {
+                  const humanoMesa = mesa.jugadores.find((j) => j.esHumano)
+                  const rival = humanoMesa ? rivalPrincipal(mesa, humanoMesa) : null
+                  if (!rival || !humanoMesa?.cartas) return null
+                  return (
+                    <RangoDelRival
+                      rango={rangoEstimado(mesa, rival, [...humanoMesa.cartas, ...mesa.comunitarias])}
+                      mesa={mesa.comunitarias}
+                      vistas={[...humanoMesa.cartas, ...mesa.comunitarias]}
+                    />
+                  )
+                })()}
 
                 {juicios.length > 0 && (
                   <div className="tarjeta">

@@ -6,7 +6,10 @@ import {
   leccionTerminada, moduloTerminado, siguienteLeccion,
 } from '../../contenido/temario'
 import type { Leccion } from '../../juego/lecciones'
+import { erroresParaRepasar } from '../../juego/progreso'
+import { fechaDeHoy } from '../../juego/retoDiario'
 import { Entrenador } from './Entrenador'
+import { RepasoDeErrores, RetoDelDia } from './ManoDelDia'
 
 /**
  * El curso: los módulos en orden, con las lecciones que se van abriendo.
@@ -17,10 +20,13 @@ import { Entrenador } from './Entrenador'
 export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
   const { progreso } = useProgreso()
   const [enCurso, setEnCurso] = useState<Leccion | null>(null)
+  const [extra, setExtra] = useState<'reto' | 'repaso' | null>(null)
 
   if (enCurso) {
     return <Entrenador leccion={enCurso} alSalir={() => setEnCurso(null)} />
   }
+  if (extra === 'reto') return <RetoDelDia alSalir={() => setExtra(null)} />
+  if (extra === 'repaso') return <RepasoDeErrores alSalir={() => setExtra(null)} />
 
   const siguiente = siguienteLeccion(progreso)
   const avance = avanceDelCurso(progreso)
@@ -35,6 +41,38 @@ export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
           se avanza cuando aciertas seguido.
         </p>
         <div className="progreso-fino"><div style={{ width: `${Math.round(avance * 100)}%` }} /></div>
+      </div>
+
+      <div className="rejilla dos">
+        <button
+          className="tarjeta"
+          style={{ textAlign: 'left', cursor: 'pointer' }}
+          onClick={() => setExtra('reto')}
+        >
+          <span className="etiqueta">Reto del día</span>
+          <h3 style={{ margin: '4px 0' }}>
+            {progreso.retoDiario?.fecha === fechaDeHoy() ? '✓ Ya jugado hoy' : 'Una mano difícil'}
+          </h3>
+          <p className="suave" style={{ fontSize: 13.5, margin: 0 }}>
+            La misma para todo el mundo, sin ayudas. Cambia cada día.
+          </p>
+        </button>
+
+        <button
+          className="tarjeta"
+          style={{ textAlign: 'left', cursor: 'pointer' }}
+          onClick={() => setExtra('repaso')}
+        >
+          <span className="etiqueta">Repaso de errores</span>
+          <h3 style={{ margin: '4px 0' }}>
+            {erroresParaRepasar(progreso).length > 0
+              ? `${erroresParaRepasar(progreso).length} manos esperando`
+              : 'Nada pendiente'}
+          </h3>
+          <p className="suave" style={{ fontSize: 13.5, margin: 0 }}>
+            Manos que fallaste hace días, cambiadas de palo para que no valga memorizar.
+          </p>
+        </button>
       </div>
 
       <div className="tarjeta" style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>

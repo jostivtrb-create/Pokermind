@@ -221,13 +221,13 @@ que se puede escribir sin bloquear nada.
 - [x] 12 · La mesa en pantalla: cartas, bote, fichas, los tres botones, barras de probabilidad
 - [x] 13 · Entrenador: lecciones, manos generadas con condiciones, corrección al instante, dominio y avance rápido acertando
 - [x] 14 · Modo libre: torneo, corrección al terminar la mano, revelación de los estilos de los bots
-- [~] 15 · Botón "¿por qué?" hecho · falta rebobinar la mano y el rango del rival al terminar
+- [x] 15 · Rebobinar la mano · botón "¿por qué?" · rango del rival al terminar
 
 **Contenido y vueltas de tuerca**
 
 - [x] 16 · Los 9 módulos del temario, lección a lección — **41 lecciones**, todas validadas contra el motor
-- [ ] 17 · Estadísticas, logros, reto diario y repaso espaciado de errores
-- [ ] 18 · Instalable y sin conexión (PWA), pulido visual y repaso final
+- [x] 17 · Estadísticas, logros, reto diario y repaso espaciado de errores
+- [~] 18 · Instalable y sin conexión (PWA) hecho · falta el repaso final
 
 ---
 
@@ -310,3 +310,10 @@ que se puede escribir sin bloquear nada.
   · «Al que se va a retirar, se le esconde» fallaba en mesas con tres cartas del mismo palo, porque
     entonces el rival sí tiene con qué seguir. Ahora exige **mesa seca**.
   Sin ese test, las dos habrían llegado al jugador contradiciendo a la corrección del propio juego.
+- **21/09/2026** — Rebobinar la mano (D27), rango del rival al terminar (D26), reto diario (D29),
+  repaso de errores (D15) e instalable sin conexión (D18, con tu logo de icono). Tres fallos que
+  solo salieron jugando de verdad en el navegador: **el reto del día se cerraba en cuanto
+  respondías** —se anotaba el resultado y la pantalla saltaba al "ya jugado" sin enseñar la
+  corrección, que es la parte que enseña—; ponía "Módulo 0" en el reto y en el repaso, que no son
+  del curso; y el aviso de "esa jugada está entera en la mesa" salía también con carta alta, donde
+  no significa nada. Los tres corregidos.
