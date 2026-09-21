@@ -5,7 +5,7 @@
 
 - **Tarea:** Crear PokerMind, un juego que enseña a tomar buenas decisiones en póker usando probabilidades, con tutorial desde cero y modo libre contra bots.
 - **Inicio:** 21 de septiembre de 2026
-- **Estado:** 🟡 Ronda 2 entregada, esperando respuestas
+- **Estado:** 🟡 Ronda 3 (última) entregada, esperando respuestas
 - **Proyecto:** `/home/user/Pokermind` · rama `claude/poker-learning-game-xh7r22`
 
 ---
@@ -94,6 +94,22 @@ No se vuelven a preguntar. Cada una con su **porqué**.
 | D18 | **Instalable en el móvil y jugable sin conexión** | S4 → Sí |
 | D19 | **Nada comprable con dinero, nunca** | S5 → Sí |
 
+### De la ronda 2
+
+| # | Decisión | Por qué |
+|---|----------|---------|
+| D20 | **El motor evalúa siempre por valor esperado contra el rango del rival**, pero la **exigencia sube por nivel**: en las primeras lecciones solo se puntúa lo grueso (retirarse/pagar bien) y a partir de nivel intermedio también se exige sacarle el máximo a la mano | Respuesta 1. Un solo motor, varias varas de medir: el novato no se agobia y el avanzado no se aburre |
+| D21 | Modo libre = **torneo corto**: 4 jugadores, ciegas que suben cada pocas manos, 15–20 minutos | Respuesta 2. Las decisiones difíciles (fichas cortas) llegan pronto, así que se aprende más rápido |
+| D22 | **Puntuación graduada**: cuanto más cerca de la mejor jugada, más puntos; un fallo leve resta poco y uno grave resta mucho | Respuesta 4. Permite decir "tus errores graves son en el river" |
+| D23 | **No se salta ninguna lección**: todos empiezan en la 1, sin prueba de nivel | Respuesta 5 |
+| D24 | El **estilo de cada bot va oculto durante la partida y se revela al terminar**, con acierto o fallo de tu lectura | Respuesta 6 |
+| D25 | Servidor en **servicios con plan gratuito**, cero euros al mes mientras haya poca gente | Respuesta 7 |
+| D26 | Al terminar la mano se enseña **qué manos podía tener el rival** y con qué probabilidad | S1 → Sí |
+| D27 | **Rebobinar la mano** y ver qué habría pasado con otra decisión, con los números y no con la carta que salió | S2 → Sí |
+| D28 | **El torneo a medias se guarda** y se puede retomar | S3 → Sí |
+| D29 | **Reto diario**: una mano difícil al día, la misma para todos, con su explicación | S4 → Sí |
+| D30 | Se construyen las pantallas de **recuperar contraseña, borrar cuenta y política de privacidad** | S5 → Sí. No son opcionales si el juego sale a internet |
+
 ---
 
 ## 4. Suposiciones del agente
@@ -123,6 +139,18 @@ Cosas que decidí yo porque las deduje del material entregado. **Válidas mientr
 - **S9** — El motor de póker (cartas, reglas, cálculo de probabilidades y evaluación de decisiones)
   se escribe **separado de la interfaz**, para que lo usen igual el entrenador, el modo libre, los
   bots y, más adelante, el multijugador. *(deducida de: D14)*
+- **S10 · Stack técnico** — Web con **React + TypeScript** (Vite), instalable como app;
+  **Supabase** para cuentas y base de datos, y despliegue en un plan gratuito tipo Vercel. Todo con
+  plan gratuito, todo mudable después. *(deducida de: D11 + D25; no se pregunta porque es fontanería,
+  no producto — si tienes preferencia, dilo y cambio)*
+- **S11** — Las manos del entrenador se **generan con condiciones por lección** (la lección de
+  proyectos de color reparte manos con proyecto de color), no se escriben a mano una a una. Así hay
+  práctica infinita sin memorizar. *(deducida de: D9 + D15)*
+- **S12** — Los parámetros de cada bot son **agresividad, disciplina (cuánto respeta las
+  probabilidades), farol y capacidad de leerte**; se sortean al empezar la partida dentro de un
+  rango, como propusiste. *(deducida de: D17)*
+- **S13** — No hay reloj para decidir: el entrenador no mete prisa. En el torneo tampoco, porque
+  jugarías peor por correr. *(deducida de: el juego premia pensar)*
 
 ---
 
@@ -140,7 +168,9 @@ Cosas que decidí yo porque las deduje del material entregado. **Válidas mientr
 ## 6. Estado de las rondas
 
 - **Ronda 1 — VISIÓN GENERAL** ✅ respondida · `Cuestionario-1-Vision-General.html`
-- **Ronda 2 — CÓMO FUNCIONA POR DENTRO** 🟡 entregada, esperando · `Cuestionario-2-Como-Funciona.html`
+- **Ronda 2 — CÓMO FUNCIONA POR DENTRO** ✅ respondida · `Cuestionario-2-Como-Funciona.html`
+- **Ronda 3 — ÚLTIMOS CABOS** 🟡 entregada, esperando · `Cuestionario-3-Ultimos-Cabos.html`
+- **Ronda 4** ❌ no se hace: con la ronda 3 respondida no me queda nada que adivinar.
 
 ---
 
@@ -148,39 +178,27 @@ Cosas que decidí yo porque las deduje del material entregado. **Válidas mientr
 
 Lo que todavía me haría **adivinar**. Cuando esta lista queda vacía → se construye.
 
-1. **Criterio exacto de decisión buena** — contestó "decide tú", pero es el corazón del juego y su
-   observación añade un matiz importante (ver abajo). Vuelve a preguntarse **una sola vez**, con mi
-   recomendación marcada *(ronda 2, P1)*
-2. Formato del torneo del modo libre: duración, subida de ciegas *(ronda 2, P2)*
-3. Si la cuenta es **obligatoria** para jugar — choca con jugar sin conexión *(ronda 2, P3)*
-4. Cómo se puntúa: acierto/fallo o puntuación graduada *(ronda 2, P4)*
-5. Si el que ya sabe póker puede saltarse lecciones *(ronda 2, P5)*
-6. Si el jugador ve el estilo de cada bot o tiene que deducirlo *(ronda 2, P6)*
-7. Dónde vive el servidor y con qué presupuesto *(ronda 2, P7)*
-8. Contenido concreto del curso (lista de lecciones en orden) y textos *(ronda 3, depende de 1 y 5)*
-9. Logros concretos y reglas de la dificultad adaptativa *(ronda 3, depende de 4)*
+1. **El choque de la respuesta 3** (ver abajo): cuenta obligatoria con internet vs. jugar sin
+   conexión, que ya estaba cerrado *(ronda 3, P1)*
+2. Unidad de práctica del entrenador: situación suelta o mano completa *(ronda 3, P2)*
+3. Cuándo corrige el juego: en cada decisión o al acabar la mano *(ronda 3, P3)*
+4. Si el modo libre está abierto desde el principio o se desbloquea *(ronda 3, P4)*
+5. Si el temario propuesto le sobra o le falta algo *(ronda 3, P5)*
 
-### El matiz de la respuesta 1 (importante, no perderlo)
+### ⚠️ CHOQUE ABIERTO — respuesta 3 de la ronda 2 contra D18
 
-Contestó "decide tú" pero escribió algo que cambia el diseño del motor:
+- **Ya estaba cerrado (D18, ronda 1):** el juego es **instalable y jugable sin conexión**.
+- **Respondió en la ronda 2:** *"Cuenta obligatoria siempre, con internet"*.
 
-> *"no es lo mismo ganar pero ganar poquito sabiendo que desde el comienzo tenías una mano fuerte y
-> podías ocultarla hasta el final para irlos exprimiendo"*
+No pueden convivir: si hace falta internet para entrar, no se juega sin conexión. Lo aviso ANTES de
+construir nada, porque cambia la arquitectura entera (guardar en el dispositivo y sincronizar, o
+hablar siempre con el servidor). **No lo decido yo**: va como P1 de la ronda 3.
 
-Es decir: **una decisión buena no es solo "no perder fichas", es sacarle el máximo a la mano**. Un
-motor que solo compare "mi probabilidad de ganar contra lo que cuesta pagar" nunca entiende eso:
-con una mano monstruosa siempre diría "sube", aunque subir espante al rival y gane menos que pagar.
-Para que el juego juzgue como él quiere, hay que comparar el **valor esperado de cada acción contra
-las manos que el rival puede tener** — eso es exactamente lo que hace que jugar lento con una mano
-fuerte salga puntuado como la mejor jugada cuando lo es. Va como recomendación marcada en la P1 de
-la ronda 2.
+### Lo que ya NO se pregunta (resuelto en la ronda 2)
 
-### El choque que hay que resolver (respuesta 5 vs. S4)
-
-Pidió **cuenta con correo y contraseña desde el principio** y también **poder jugar sin conexión**.
-No son incompatibles, pero chocan en el primer arranque: si la cuenta es obligatoria, el que abre
-el juego sin internet no puede ni empezar. Lo pregunto en la P3 de la ronda 2 en vez de decidirlo
-yo, porque afecta a cuánta gente llega a jugar.
+El criterio de decisión queda cerrado en D20 y **no se vuelve a tocar**: un solo motor de valor
+esperado contra rangos, con la exigencia subiendo por nivel. Es exactamente lo que hacía falta para
+que "esconder una mano fuerte y exprimirla" salga puntuado como la mejor jugada cuando lo es.
 
 ## 8. Plan de implementación
 
@@ -201,3 +219,8 @@ yo, porque afecta a cuánta gente llega a jugar.
   más crítico del juego, así que se repregunta **una vez** con recomendación) y la tensión entre
   cuenta obligatoria y jugar sin conexión. Entregada la ronda 2 (CÓMO FUNCIONA POR DENTRO, 7
   preguntas + 5 sugerencias).
+- **21/09/2026** — Ronda 2 respondida. Se cierran 11 decisiones (D20–D30) y se añaden 4 suposiciones
+  (stack, generación de manos por lección, parámetros de bots, sin reloj). Aparece un **choque con
+  una decisión ya cerrada**: pidió cuenta obligatoria con internet, pero jugar sin conexión estaba
+  cerrado en la ronda 1 (D18). Me paro y se lo devuelvo en vez de decidirlo yo. Entregada la ronda 3
+  (ÚLTIMOS CABOS, 5 preguntas + 3 sugerencias), que es la última: después se construye.
