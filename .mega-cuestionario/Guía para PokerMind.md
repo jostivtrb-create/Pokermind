@@ -212,16 +212,16 @@ que se puede escribir sin bloquear nada.
 
 **Datos y cuentas**
 
-- [ ] 9 · Guardado local primero (juega sin conexión) y sincronización con el servidor al volver
+- [x] 9 · Guardado local primero (juega sin conexión) y sincronización con el servidor al volver
 - [ ] 10 · Cuentas: registro, entrar, recuperar contraseña, borrar cuenta, página de privacidad
 
 **Pantalla**
 
-- [ ] 11 · Esqueleto visual: tema oscuro, acento morado, navegación (Inicio · Jugar · Estadísticas · Logros · Configuración · Guía) según `docs/identidad/`
-- [ ] 12 · La mesa en pantalla: cartas, bote, fichas, los tres botones, barras de probabilidad
-- [ ] 13 · Entrenador: lecciones, manos generadas con condiciones, corrección al instante, dominio y avance rápido acertando
-- [ ] 14 · Modo libre: torneo, corrección al terminar la mano, revelación de los estilos de los bots
-- [ ] 15 · Rebobinar la mano · botón "¿por qué?" · rango del rival al terminar
+- [x] 11 · Esqueleto visual: tema oscuro, acento morado, navegación (Inicio · Jugar · Estadísticas · Logros · Configuración · Guía) según `docs/identidad/`
+- [x] 12 · La mesa en pantalla: cartas, bote, fichas, los tres botones, barras de probabilidad
+- [x] 13 · Entrenador: lecciones, manos generadas con condiciones, corrección al instante, dominio y avance rápido acertando
+- [x] 14 · Modo libre: torneo, corrección al terminar la mano, revelación de los estilos de los bots
+- [~] 15 · Botón "¿por qué?" hecho · falta rebobinar la mano y el rango del rival al terminar
 
 **Contenido y vueltas de tuerca**
 
@@ -285,3 +285,18 @@ que se puede escribir sin bloquear nada.
   También: los errores de los bots ahora son creíbles (se van a la segunda mejor jugada, no a una
   cualquiera) y farolear les exige un margen que sale de su barra de farol; y dos eliminados en la
   misma mano ya no empatan de puesto — queda por delante el que llegaba con más fichas.
+- **21/09/2026** — Capa de juego e interfaz. Ya es jugable de punta a punta: curso con lecciones que
+  se desbloquean, corrección al instante, modo libre con torneo, estadísticas, logros, ajustes y
+  glosario. 91 tests. Decisiones tomadas sobre la marcha:
+  1. **Las lecciones admiten preguntas de test, no solo decisiones.** Con tres botones no se puede
+     enseñar qué gana a qué ni cómo se llama cada cosa, y el módulo 1 es justo eso. Las preguntas se
+     generan (dos manos al azar → "¿cuál gana?"), así que no se memorizan.
+  2. Probándolo en el navegador salieron **dos errores que engañaban al que aprende**: una pregunta
+     cuya respuesta era "pareja" cuando la pareja estaba en la mesa, y una lección que decía "no has
+     ligado nada" mientras el juego anunciaba "tienes pareja de nueves" (también de la mesa). Ahora
+     el juego avisa cuando la jugada **está entera en la mesa**, y esa pregunta solo sale con manos
+     donde tus cartas pintan algo.
+  3. El progreso se guarda en el aparato desde ya, con **migración por versión** desde el primer día
+     y una capa de sincronización aparte que fusiona **quedándose con lo más avanzado, no con lo más
+     reciente**: quien juega en el móvil sin conexión y luego abre el portátil no puede perder
+     lecciones terminadas.
