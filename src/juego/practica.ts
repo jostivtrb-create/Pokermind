@@ -400,3 +400,8 @@ export function describirTuMano(mano: readonly Carta[], mesa: readonly Carta[]):
   if (proyectos.length === 0) return hecha
   return `${hecha}, y ${proyectos.join(' y ')}`
 }
+
+/** Lo contrario de una condición. */
+export function sin(condicion: Condicion): Condicion {
+  return { nombre: `sin ${condicion.nombre}`, cumple: (mano, mesa) => !condicion.cumple(mano, mesa) }
+}

@@ -8,11 +8,14 @@ import { describirTuMano, usaTusCartas } from '../../juego/practica'
 import { rangoEstimado, rivalPrincipal } from '../../motor/lectura'
 import type { AccionMesa, EstadoMesa } from '../../motor/mesa'
 import { aplicar, boteTotal, opcionesDisponibles, paraPagar } from '../../motor/mesa'
+import { decidirBot } from '../../motor/bot'
 import { describirPerfil } from '../../motor/perfiles'
 import type { Torneo } from '../../motor/torneo'
-import { cerrarMano, ciegasActuales, crearTorneo, jugarHastaElHumano, siguienteMano } from '../../motor/torneo'
+import { cerrarMano, ciegasActuales, crearTorneo, siguienteMano } from '../../motor/torneo'
 import { useProgreso } from '../estado'
+import { sonar } from '../sonido'
 import { FilaDeCartas } from '../componentes/Carta'
+import { BotonesDeDecision, tamanosParaElegir } from '../componentes/BotonesDeDecision'
 import { RangoDelRival } from '../componentes/RangoDelRival'
 
 /**
@@ -61,17 +64,37 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
     if (conMano.mesa) avanzarBots(conMano.mesa)
   }
 
+  /**
+   * Los bots juegan **de uno en uno**, con una pausa entre cada jugada.
+   *
+   * Antes jugaban los tres de golpe y aparecía el resultado ya hecho: no se veía
+   * quién había subido ni quién se había ido, que es justo lo que hay que mirar
+   * para aprender a leer a la mesa. La pausa es más corta si el jugador ha
+   * quitado las animaciones.
+   */
   const avanzarBots = (desde: EstadoMesa) => {
     setPensando(true)
-    // Una pausa corta para que se vea jugar a los bots en vez de aparecer todo hecho.
-    temporizador.current = window.setTimeout(() => {
-      const { mesa: resultado } = jugarHastaElHumano(desde, azar)
-      setMesa(resultado)
-      setPensando(false)
-    }, 550)
+    const pausa = () => (progreso.ajustes.animaciones ? 620 + Math.random() * 420 : 220)
+
+    const paso = (actual: EstadoMesa) => {
+      const turno = actual.jugadores[actual.turno]
+      const leToca = !actual.manoTerminada && turno && !turno.esHumano && turno.estado === 'jugando'
+      if (!leToca) {
+        setMesa(actual)
+        setPensando(false)
+        return
+      }
+      const decision = decidirBot(actual, azar)
+      const siguiente = aplicar(actual, decision.accion, decision.cantidad)
+      sonar(decision.accion === 'retirarse' ? 'repartir' : 'ficha')
+      setMesa(siguiente)
+      temporizador.current = window.setTimeout(() => paso(siguiente), pausa())
+    }
+
+    temporizador.current = window.setTimeout(() => paso(desde), pausa())
   }
 
-  const decidir = (accion: Accion) => {
+  const decidir = (accion: Accion, tamanoElegido?: number) => {
     if (!mesa) return
     const humano = mesa.jugadores[mesa.turno]
     if (!humano?.cartas) return
@@ -93,6 +116,7 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
       },
       accion,
       'intermedia',
+      tamanoElegido,
     )
     setJuicios((lista) => [...lista, { juicio, calle: mesa.calle }])
 
@@ -104,10 +128,12 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
           ? paraPagar(mesa, humano) === 0 ? 'pasar' : 'pagar'
           : 'subir'
     const subida = opciones.find((o) => o.accion === 'subir')
-    const cantidad = traducida === 'subir'
-      ? Math.max(subida?.minimo ?? 0, Math.round((boteTotal(mesa) + paraPagar(mesa, humano)) * 0.7))
-      : 0
+    const cantidad =
+      traducida === 'subir'
+        ? Math.max(subida?.minimo ?? 0, tamanoElegido ?? Math.round((boteTotal(mesa) + paraPagar(mesa, humano)) * 0.7))
+        : 0
 
+    sonar(traducida === 'retirarse' ? 'repartir' : 'ficha')
     const siguiente = aplicar(mesa, traducida, Math.min(cantidad, subida?.maximo ?? cantidad))
     setMesa(siguiente)
     if (!siguiente.manoTerminada) avanzarBots(siguiente)
@@ -153,7 +179,11 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
                 <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   {mesa.boton === i && <span className="chip" title="El botón">D</span>}
                   <strong>{j.nombre}</strong>
-                  {j.estado === 'retirado' && <span className="tenue" style={{ fontSize: 13 }}>se retiró</span>}
+                  {j.estado === 'retirado' ? (
+                    <span className="tenue" style={{ fontSize: 13 }}>se retiró</span>
+                  ) : (
+                    <span className="tenue" style={{ fontSize: 13 }}>{ultimaJugada(mesa, j.id)}</span>
+                  )}
                   {j.estado === 'allin' && <span className="chip">todo-in</span>}
                 </span>
                 <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -189,20 +219,16 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
             {pensando && <p className="tenue" style={{ marginTop: 14 }}>Están pensando…</p>}
 
             {meToca && humano && (
-              <div className="acciones">
-                <button className="accion retirarse" onClick={() => decidir('retirarse')}>
-                  <span>✕ {paraPagar(mesa, humano) === 0 ? 'Pasar' : 'Retirarse'}</span>
-                  <span className="sub">{paraPagar(mesa, humano) === 0 ? 'Sin poner nada' : 'Sales de la mano'}</span>
-                </button>
-                <button className="accion pagar" onClick={() => decidir('pagar')}>
-                  <span>≡ {paraPagar(mesa, humano) === 0 ? 'Pasar' : 'Pagar'}</span>
-                  <span className="sub">{paraPagar(mesa, humano) > 0 ? `Pones ${paraPagar(mesa, humano)}` : 'Gratis'}</span>
-                </button>
-                <button className="accion subir" onClick={() => decidir('subir')}>
-                  <span>↗ Subir</span>
-                  <span className="sub">Aprietas el bote</span>
-                </button>
-              </div>
+              <BotonesDeDecision
+                paraPagar={paraPagar(mesa, humano)}
+                opcionesDeSubida={tamanosParaElegir(
+                  boteTotal(mesa),
+                  paraPagar(mesa, humano),
+                  humano.fichas,
+                  rivalPrincipal(mesa, humano)?.fichas ?? humano.fichas,
+                )}
+                alDecidir={decidir}
+              />
             )}
 
             {mesa.manoTerminada && (
@@ -315,4 +341,15 @@ function Portada({ torneo, alEmpezar, ir }: { torneo: Torneo | null; alEmpezar: 
       </div>
     </div>
   )
+}
+
+/** Lo último que hizo ese jugador en esta calle, para que se vea la mano jugarse. */
+function ultimaJugada(mesa: EstadoMesa, jugador: number): string {
+  const suyas = mesa.historial.filter((h) => h.jugador === jugador && h.calle === mesa.calle)
+  const ultima = suyas[suyas.length - 1]
+  if (!ultima) return ''
+  if (ultima.accion === 'pasar') return 'pasa'
+  if (ultima.accion === 'pagar') return 'paga'
+  if (ultima.accion === 'retirarse') return 'se retira'
+  return `sube ${ultima.cantidad}`
 }

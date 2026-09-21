@@ -122,6 +122,9 @@ El usuario publicó el juego, lo probó y trajo dos cosas. Las dos cambian decis
 | D42 | Quien elige un nivel distinto de «no sé nada» **tiene el modo libre abierto desde el principio** | Se le está creyendo que sabe las reglas; pedirle que lo demuestre para poder sentarse a una mesa sobra |
 | D44 | **El porcentaje de retiradas del rival depende del tamaño de la apuesta.** Antes el tope por «con nada no se paga» ignoraba el precio y salía el mismo 47% para una subida pequeña que para un todo-in | Lo encontró el usuario pasando una mano por dos IA. Era un fallo de verdad del motor |
 | D45 | Las explicaciones **enseñan las dos partes y el total** («−42 ahora, −23 más de las calles siguientes, total −65»), y las subidas dicen **cuánto pones en total** («subir 220, pones 400») | Las dos IA hicieron la cuenta a mano y no llegaron al número de la pantalla; una entendió además «subir 220» como subir *hasta* 220 y la dio por ilegal. Los números estaban bien: la redacción, no |
+| D47 | **El jugador elige el tamaño de la subida** (½ bote, ¾, bote, y todo-in con fichas cortas), y el motor juzga el tamaño elegido | En el entrenador se aguantaba un tamaño fijo, pero en una partida el tamaño **es** la decisión |
+| D48 | **El todo-in solo se ofrece con fichas cortas** (hasta 2,5 veces el bote más lo que cuesta igualar) | Honestidad sobre lo que el motor sabe: calcula muy bien una calle, pero aproxima el dinero de las siguientes. Con 900 fichas en un bote de 100 esa aproximación sobrevalora el todo-in frente a apostar tres veces seguidas, que es lo que haría un buen jugador |
+| D49 | Los bots juegan **de uno en uno**, con pausa, y se ve lo que hace cada uno | Antes jugaban los tres de golpe y aparecía el resultado ya hecho: no se veía quién subía ni quién se iba, que es justo lo que hay que mirar |
 | D46 | Lo que tienes en la mano **incluye los proyectos**: «carta alta: rey, y proyecto de color» | Decir solo «carta alta: rey» con cuatro tréboles es cierto y engaña, y encima contradice lo que enseña el módulo 2 |
 | D43 | **Ninguna pantalla puede ser solo texto.** Todo lo que se explica se dibuja: cartas, porcentajes, montones de fichas, la mesa desde arriba, la rejilla de rangos. Como mucho **un** paso de texto suelto por lección, y eso es un test que falla si se incumple | *"cualquier pantalla que sea solo texto aburre (...) si es un reguero de texto, hasta a mí me aburrió, y eso que estaba probando la idea"*. Se convirtieron las 38 lecciones que quedaban |
 
@@ -407,3 +410,17 @@ preparado), otros idiomas (D12) y el mazo de cuatro colores.
   · FALSA: «subir 220 es ilegal, el mínimo es 360». Era subir 220 *por encima* de su apuesta, o sea
     400 en total: legal. Otra vez, culpa de cómo estaba escrito (D45).
   · FALSA: «+7 no cuadra». Sí cuadraba; se comprobó término a término con `scripts/auditoria.ts`.
+- **22/09/2026 (tarde)** — Cerrados los tres cabos sueltos que quedaban. Elegir el tamaño de la
+  subida (D47), los dos interruptores de Ajustes funcionando de verdad —sonido sintetizado, que no
+  pesa nada y funciona sin conexión, y las animaciones— y los bots jugando de uno en uno (D49).
+  Dar al jugador el botón de todo-in destapó **dos errores de fondo del motor** que llevaban ahí
+  desde el principio y que nadie podía ver porque nadie podía ir todo-in:
+  1. **Después de un todo-in seguía contando dinero de las calles siguientes.** No hay calles
+     siguientes: está todo dentro. El motor se inventaba cientos de fichas detrás de cada todo-in.
+  2. **El tope de "con la mano vacía no se paga" y el de "este paga de más" no miraban el precio.**
+     Un todo-in de nueve veces el bote encontraba al mismo 15% pagando con cualquier cosa.
+  Arreglados los dos, apareció un límite que **no** es un error sino lo que este motor es: sabe
+  valorar una calle, no tres seguidas. Por eso el todo-in solo se ofrece con fichas cortas (D48),
+  que es cuando no hay futuro que valorar — y es justo la situación del módulo 8.
+  De paso, la lección «al que lo paga todo, se le cobra» repartía mesas secas donde hasta el que
+  paga todo se retira: ahora exige una mesa que le dé algo con lo que pagar.

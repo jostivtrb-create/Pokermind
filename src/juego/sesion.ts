@@ -93,9 +93,9 @@ export function terminarEjemplo(estado: EstadoSesion, azar: Aleatorio): EstadoSe
 }
 
 /** El jugador decide. Aquí es donde se corrige, al instante (D33). */
-export function responder(estado: EstadoSesion, accion: Accion): EstadoSesion {
+export function responder(estado: EstadoSesion, accion: Accion, tamano?: number): EstadoSesion {
   if (!estado.mano) return estado
-  const juicio = juzgar(aSituacion(estado.mano), accion, estado.mano.exigencia)
+  const juicio = juzgar(aSituacion(estado.mano), accion, estado.mano.exigencia, tamano)
   const resultado: ResultadoDeMano = {
     leccionId: estado.leccion.id,
     fecha: new Date().toISOString(),

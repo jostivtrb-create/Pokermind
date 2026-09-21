@@ -232,3 +232,10 @@ button:disabled { cursor: not-allowed; opacity: 0.45; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* El interruptor de Ajustes. Lo mismo que respetar la preferencia del sistema,
+   pero decidido por el jugador dentro del juego. */
+:root[data-animaciones='no'] * {
+  transition: none !important;
+  animation: none !important;
+}

@@ -111,7 +111,6 @@ export function fraccionQueContinua(
   // El exponente inclina la cuenta hacia lo que pasa de verdad en la mesa: ante
   // una apuesta del tamaño del bote no sigue la mitad de la gente, sigue bastante menos.
   const porLasCuentas = (1 - precio) ** 1.15 * (0.7 + 0.6 * perfil.tenacidad)
-  const porNoSaberRetirarse = (1 - perfil.disciplina) * 0.2
 
   // Nadie paga con la mano vacía, por bueno que sea el precio. Este tope es el
   // que hace que en una mesa que no le sirve a nadie, apostar se lleve el bote
@@ -124,8 +123,18 @@ export function fraccionQueContinua(
   // tiran— sino las marginales: el que va con una pareja floja o medio proyecto
   // paga una apuesta pequeña y suelta una enorme.
   const aguantaElPrecio = Math.max(0.25, 1.15 - 1.3 * precio)
+
+  // "El que paga de más" también deja de pagar cuando la apuesta es enorme.
+  // Como constante, hacía que hasta un todo-in de nueve veces el bote
+  // encontrara a un 15% pagando con cualquier cosa, y eso volvía rentables los
+  // todo-in disparatados.
+  const porNoSaberRetirarse = (1 - perfil.disciplina) * 0.2 * aguantaElPrecio
+  // El precio aprieta TODO el tope, también la parte de "este paga por tozudez".
+  // Dejar ese sumando fuera hacía que un todo-in enorme siguiera encontrando un
+  // 8% de gente pagando con nada, y con eso los todo-in salían rentables casi
+  // siempre. A un bote pequeño no se le paga un todo-in con la mano vacía.
   const tope =
-    conexionConLaMesa * (0.75 + 0.5 * (1 - perfil.disciplina)) * aguantaElPrecio + perfil.farol * 0.08
+    (conexionConLaMesa * (0.75 + 0.5 * (1 - perfil.disciplina)) + perfil.farol * 0.08) * aguantaElPrecio
 
   // Suelo: con pareja alta o mejor nadie se retira ante una apuesta normal, por
   // muy disciplinado que sea. Sin este suelo el motor creía que puede echar de la

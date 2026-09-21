@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { hayServidor, usuarioActual } from '../almacen/cuenta'
 import { ProveedorDeProgreso, useProgreso } from './estado'
+import { ajustarSonido } from './sonido'
 import { Cuenta } from './pantallas/Cuenta'
 import { Bienvenida } from './pantallas/Bienvenida'
 import { Inicio } from './pantallas/Inicio'
@@ -60,6 +61,12 @@ export function App() {
 function Marco() {
   const [pantalla, setPantalla] = useState<Pantalla>('inicio')
   const { progreso, actualizar } = useProgreso()
+
+  // Los dos interruptores de Ajustes, aplicados de verdad.
+  useEffect(() => {
+    ajustarSonido(progreso.ajustes.sonido)
+    document.documentElement.dataset.animaciones = progreso.ajustes.animaciones ? 'si' : 'no'
+  }, [progreso.ajustes.sonido, progreso.ajustes.animaciones])
 
   // Lo primero de todo: por dónde empieza. Se pregunta una sola vez.
   if (progreso.nivel === null) {

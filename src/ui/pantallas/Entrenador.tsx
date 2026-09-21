@@ -16,8 +16,10 @@ import {
 import type { ManoDePractica } from '../../juego/practica'
 import { moduloTerminado } from '../../contenido/temario'
 import { useProgreso } from '../estado'
+import { sonar } from '../sonido'
 import { FilaDeCartas } from '../componentes/Carta'
 import { BarrasDeProbabilidad } from '../componentes/BarraProbabilidad'
+import { BotonesDeDecision, tamanosParaElegir } from '../componentes/BotonesDeDecision'
 import { Pasos } from '../componentes/Pasos'
 import { RangoDelRival } from '../componentes/RangoDelRival'
 import { Rebobinar } from '../componentes/Rebobinar'
@@ -47,11 +49,12 @@ export function Entrenador({
   )
   const { actualizar } = useProgreso()
 
-  const decidir = (accion: Accion) => {
-    const siguiente = responder(sesion, accion)
+  const decidir = (accion: Accion, tamano?: number) => {
+    const siguiente = responder(sesion, accion, tamano)
     setSesion(siguiente)
     if (siguiente.ultimoResultado && siguiente.mano) {
       const resultado = siguiente.ultimoResultado
+      sonar(resultado.veredicto === 'mala' ? 'fallo' : 'acierto')
       const mano = siguiente.mano
       actualizar((p) => anotarDecision(p, resultado, mano))
       alTerminarManoSuelta?.(resultado.veredicto !== 'mala', resultado.puntos)
@@ -63,6 +66,7 @@ export function Entrenador({
     setSesion(siguiente)
     if (siguiente.ultimoResultado) {
       const resultado = siguiente.ultimoResultado
+      sonar(resultado.veredicto === 'optima' ? 'acierto' : 'fallo')
       actualizar((p) => ({
         ...p,
         puntosTotales: p.puntosTotales + resultado.puntos,
@@ -254,7 +258,7 @@ function Jugada({
   manoSuelta,
 }: {
   sesion: EstadoSesion
-  alDecidir: (accion: Accion) => void
+  alDecidir: (accion: Accion, tamano?: number) => void
   alSeguir: () => void
   manoSuelta?: boolean
 }) {
@@ -292,20 +296,11 @@ function Jugada({
             </p>
           )}
 
-          <div className="acciones">
-            <button className="accion retirarse" onClick={() => alDecidir('retirarse')}>
-              <span>✕ Retirarse</span>
-              <span className="sub">Pierdes la mano</span>
-            </button>
-            <button className="accion pagar" onClick={() => alDecidir('pagar')}>
-              <span>{mano.paraPagar > 0 ? '≡ Pagar' : '≡ Pasar'}</span>
-              <span className="sub">{mano.paraPagar > 0 ? `Pones ${mano.paraPagar}` : 'Gratis'}</span>
-            </button>
-            <button className="accion subir" onClick={() => alDecidir('subir')}>
-              <span>↗ Subir</span>
-              <span className="sub">Aumentar la apuesta</span>
-            </button>
-          </div>
+          <BotonesDeDecision
+            paraPagar={mano.paraPagar}
+            opcionesDeSubida={tamanosParaElegir(mano.bote, mano.paraPagar, mano.tusFichas, mano.fichasRival)}
+            alDecidir={alDecidir}
+          />
         </>
       )}
 

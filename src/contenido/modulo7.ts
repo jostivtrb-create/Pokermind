@@ -4,7 +4,7 @@ import { manoDeCodigo } from '../motor/cartas'
 import type { Carta } from '../motor/cartas'
 
 const m = (texto: string): Carta[] => manoDeCodigo(texto)
-import { mesaBaja, mesaSeca, tenerManoMuyFuerte, tenerNada, todas } from '../juego/practica'
+import { mesaBaja, mesaSeca, sin, tenerManoMuyFuerte, tenerNada, todas } from '../juego/practica'
 
 /**
  * MÓDULO 7 · Sacar valor y farolear.
@@ -89,10 +89,13 @@ export const MODULO_7: Modulo = {
         tipo: 'decision',
         mano: () => ({
           calle: 'flop',
-          condicion: tenerManoMuyFuerte,
+          // La mesa tiene que darle algo con lo que pagar. En una mesa seca hasta
+          // el que lo paga todo se retira, y entonces la lección enseñaría lo
+          // contrario de lo que dice su título.
+          condicion: todas(tenerManoMuyFuerte, sin(mesaSeca)),
           bote: 120,
           paraPagar: 0,
-          contexto: 'Has ligado una mano muy fuerte. Enfrente tienes al que lo paga todo por ver.',
+          contexto: 'Has ligado una mano muy fuerte y la mesa le da cosas con las que pagar. Enfrente, el que lo paga todo por ver.',
           rangoRival: '22+, A2s+, K5s+, Q7s+, J7s+, T7s+, 96s+, 85s+, 75s+, 64s+, 54s, A2o+, K8o+, Q8o+, J8o+, T8o+, 98o',
           perfilRival: { nombre: 'el pegajoso', agresividad: 0.3, disciplina: 0.25, farol: 0.15, tenacidad: 0.85 },
           exigencia: 'intermedia',

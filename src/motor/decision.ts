@@ -45,6 +45,12 @@ export const NOMBRES_CALLE: Record<Calle, string> = {
 /** Cuánto aprieta el juego al corregir. Sube con el nivel del jugador (D20). */
 export type Exigencia = 'basica' | 'intermedia' | 'seria'
 
+/**
+ * Hasta cuántas veces "el bote más lo que cuesta igualar" puede valer tu montón
+ * para que el todo-in siga siendo una jugada normal y no un disparate.
+ */
+export const TOPE_PARA_TODO_IN = 2.5
+
 /** Cuánta pérdida (en botes) se perdona antes de llamarlo error, según el nivel. */
 const TOLERANCIA: Record<Exigencia, number> = {
   basica: 0.35,
@@ -130,9 +136,13 @@ export function analizar(situacion: Situacion): Analisis {
   // ── Pagar (o pasar, si no hay nada que pagar) ────────────────────────────
   // Al pagar o pasar no se espanta a nadie: sigue vivo todo su rango, faroles
   // incluidos. Eso es lo que hace rentable esconder una mano fuerte.
-  const futuroPagando = valorDeLasCallesSiguientes(
-    equity.equity, bote + paraPagar * 2, perfil, callesQueQuedan, 1, true,
-  )
+  //
+  // Salvo que pagar te deje sin fichas: si vas todo-in al pagar, ya no queda
+  // nada que apostar en las calles siguientes.
+  const pagarEsTodoIn = paraPagar >= situacion.tusFichas
+  const futuroPagando = pagarEsTodoIn
+    ? 0
+    : valorDeLasCallesSiguientes(equity.equity, bote + paraPagar * 2, perfil, callesQueQuedan, 1, true)
   const valorAhoraPagando = equity.equity * (bote + paraPagar) - paraPagar
   const valorPagar = valorAhoraPagando + futuroPagando
 
@@ -207,11 +217,20 @@ function valorDeSubir(
 
   const inversion = paraPagar + tamano
   const botePagado = bote + paraPagar + 2 * tamano
-  // Subiendo, el que sigue lo hace con algo de verdad: ya no va a farolear,
-  // pero lo que pague pagará más porque el bote es mayor.
-  const futuro = valorDeLasCallesSiguientes(
-    equitySiSigue, botePagado, perfil, callesQueQuedan, continua, false,
-  )
+  /*
+    Subiendo, el que sigue lo hace con algo de verdad: ya no va a farolear, pero
+    lo que pague pagará más porque el bote es mayor.
+
+    EXCEPCIÓN IMPORTANTE: si la subida es un todo-in —tuyo o suyo— **no hay
+    calles siguientes**. Ya está todo el dinero dentro y solo quedan cartas por
+    salir. Sin esta excepción el motor se inventaba un montón de fichas futuras
+    detrás de cada todo-in y lo recomendaba casi siempre. Salió a la luz el día
+    que el jugador pudo elegir el tamaño de la subida.
+  */
+  const esTodoIn = inversion >= situacion.tusFichas || tamano >= situacion.fichasRival
+  const futuro = esTodoIn
+    ? 0
+    : valorDeLasCallesSiguientes(equitySiSigue, botePagado, perfil, callesQueQuedan, continua, false)
 
   const valorEsperado =
     seRetiran * bote + continua * (equitySiSigue * botePagado - inversion + futuro)
@@ -281,7 +300,17 @@ function tamanosHabituales(bote: number, paraPagar: number, tusFichas: number, f
   const candidatos = [referencia * 0.5, referencia * 0.75, referencia].map((t) =>
     Math.round(Math.max(1, Math.min(t, tope))),
   )
-  return [...new Set(candidatos)].filter((t) => t > 0)
+  // El todo-in solo entra cuando de verdad es una opción: con fichas cortas.
+  //
+  // No es pereza, es honestidad sobre lo que este motor sabe hacer. Calcula muy
+  // bien una calle, pero no sabe valorar "apuesto dos tercios ahora y otra vez
+  // en el river": aproxima ese dinero futuro. Con fichas cortas la aproximación
+  // da igual porque no hay futuro que valorar. Con 900 fichas en un bote de 100
+  // sí importa, y entonces el motor sobrevalora el todo-in frente a apostar tres
+  // veces seguidas, que es lo que haría un buen jugador. Ofrecer una jugada que
+  // el motor juzga peor de lo que la juzgaría un experto sería enseñar mal.
+  if (tope > 0 && tope <= TOPE_PARA_TODO_IN * referencia) candidatos.push(Math.round(tope))
+  return [...new Set(candidatos)].filter((t) => t > 0).sort((a, b) => a - b)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
