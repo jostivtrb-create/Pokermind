@@ -42,6 +42,10 @@ export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
   const entrada = moduloDeEntrada(progreso)
   const suyas = leccionesDeSuNivel(progreso)
   const libreAbierto = progreso.modoLibreDesbloqueado || moduloTerminado(progreso, 1)
+  const moduloUno = TEMARIO.find((m) => m.numero === 1)
+  const faltanParaLibre = moduloUno
+    ? moduloUno.lecciones.filter((l) => !leccionTerminada(progreso, l.id)).length
+    : 0
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -175,8 +179,13 @@ export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
           <p className="suave" style={{ fontSize: 14, margin: 0 }}>
             {libreAbierto
               ? 'Una partida de verdad, con fichas y ciegas que suben. Los puntos siguen premiando las decisiones, ganes o pierdas.'
-              : 'Se abre al terminar el módulo 1. Sentarse en una mesa sin saber qué es una ciega no enseña nada.'}
+              : `Te ${faltanParaLibre === 1 ? 'falta 1 lección' : `faltan ${faltanParaLibre} lecciones`} del módulo 1 para abrirlo. Sentarse en una mesa sin saber qué es una ciega no enseña nada.`}
           </p>
+          {!libreAbierto && (
+            <p className="tenue" style={{ fontSize: 12.5, margin: '8px 0 0' }}>
+              ¿Ya sabes jugar? Cambia tu nivel en Ajustes y se abre al momento.
+            </p>
+          )}
         </div>
         <button
           className={`boton ${libreAbierto ? 'principal' : ''}`}

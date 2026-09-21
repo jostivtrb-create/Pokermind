@@ -3,7 +3,9 @@ import { Pica } from '../App'
 import { Carta } from '../componentes/Carta'
 import { deCodigo } from '../../motor/cartas'
 import { useProgreso } from '../estado'
-import { avanceDelCurso, leccionTerminada, leccionesDeSuNivel, siguienteLeccion } from '../../contenido/temario'
+import {
+  TEMARIO, avanceDelCurso, leccionTerminada, leccionesDeSuNivel, moduloTerminado, siguienteLeccion,
+} from '../../contenido/temario'
 
 export function Inicio({ ir }: { ir: (p: Pantalla) => void }) {
   const { progreso } = useProgreso()
@@ -11,6 +13,11 @@ export function Inicio({ ir }: { ir: (p: Pantalla) => void }) {
   const avance = avanceDelCurso(progreso)
   const suyas = leccionesDeSuNivel(progreso)
   const hechas = suyas.filter((l) => leccionTerminada(progreso, l.id)).length
+  const libreAbierto = progreso.modoLibreDesbloqueado || moduloTerminado(progreso, 1)
+  const moduloUno = TEMARIO.find((m) => m.numero === 1)
+  const faltanParaLibre = moduloUno
+    ? moduloUno.lecciones.filter((l) => !leccionTerminada(progreso, l.id)).length
+    : 0
   const empezado = progreso.decisiones > 0
 
   return (
@@ -57,6 +64,30 @@ export function Inicio({ ir }: { ir: (p: Pantalla) => void }) {
           </p>
         </section>
       )}
+
+      {/*
+        El modo libre también desde la portada. Estaba solo al final de la
+        pantalla del curso y el propio usuario no lo encontraba: "¿dónde puedo
+        jugar normal, sin el modo entrenador?".
+      */}
+      <section className="tarjeta" style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 240px' }}>
+          <span className="etiqueta">Jugar sin entrenador</span>
+          <h3 style={{ margin: '4px 0' }}>Torneo contra tres bots</h3>
+          <p className="suave" style={{ fontSize: 13.5, margin: 0 }}>
+            {libreAbierto
+              ? 'Una partida de verdad: fichas, ciegas que suben y eliminación. Los puntos siguen siendo por decidir bien.'
+              : `Te ${faltanParaLibre === 1 ? 'falta 1 lección' : `faltan ${faltanParaLibre} lecciones`} del módulo 1 para abrirlo.`}
+          </p>
+        </div>
+        <button
+          className={`boton ${libreAbierto ? 'principal' : ''}`}
+          disabled={!libreAbierto}
+          onClick={() => ir('libre')}
+        >
+          {libreAbierto ? 'Jugar →' : '🔒 Bloqueado'}
+        </button>
+      </section>
 
       <section className="rejilla tres">
         {[
