@@ -2,6 +2,7 @@ import type { Calle } from './decision'
 import type { EstadoMesa, Jugador } from './mesa'
 import type { Posicion } from './rangos'
 import { estrecharPorFuerza, quitarBloqueadas, rangoApertura, rangoPago, rangoTotal } from './rangos'
+import { RIVAL_TIPICO } from './perfiles'
 import type { Rango } from './rangos'
 
 /**
@@ -73,14 +74,26 @@ export function rangoEstimado(
 
   rango = quitarBloqueadas(rango, cartasVistas)
 
-  // Cada vez que pone fichas después del flop, se queda con la mejor parte de
-  // lo que tenía. Tres apuestas seguidas dejan un rango muy pequeño y muy fuerte.
+  /*
+    Cada vez que pone fichas después del flop, se queda con la mejor parte de lo
+    que tenía… y con sus faroles.
+
+    Sin la parte de faroles el rango se convertía en "solo la nuez" a las tres
+    apuestas, y con eso el juego llegó a decirle a un jugador con doble pareja
+    de reyes y reinas que ganaba el 0%. Cuánto farolea depende de su carácter:
+    una roca casi nunca, un loco todo el rato.
+  */
+  const perfil = jugador.perfil ?? RIVAL_TIPICO
+  const faroles = 0.15 + 0.75 * perfil.farol
   let apretado = rango
   const acciones = suyas.filter((h) => h.calle !== 'preflop')
   for (const accion of acciones) {
     if (accion.accion === 'subir') {
-      apretado = estrecharPorFuerza(apretado, estado.comunitarias, APRIETA_AL_SUBIR[accion.calle])
+      apretado = estrecharPorFuerza(
+        apretado, estado.comunitarias, APRIETA_AL_SUBIR[accion.calle], undefined, faroles,
+      )
     } else if (accion.accion === 'pagar') {
+      // Al pagar no se farolea: se paga con algo, aunque sea flojo.
       apretado = estrecharPorFuerza(apretado, estado.comunitarias, APRIETA_AL_PAGAR[accion.calle])
     }
   }

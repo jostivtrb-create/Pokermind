@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { deCodigo, manoDeCodigo } from './cartas'
 import { CLASES_PREFLOP, claseDeMano, combinacionesDeClase } from './clases'
 import {
-  clasesDelRango, contieneMano, estrecharPorFuerza, parsearRango, porcentajeDeRango,
+  clasesDelRango, contieneMano, equityContra, estrecharPorFuerza, parsearRango, porcentajeDeRango,
   quitarBloqueadas, rangoApertura, rangoPorPorcentaje, rangoTotal, repartirEnTramos,
 } from './rangos'
+import type { Carta } from './cartas'
 
 describe('clases de mano inicial', () => {
   it('hay exactamente 169 y suman las 1.326 manos posibles', () => {
@@ -93,5 +94,54 @@ describe('cartas bloqueadas', () => {
     const r = quitarBloqueadas(rangoTotal(), manoDeCodigo('As Ah'))
     expect(contieneMano(r, deCodigo('As'), deCodigo('Kd'))).toBe(false)
     expect(r.combos).toHaveLength((50 * 49) / 2)
+  })
+})
+
+describe('un rango que apuesta no es solo la nuez', () => {
+  /*
+    Mano real del modo libre: K♠8♦ en Q♣K♥5♥Q♠3♠ es doble pareja de reyes y
+    reinas, y el juego decía "ganabas el 0%, lo mejor era retirarte". El rival
+    había apostado tres veces y el modelo se quedaba cada vez con lo mejor de lo
+    mejor: a la tercera solo le quedaban tríos de reinas y mejores.
+
+    Nadie apuesta tres veces seguidas con la nuez y nada más. Se apuesta con
+    manos buenas y con manos vacías, y las vacías son justo las que pagan una
+    doble pareja.
+  */
+  const mano = manoDeCodigo('Ks 8d') as [Carta, Carta]
+  const flop = manoDeCodigo('Qc Kh 5h')
+  const turn = manoDeCodigo('Qc Kh 5h Qs')
+  const river = manoDeCodigo('Qc Kh 5h Qs 3s')
+  const FAROLES = 0.15 + 0.75 * 0.3
+
+  const trasTresApuestas = (faroles: number) => {
+    let r = quitarBloqueadas(rangoApertura('boton'), [...mano, ...river])
+    r = estrecharPorFuerza(r, flop, 0.45, undefined, faroles)
+    r = estrecharPorFuerza(r, turn, 0.4, undefined, faroles)
+    return estrecharPorFuerza(r, river, 0.35, undefined, faroles)
+  }
+
+  it('sin faroles el rival se queda con la nuez y tu doble pareja gana el 0%', () => {
+    const equity = equityContra(mano, river, trasTresApuestas(0), 4000).equity
+    expect(equity).toBeLessThan(0.05)
+  })
+
+  it('con sus faroles dentro, la misma mano gana una de cada cuatro', () => {
+    const equity = equityContra(mano, river, trasTresApuestas(FAROLES), 4000).equity
+    expect(equity).toBeGreaterThan(0.15)
+    expect(equity).toBeLessThan(0.45)
+  })
+
+  it('el rango sigue siendo más fuerte que el de partida: apretar apreta', () => {
+    const departida = quitarBloqueadas(rangoApertura('boton'), [...mano, ...river])
+    const equityDePartida = equityContra(mano, river, departida, 4000).equity
+    const equityApretado = equityContra(mano, river, trasTresApuestas(FAROLES), 4000).equity
+    expect(equityApretado).toBeLessThan(equityDePartida)
+  })
+
+  it('el que farolea mucho deja un rango más flojo que la roca', () => {
+    const loco = equityContra(mano, river, trasTresApuestas(0.15 + 0.75 * 0.8), 4000).equity
+    const roca = equityContra(mano, river, trasTresApuestas(0.15 + 0.75 * 0.05), 4000).equity
+    expect(loco).toBeGreaterThan(roca)
   })
 })

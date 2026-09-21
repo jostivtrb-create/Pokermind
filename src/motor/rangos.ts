@@ -240,20 +240,41 @@ export function rangoPago(posicion: Posicion): Rango {
  * flop de picas, su rango deja de ser "lo que abrió" y pasa a ser "lo que abrió
  * y además le pega a este flop". Sin esto, las probabilidades del juego serían
  * de cartas al azar y enseñarían mal.
+ *
+ * `faroles` es la parte que además se guarda del FONDO, y no es un adorno: sin
+ * ella el modelo se rompe. Quedándose solo con lo mejor, calle tras calle, el
+ * rival acaba teniendo únicamente la nuez: en una mano de verdad, con doble
+ * pareja de reyes y reinas, el juego llegó a decir que ganabas el 0% y que lo
+ * mejor era retirarte. Nadie apuesta tres veces seguidas con la nuez y nada
+ * más: se apuesta con manos buenas Y con manos vacías. Las vacías son las que
+ * pagan tus dobles parejas, y las que se van cuando les subes.
  */
 export function estrecharPorFuerza(
   r: Rango,
   mesa: readonly Carta[],
   quedarse: number,
   descripcion?: string,
+  faroles = 0,
 ): Rango {
   if (quedarse >= 1 || r.combos.length === 0) return r
   const valorados = ordenarPorFuerza(r, mesa)
   const cuantos = Math.max(1, Math.round(valorados.length * quedarse))
-  const apretado = rango(valorados.slice(0, cuantos).map((v) => v.combo), '')
+  const deFarol = Math.min(
+    valorados.length - cuantos,
+    Math.max(0, Math.round(cuantos * faroles)),
+  )
+  const combos = [
+    ...valorados.slice(0, cuantos),
+    ...valorados.slice(valorados.length - deFarol),
+  ].map((v) => v.combo)
+
+  const apretado = rango(combos, '')
   // Ya no es el rango escrito: la notación dejaría de ser verdad, así que se cae.
   apretado.descripcion =
-    descripcion ?? `${enPalabras(apretado)}, quedándose con la mejor parte en esta mesa`
+    descripcion ??
+    (deFarol > 0
+      ? `${enPalabras(apretado)}: sus manos buenas en esta mesa, más los faroles`
+      : `${enPalabras(apretado)}, quedándose con la mejor parte en esta mesa`)
   return apretado
 }
 
