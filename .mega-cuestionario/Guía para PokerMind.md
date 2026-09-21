@@ -206,9 +206,9 @@ que se puede escribir sin bloquear nada.
 - [x] 3 · Probabilidades: equity exacta cuando es barata, simulación cuando no; outs y regla del 2 y el 4
 - [x] 4 · Rangos: representar un rango de manos, estrecharlo calle a calle según cómo apuesta el rival
 - [x] 5 · Evaluación de decisiones: valor esperado de retirarse / pagar / subir contra el rango, puntuación graduada y exigencia por nivel (D20)
-- [ ] 6 · Mesa: turnos, ciegas, botón que rota, apuestas, todo-in, botes paralelos, reparto
-- [ ] 7 · Torneo corto: 4 jugadores, ciegas que suben, eliminación, guardar a medias
-- [ ] 8 · Bots: parámetros sorteados (agresividad, disciplina, farol, lectura) sobre el mismo motor
+- [x] 6 · Mesa: turnos, ciegas, botón que rota, apuestas, todo-in, botes paralelos, reparto
+- [x] 7 · Torneo corto: 4 jugadores, ciegas que suben, eliminación, guardar a medias
+- [x] 8 · Bots: parámetros sorteados (agresividad, disciplina, farol, lectura) sobre el mismo motor
 
 **Datos y cuentas**
 
@@ -276,3 +276,12 @@ que se puede escribir sin bloquear nada.
   4. **La puntuación se aplastaba a 0 demasiado pronto** y todos los errores parecían iguales. Curva
      nueva: 100 si clavas la jugada, 50 en el límite de lo aceptable para tu nivel, 0 a partir de
      cuatro veces ese límite.
+- **21/09/2026** — Pasos 6, 7 y 8: mesa completa (ciegas, botón que rota, subida mínima, todo-in y
+  botes paralelos), torneo corto con eliminación y bots. 77 tests. Lo que salió mal y hubo que
+  arreglar: **el precio que le sale al rival cuando le subes estaba mal calculado** — se medía sobre
+  el bote de antes en vez de sobre el que se llevaría si paga, y con eso el motor creía que la gente
+  se retira mucho más de lo que se retira; cualquier farol parecía rentable y hasta un bot prudente
+  se lanzaba con 7-2. Corregido, los seis casos de referencia del sondeo dan la respuesta de manual.
+  También: los errores de los bots ahora son creíbles (se van a la segunda mejor jugada, no a una
+  cualquiera) y farolear les exige un margen que sale de su barra de farol; y dos eliminados en la
+  misma mano ya no empatan de puesto — queda por delante el que llegaba con más fichas.

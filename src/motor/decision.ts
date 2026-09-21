@@ -68,6 +68,12 @@ export interface Situacion {
   perfilRival?: PerfilRival
   /** Tamaño de subida que se está juzgando. Si no se dice, se prueban varios. */
   tamanoSubida?: number
+  /**
+   * "rapida" simula menos manos. Los bots la usan: para decidir les sobra con
+   * un punto porcentual de margen, y así una mesa de cuatro no tarda medio
+   * segundo por jugada. Al corregir al jugador se usa siempre la normal.
+   */
+  precision?: 'rapida' | 'normal'
 }
 
 export interface ValorDeAccion {
@@ -101,7 +107,8 @@ export function analizar(situacion: Situacion): Analisis {
   const perfil = situacion.perfilRival ?? RIVAL_TIPICO
   const rango = quitarBloqueadas(rangoRival, [...mano, ...mesa])
 
-  const equity = equityContraRango(mano, mesa, rango.combos, { repeticiones: 12000 })
+  const rapida = situacion.precision === 'rapida'
+  const equity = equityContraRango(mano, mesa, rango.combos, { repeticiones: rapida ? 2500 : 12000 })
   const precioDelBote = paraPagar > 0 ? paraPagar / (bote + paraPagar) : 0
   const callesQueQuedan = calculoCallesRestantes(situacion.calle)
   const conexion = fraccionQueLiga(rango, mesa)
@@ -143,7 +150,7 @@ export function analizar(situacion: Situacion): Analisis {
     : tamanosHabituales(bote, paraPagar, situacion.tusFichas, situacion.fichasRival)
 
   for (const tamano of tamanos) {
-    acciones.push(valorDeSubir(situacion, rango, perfil, tamano, callesQueQuedan, conexion, conexionFuerte))
+    acciones.push(valorDeSubir(situacion, rango, perfil, tamano, callesQueQuedan, conexion, conexionFuerte, rapida))
   }
 
   const mejor = acciones.reduce((a, b) => (b.valorEsperado > a.valorEsperado ? b : a))
@@ -165,14 +172,21 @@ function valorDeSubir(
   callesQueQuedan: number,
   conexion: number,
   conexionFuerte: number,
+  rapida: boolean,
 ): ValorDeAccion {
   const { mano, mesa, bote, paraPagar } = situacion
-  const continua = fraccionQueContinua(perfil, tamano, bote, conexion, conexionFuerte)
+
+  // El precio que le sale a ÉL: para seguir tiene que poner `tamano` y optaría a
+  // todo lo que habrá en el bote si lo hace. Calcularlo sobre el bote de antes
+  // —el error que tenía esto— hacía que el motor creyera que la gente se retira
+  // mucho más de lo que se retira, y con eso cualquier farol parecía rentable.
+  const precioParaElRival = tamano / (bote + paraPagar + 2 * tamano)
+  const continua = fraccionQueContinua(perfil, precioParaElRival, conexion, conexionFuerte)
   const seRetiran = 1 - continua
 
   // Las manos que aguantan una subida son las mejores de su rango en esta mesa.
   const rangoQueSigue = estrecharPorFuerza(rango, mesa, continua)
-  const equitySiSigue = equityContraRango(mano, mesa, rangoQueSigue.combos, { repeticiones: 8000 }).equity
+  const equitySiSigue = equityContraRango(mano, mesa, rangoQueSigue.combos, { repeticiones: rapida ? 1800 : 8000 }).equity
 
   const inversion = paraPagar + tamano
   const botePagado = bote + paraPagar + 2 * tamano

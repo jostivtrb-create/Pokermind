@@ -100,15 +100,14 @@ export function describirPerfil(p: PerfilRival): string {
  */
 export function fraccionQueContinua(
   perfil: PerfilRival,
-  apuesta: number,
-  bote: number,
+  /** Lo que le cuesta seguir respecto al bote que se llevaría si paga (0 a 1). */
+  precio: number,
   /** Parte de su rango que ha ligado algo con esta mesa. 1 antes del flop. */
   conexionConLaMesa = 1,
   /** Parte de su rango con una mano de verdad (pareja alta o mejor). Esas no se tiran. */
   fraccionFuerte = 0,
 ): number {
-  if (apuesta <= 0) return 1
-  const precio = apuesta / (bote + apuesta)
+  if (precio <= 0) return 1
   // El exponente inclina la cuenta hacia lo que pasa de verdad en la mesa: ante
   // una apuesta del tamaño del bote no sigue la mitad de la gente, sigue bastante menos.
   const porLasCuentas = (1 - precio) ** 1.15 * (0.7 + 0.6 * perfil.tenacidad)
