@@ -41,15 +41,20 @@ export function tamanosParaElegir(
   // no sabe puntuar bien, estaría enseñando mal.
   const todoInTieneSentido = tope <= TOPE_PARA_TODO_IN * referencia
 
+  // El mismo mínimo que usa el motor: subir menos que la última apuesta —o que
+  // un cuarto del bote cuando nadie ha apostado— no es subir. Si el juego lo
+  // ofreciera, estaría ofreciendo una jugada que el motor no sabe puntuar.
+  const minimaDeVerdad = Math.max(1, paraPagar, Math.round(referencia * 0.25))
+
   const opciones: OpcionDeSubida[] = []
   for (const [etiqueta, cruda] of crudas) {
     const cantidad = Math.round(Math.min(cruda, tope))
-    if (cantidad <= 0) continue
+    if (cantidad < minimaDeVerdad) continue
     if (cantidad >= tope && todoInTieneSentido) continue
     if (opciones.some((o) => o.cantidad === cantidad)) continue
     opciones.push({ etiqueta, cantidad, pones: cantidad + paraPagar })
   }
-  if (todoInTieneSentido) {
+  if (todoInTieneSentido && Math.round(tope) >= minimaDeVerdad) {
     opciones.push({
       etiqueta: 'Todo-in',
       cantidad: Math.round(tope),
@@ -100,10 +105,18 @@ export function BotonesDeDecision({
 
   return (
     <div className="acciones">
-      <button className="accion retirarse" onClick={() => alDecidir('retirarse')}>
-        <span>✕ {paraPagar === 0 ? 'Pasar' : 'Retirarse'}</span>
-        <span className="sub">{paraPagar === 0 ? 'Sin poner nada' : 'Sales de la mano'}</span>
-      </button>
+      {/*
+        Cuando seguir es gratis, retirarse no se ofrece: en la mesa hace lo
+        mismo que pasar (sigues en la mano) pero se juzga como tirar las
+        cartas, así que eran dos botones con la misma palabra y distinta nota.
+        Tirar una mano gratis no es una jugada, es un despiste.
+      */}
+      {paraPagar > 0 && (
+        <button className="accion retirarse" onClick={() => alDecidir('retirarse')}>
+          <span>✕ Retirarse</span>
+          <span className="sub">Sales de la mano</span>
+        </button>
+      )}
       <button className="accion pagar" onClick={() => alDecidir('pagar')}>
         <span>≡ {paraPagar === 0 ? 'Pasar' : 'Pagar'}</span>
         <span className="sub">{paraPagar > 0 ? `Pones ${paraPagar.toLocaleString('es')}` : 'Gratis'}</span>

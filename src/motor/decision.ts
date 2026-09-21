@@ -297,6 +297,16 @@ function calculoCallesRestantes(calle: Calle): number {
 function tamanosHabituales(bote: number, paraPagar: number, tusFichas: number, fichasRival: number): number[] {
   const tope = Math.max(0, Math.min(tusFichas - paraPagar, fichasRival))
   const referencia = bote + paraPagar
+  /*
+    Una subida tiene que ser una subida.
+
+    En la mesa, subir obliga a poner al menos lo que puso el último que apostó;
+    y sin nadie que haya apostado, una apuesta de calderilla no hace nada. Sin
+    este mínimo salían consejos como "lo mejor era subir 1 (pones 179)" cuando
+    al jugador le quedaba una ficha suelta por encima de lo que costaba pagar.
+    Si no llega a eso, sus jugadas de verdad son pagar o soltar.
+  */
+  const minimaDeVerdad = Math.max(1, paraPagar, Math.round(referencia * 0.25))
   const candidatos = [referencia * 0.5, referencia * 0.75, referencia].map((t) =>
     Math.round(Math.max(1, Math.min(t, tope))),
   )
@@ -310,7 +320,7 @@ function tamanosHabituales(bote: number, paraPagar: number, tusFichas: number, f
   // veces seguidas, que es lo que haría un buen jugador. Ofrecer una jugada que
   // el motor juzga peor de lo que la juzgaría un experto sería enseñar mal.
   if (tope > 0 && tope <= TOPE_PARA_TODO_IN * referencia) candidatos.push(Math.round(tope))
-  return [...new Set(candidatos)].filter((t) => t > 0).sort((a, b) => a - b)
+  return [...new Set(candidatos)].filter((t) => t >= minimaDeVerdad).sort((a, b) => a - b)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -398,7 +408,7 @@ export function juzgar(
     veredicto,
     puntos,
     exigencia,
-    porQue: explicacionCorta(analisis, elegida, veredicto, perdida),
+    porQue: explicacionCorta(analisis, elegida, veredicto, perdida, situacion.paraPagar === 0),
     porQueLargo: explicacionLarga(situacion, analisis, elegida),
   }
 }
@@ -420,7 +430,10 @@ function perdidaPorFamilia(analisis: Analisis, accion: Accion): number {
 
 function elegirAccionComparable(analisis: Analisis, accion: Accion, tamano?: number): ValorDeAccion {
   const candidatas = analisis.acciones.filter((a) => a.accion === accion)
-  if (candidatas.length === 0) return analisis.acciones[0]
+  // Un "subir" que no llega al mínimo de una subida de verdad es, en la
+  // práctica, pagar: se juzga como tal y no como retirarse.
+  if (candidatas.length === 0)
+    return analisis.acciones.find((a) => a.accion === 'pagar') ?? analisis.acciones[0]
   if (accion !== 'subir' || tamano === undefined) {
     // Sin tamaño concreto, se le da al jugador el beneficio de la duda: se juzga
     // su intención con el mejor tamaño posible, no con el peor.
@@ -431,13 +444,19 @@ function elegirAccionComparable(analisis: Analisis, accion: Accion, tamano?: num
   )
 }
 
-function explicacionCorta(analisis: Analisis, elegida: ValorDeAccion, veredicto: Veredicto, perdida: number): string {
+function explicacionCorta(
+  analisis: Analisis,
+  elegida: ValorDeAccion,
+  veredicto: Veredicto,
+  perdida: number,
+  gratis: boolean,
+): string {
   const eq = pc(analisis.equity.equity)
   // Cuando la jugada es buena pero había otra mejor, se dice: si no, el jugador
   // se queda con "hice lo correcto" y no aprende la jugada que sí tocaba.
   const matiz =
     elegida !== analisis.mejor && perdida > 0.5
-      ? ` Aun así, ${etiquetaDeAccion(analisis.mejor)} habría sacado algo más.`
+      ? ` Aun así, ${etiquetaDeAccion(analisis.mejor, gratis)} habría sacado algo más.`
       : ''
 
   if (veredicto === 'optima' || veredicto === 'buena') {
@@ -447,10 +466,15 @@ function explicacionCorta(analisis: Analisis, elegida: ValorDeAccion, veredicto:
     if (elegida.accion === 'subir') {
       return `Con el ${eq} de probabilidad de ganar, subir te hace ganar fichas: le cobras a sus manos peores y las mejores tuyas se pagan solas.${matiz}`
     }
+    // Pasar cuando no cuesta nada no se explica con la cuenta del precio: no hay
+    // precio. Lo que se explica es qué ganas mirando otra carta gratis.
+    if (gratis) {
+      return `Seguir no costaba nada, así que ves la carta siguiente gratis con tu ${eq} de probabilidad.${matiz}`
+    }
     return `Con el ${eq} de probabilidad, pagar sale a cuenta${analisis.mejor.accion === 'pagar' ? ' y es mejor que subir: subiendo espantas justo a las manos que te iban a pagar' : ''}.${matiz}`
   }
-  const mejorTexto = etiquetaDeAccion(analisis.mejor)
-  return `Ganabas el ${eq} de las veces. Lo mejor era ${mejorTexto}: eligiendo ${NOMBRES_ACCION[elegida.accion]} dejas ${redondear(perdida)} fichas por el camino de media.`
+  const mejorTexto = etiquetaDeAccion(analisis.mejor, gratis)
+  return `Ganabas el ${eq} de las veces. Lo mejor era ${mejorTexto}: eligiendo ${etiquetaDeAccion(elegida, gratis)} dejas ${redondear(perdida)} fichas por el camino de media.`
 }
 
 function explicacionLarga(situacion: Situacion, analisis: Analisis, elegida: ValorDeAccion): string {
@@ -484,7 +508,9 @@ function explicacionLarga(situacion: Situacion, analisis: Analisis, elegida: Val
  * HASTA 220 o subir 220 MÁS. Se dice siempre lo que pones en total, que es lo
  * único que no se malinterpreta.
  */
-export function etiquetaDeAccion(accion: ValorDeAccion): string {
+export function etiquetaDeAccion(accion: ValorDeAccion, gratis = false): string {
+  // Cuando seguir no cuesta nada, en la mesa no se dice "pagar", se dice "pasar".
+  if (accion.accion === 'pagar') return gratis ? 'pasar' : 'pagar'
   if (accion.accion !== 'subir') return NOMBRES_ACCION[accion.accion]
   return `subir ${redondear(accion.tamano ?? 0)} (pones ${redondear(accion.pones ?? 0)})`
 }

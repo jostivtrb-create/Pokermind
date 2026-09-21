@@ -162,3 +162,43 @@ describe('las explicaciones', () => {
     expect(j.porQueLargo).toContain('necesitas ganar al menos')
   })
 })
+
+describe('una subida tiene que ser una subida', () => {
+  /*
+    Jugando en el modo libre salió el consejo "lo mejor era subir 1 (pones 179)":
+    al jugador le quedaba una ficha suelta por encima de lo que costaba pagar y
+    el motor la ofrecía como jugada. Subir menos que la última apuesta no es
+    legal en una mesa, y apostar calderilla no hace nada.
+  */
+  const casiSinFichas: Situacion = {
+    mano: par('Ah Kh'), mesa: manoDeCodigo('Kd 7c 2s'), calle: 'flop',
+    bote: 2879, paraPagar: 178, tusFichas: 179, fichasRival: 3000,
+    rangoRival: rangoApertura('boton'), perfilRival: RIVAL_TIPICO,
+  }
+
+  it('no se ofrecen subidas por debajo del mínimo de verdad', () => {
+    for (const a of analizar(casiSinFichas).acciones) {
+      if (a.accion !== 'subir') continue
+      expect(a.tamano, 'subida ridícula ofrecida como jugada').toBeGreaterThanOrEqual(178)
+    }
+  })
+
+  it('con fichas para pagar y poco más, las jugadas son pagar o soltar', () => {
+    const acciones = analizar(casiSinFichas).acciones.map((a) => a.accion)
+    expect(acciones).toContain('pagar')
+    expect(acciones).toContain('retirarse')
+    expect(acciones).not.toContain('subir')
+  })
+
+  it('si aun así sube, se le juzga como si hubiera pagado, no como si se retirara', () => {
+    const j = juzgar(casiSinFichas, 'subir', 'intermedia', 1)
+    expect(j.elegida.accion).toBe('pagar')
+  })
+
+  it('con fichas de sobra sí se prueban medio bote, tres cuartos y bote', () => {
+    const holgado: Situacion = { ...casiSinFichas, tusFichas: 4000 }
+    const tamanos = analizar(holgado).acciones.filter((a) => a.accion === 'subir').map((a) => a.tamano!)
+    expect(tamanos.length).toBeGreaterThanOrEqual(3)
+    for (const t of tamanos) expect(t).toBeGreaterThanOrEqual(178)
+  })
+})
