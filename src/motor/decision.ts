@@ -5,6 +5,7 @@ import type { PerfilRival } from './perfiles'
 import { RIVAL_TIPICO, fraccionQueContinua, multiplicadorDeFarol } from './perfiles'
 import type { Rango } from './rangos'
 import { estrecharPorFuerza, fraccionQueLiga, fraccionQueLigaFuerte, quitarBloqueadas } from './rangos'
+import { outsContra } from './proyectos'
 
 /**
  * EL CORAZÓN DEL JUEGO (decisión D20).
@@ -51,12 +52,28 @@ export type Exigencia = 'basica' | 'intermedia' | 'seria'
  */
 export const TOPE_PARA_TODO_IN = 2.5
 
-/** Cuánta pérdida (en botes) se perdona antes de llamarlo error, según el nivel. */
-const TOLERANCIA: Record<Exigencia, number> = {
-  basica: 0.35,
-  intermedia: 0.15,
-  seria: 0.06,
+/**
+ * Pérdida (medida en botes) con la que la nota llega a cero, según el nivel.
+ *
+ * La escala se recalibró jugando: perder 17 fichas de media en un bote de 139
+ * —menos de una ciega grande— bajaba la nota a 55, casi lo mismo que perder 23.
+ * Un descuido de ese tamaño no puede puntuar como un error caro: con la curva
+ * de abajo da 90, y solo se baja de 50 cuando te dejas más de un tercio del
+ * bote, que ya es una equivocación de las que cuestan torneos.
+ */
+const PERDIDA_QUE_DEJA_A_CERO: Record<Exigencia, number> = {
+  basica: 0.8,
+  intermedia: 0.5,
+  seria: 0.3,
 }
+
+/**
+ * Exponente de la curva de la nota. Por debajo de 1 la curva bajaría en picado
+ * desde el primer fallo; por encima de 2 casi todo puntuaría 90 y la nota no
+ * distinguiría nada. 1,6 deja un descuido leve en 85-90 y un error caro por
+ * debajo de 50, que es lo que se pidió.
+ */
+const CURVA_DE_LA_NOTA = 1.6
 
 export interface Situacion {
   mano: readonly [Carta, Carta]
@@ -262,7 +279,9 @@ function valorDeSubir(
     equitySiSigue,
     valorEsperado,
     desglose:
-      `Subes ${redondear(tamano)} por encima de su apuesta: pones ${redondear(inversion)} en total. ` +
+      (paraPagar > 0
+        ? `Subes ${redondear(tamano)} por encima de su apuesta: pones ${redondear(inversion)} en total. `
+        : `Apuestas ${redondear(tamano)}. `) +
       `El ${pc(seRetiran)} de sus manos se retira y te llevas ${redondear(bote)} sin ver más cartas. ` +
       `El ${pc(continua)} restante sigue, y contra esa parte —que es la fuerte— ganas el ${pc(equitySiSigue)}.`,
   }
@@ -416,23 +435,28 @@ export function juzgar(
       : Math.max(0, analisis.mejor.valorEsperado - elegida.valorEsperado)
 
   const perdidaEnBotes = perdida / bote
-  const tolerancia = TOLERANCIA[exigencia]
+  const cero = PERDIDA_QUE_DEJA_A_CERO[exigencia]
 
   const veredicto: Veredicto =
-    perdidaEnBotes <= tolerancia * 0.12
+    perdidaEnBotes <= cero * 0.04
       ? 'optima'
-      : perdidaEnBotes <= tolerancia * 0.5
+      : perdidaEnBotes <= cero * 0.35
         ? 'buena'
-        : perdidaEnBotes <= tolerancia
+        : perdidaEnBotes <= cero * 0.7
           ? 'dudosa'
           : 'mala'
 
-  // Curva de puntos: 100 si clavaste la jugada, 50 justo en el límite de lo
-  // aceptable para tu nivel, y 0 a partir de cuatro veces ese límite. Con una
-  // recta, casi todos los errores daban 0 y el número dejaba de decir nada; así
-  // se distingue "te pasaste un poco" de "eso no se hace nunca" (D22).
-  const vecesLaTolerancia = perdidaEnBotes / tolerancia
-  const puntos = Math.round(100 * Math.max(0, 1 - Math.sqrt(vecesLaTolerancia / 4)))
+  /*
+    La nota: 100 si clavaste la jugada, 0 cuando te dejas el bote entero.
+
+    La forma de la curva importa tanto como el límite. Es plana cerca de cero
+    —los descuidos de una ficha no se castigan— y se hunde deprisa cuando el
+    error ya cuesta dinero de verdad. Perder un 12% del bote da 90; un tercio
+    del bote, 44 (D65).
+  */
+  const puntos = Math.round(
+    100 * Math.max(0, 1 - Math.pow(Math.min(1, perdidaEnBotes / cero), CURVA_DE_LA_NOTA)),
+  )
 
   return {
     analisis,
@@ -502,7 +526,10 @@ function explicacionCorta(
       if (elegida.valorEsperado <= 0) {
         return `Con el ${eq} de probabilidad, subir pierde ${redondear(-elegida.valorEsperado)} fichas de media: poco, pero pierde.${matiz}`
       }
-      return `Con el ${eq} de probabilidad de ganar, subir te hace ganar fichas: le cobras a sus manos peores y las mejores tuyas se pagan solas.${matiz}`
+      return (
+        `Con el ${eq} de probabilidad de ganar, ${gratis ? 'apostar' : 'subir'} gana fichas: ` +
+        `las manos peores que la tuya te pagan, y las que se retiran te dejan el bote.${matiz}`
+      )
     }
     // Pasar cuando no cuesta nada no se explica con la cuenta del precio: no hay
     // precio. Lo que se explica es qué ganas mirando otra carta gratis.
@@ -531,10 +558,43 @@ function explicacionLarga(situacion: Situacion, analisis: Analisis, elegida: Val
     `Tu mano gana el ${pc(analisis.equity.equity)} de las veces contra ${situacion.rangoRival.descripcion}` +
       (analisis.equity.exacto ? ' (calculado exacto, sin simular).' : ` (simulado ${analisis.equity.repeticiones.toLocaleString('es')} veces).`),
   )
+  /*
+    De dónde sale ese porcentaje, en cartas que se pueden contar.
+
+    Un número suelto no enseña nada: en una mesa de verdad no hay pantalla. Lo
+    que se lleva uno puesto es "me falta una jota, son cuatro cartas, y cuatro
+    outs con una carta por salir son un 8%". Eso es la regla del 2 y el 4 del
+    módulo 2, y es lo que convierte el juego en un entrenador.
+  */
+  const outs = outsContra(situacion.mano, situacion.mesa, situacion.rangoRival)
+  if (outs.cuantas > 0) {
+    const porSalir = 5 - situacion.mesa.length
+    lineas.push(
+      `Tienes ${outs.proyecto}: te sirven ${outs.cuantas} cartas (${outs.comoSeLlaman}). ` +
+        (porSalir === 1
+          ? `Queda una carta, así que son tus outs por 2: un ${pc(outs.probabilidad)}.`
+          : `Quedan dos cartas, así que son tus outs por 4: un ${pc(outs.probabilidad)}.`) +
+        (outs.hayMas && analisis.equity.equity > outs.probabilidad
+          ? ` Tu ${pc(analisis.equity.equity)} es algo más alto porque a veces también ganas ligando pareja.`
+          : analisis.equity.equity < outs.probabilidad
+            ? ` Tu ${pc(analisis.equity.equity)} es más bajo porque ligarlo no siempre basta: él también puede mejorar.`
+            : ''),
+    )
+  } else if (outs.hayMas) {
+    lineas.push(
+      'No tienes ningún proyecto que contar: lo que te queda es ligar pareja y que le valga.',
+    )
+  }
+
   if (situacion.paraPagar > 0) {
     lineas.push(
       `Pagar te cuesta ${redondear(situacion.paraPagar)} para optar a un bote de ${redondear(situacion.bote + situacion.paraPagar)}: ` +
-        `necesitas ganar al menos el ${pc(analisis.equityNecesaria)} de las veces para que pagar no pierda fichas.`,
+        `necesitas ganar al menos el ${pc(analisis.equityNecesaria)} de las veces para que pagar no pierda fichas.` +
+        (outs.cuantas > 0
+          ? outs.probabilidad >= analisis.equityNecesaria
+            ? ` Solo con tus ${outs.cuantas} outs ya tienes un ${pc(outs.probabilidad)}: el precio te sale sin contar nada más.`
+            : ` Solo con tus ${outs.cuantas} outs (un ${pc(outs.probabilidad)}) no llegarías, pero contándolo todo ganas el ${pc(analisis.equity.equity)}${analisis.equity.equity >= analisis.equityNecesaria ? ', así que sí te sale' : ', y tampoco llega'}.`
+          : ''),
     )
   }
   for (const accion of analisis.acciones) {
@@ -557,9 +617,11 @@ function explicacionLarga(situacion: Situacion, analisis: Analisis, elegida: Val
  * único que no se malinterpreta.
  */
 export function etiquetaDeAccion(accion: ValorDeAccion, gratis = false): string {
-  // Cuando seguir no cuesta nada, en la mesa no se dice "pagar", se dice "pasar".
+  // Cuando seguir no cuesta nada, en la mesa no se dice "pagar", se dice "pasar";
+  // y lo que se pone no es "subir", es "apostar": no hay nada que subir todavía.
   if (accion.accion === 'pagar') return gratis ? 'pasar' : 'pagar'
   if (accion.accion !== 'subir') return NOMBRES_ACCION[accion.accion]
+  if (gratis) return `apostar ${redondear(accion.tamano ?? 0)}`
   return `subir ${redondear(accion.tamano ?? 0)} (pones ${redondear(accion.pones ?? 0)})`
 }
 

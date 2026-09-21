@@ -11,6 +11,7 @@ import {
   manosConNota, notaReciente, progresoNuevo, repasarError, tendenciaDeLaNota, variarMano,
 } from './progreso'
 import { LOGROS, logroConseguido } from './logros'
+import { describirTuMano } from './practica'
 import { empezarLeccion, empezarPractica, responder, responderTest, siguienteMano } from './sesion'
 import { manoDeCodigo } from '../motor/cartas'
 
@@ -235,5 +236,30 @@ describe('la nota: lo bien que decides ahora mismo (D63)', () => {
     expect(logroConseguido(logro, machacado)).toBe(false)
     // Pocas manos pero bien jugadas: sí.
     expect(logroConseguido(logro, conNotas(Array(MANOS_DE_LA_NOTA).fill(85)))).toBe(true)
+  })
+})
+
+describe('lo que se dice de tu mano es verdad', () => {
+  const m = (t: string) => manoDeCodigo(t)
+
+  it('no dice "carta alta: as" cuando el as es de la mesa', () => {
+    const texto = describirTuMano(m('Th 3c'), m('Ac 6c Jh 8d'))
+    expect(texto).toContain('no tienes pareja')
+    expect(texto).toContain('está en la mesa')
+    expect(texto).not.toMatch(/carta alta: as/)
+  })
+
+  it('pero si la carta alta es tuya, se dice', () => {
+    expect(describirTuMano(m('Ah 7h'), m('Kh 4h 2c'))).toContain('tu carta alta es el as')
+  })
+
+  it('y nombra el proyecto con las cartas que te faltan', () => {
+    const texto = describirTuMano(m('Kd Qc'), m('Ah Ts 3d'))
+    expect(texto).toContain('escalera por dentro')
+    expect(texto).toContain('las jotas')
+  })
+
+  it('con jugada hecha se dice la jugada, sin rodeos', () => {
+    expect(describirTuMano(m('Kd Kc'), m('Ah Ts 3d'))).toBe('pareja de reyes')
   })
 })

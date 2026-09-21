@@ -132,8 +132,14 @@ describe('puntuación graduada (D22)', () => {
 })
 
 describe('la exigencia sube con el nivel (D20)', () => {
+  /*
+    Pareja de reinas en una mesa baja contra el que lo paga todo: apostar saca
+    bastante más que pasar, pero no es un abismo. Hace falta un hueco así para
+    ver el efecto del nivel — con dos jugadas que valen casi lo mismo, la nota
+    es 100 en los tres niveles, y con razón (D65).
+  */
   const s: Situacion = {
-    mano: par('7s 7h'), mesa: manoDeCodigo('7d 4c 2h'), calle: 'flop',
+    mano: par('Qs Qh'), mesa: manoDeCodigo('9d 7c 2h'), calle: 'flop',
     bote: 100, paraPagar: 0, tusFichas: 900, fichasRival: 900,
     rangoRival: rangoApertura('boton'), perfilRival: perfil('el pegajoso'),
   }
@@ -144,7 +150,9 @@ describe('la exigencia sube con el nivel (D20)', () => {
   })
 
   it('pero al principiante sí se le castiga retirarse con la mejor mano', () => {
-    expect(juzgar(s, 'retirarse', 'basica').veredicto).toBe('mala')
+    // Con algo que pagar, porque gratis no existe retirarse (D60).
+    const conApuesta: Situacion = { ...s, paraPagar: 40 }
+    expect(juzgar(conApuesta, 'retirarse', 'basica').veredicto).toBe('mala')
   })
 
   it('a nivel serio, pagar en vez de subir ya cuesta puntos', () => {
@@ -299,5 +307,71 @@ describe('lo que se pierde en las calles siguientes se puede declinar', () => {
     const pagar = analizar(fuerte).acciones.find((a) => a.accion === 'pagar')!
     const sinFuturo = analizar(fuerte).equity.equity * (76 + 36) - 36
     expect(pagar.valorEsperado).toBeGreaterThan(sinFuturo)
+  })
+})
+
+describe('la nota castiga los errores caros, no los descuidos (D65)', () => {
+  /*
+    Jugando salió esto: perder 17 fichas de media en un bote de 139 —menos de
+    una ciega grande— bajaba la nota a 55, casi lo mismo que perder 23. Un
+    descuido así tiene que puntuar alto; lo que tiene que hundir la nota es
+    dejarse un tercio del bote.
+  */
+  const notaCon = (perdidaEnBotes: number) =>
+    Math.round(100 * Math.max(0, 1 - Math.pow(Math.min(1, perdidaEnBotes / 0.5), 1.6)))
+
+  it('un descuido de una ficha no se castiga', () => {
+    expect(notaCon(0.01)).toBeGreaterThanOrEqual(99)
+  })
+
+  it('perder un 12% del bote deja la nota entre 85 y 92', () => {
+    expect(notaCon(17 / 139)).toBeGreaterThanOrEqual(85)
+    expect(notaCon(17 / 139)).toBeLessThanOrEqual(92)
+  })
+
+  it('solo se baja de 50 dejándose más de un tercio del bote', () => {
+    expect(notaCon(0.3)).toBeGreaterThan(50)
+    expect(notaCon(0.36)).toBeLessThan(50)
+  })
+
+  it('y el motor puntúa igual que esa curva', () => {
+    const s: Situacion = {
+      mano: par('Qs Qh'), mesa: manoDeCodigo('9d 7c 2h'), calle: 'flop',
+      bote: 100, paraPagar: 0, tusFichas: 900, fichasRival: 900,
+      rangoRival: rangoApertura('boton'), perfilRival: perfil('el pegajoso'),
+    }
+    const j = juzgar(s, 'pagar', 'intermedia')
+    expect(j.puntos).toBe(notaCon(j.perdidaEnBotes))
+  })
+})
+
+describe('las explicaciones enseñan a contar, no solo a obedecer', () => {
+  const conProyecto: Situacion = {
+    mano: par('Kd Qc'), mesa: manoDeCodigo('Ah Ts 3d 4c'), calle: 'turn',
+    bote: 139, paraPagar: 40, tusFichas: 900, fichasRival: 900,
+    rangoRival: rangoApertura('boton'), perfilRival: RIVAL_TIPICO,
+  }
+
+  it('nombran el proyecto y las cartas que te sirven', () => {
+    const texto = juzgar(conProyecto, 'pagar', 'intermedia').porQueLargo
+    expect(texto).toContain('escalera por dentro')
+    expect(texto).toContain('4 cartas')
+    expect(texto).toContain('las jotas')
+  })
+
+  it('enseñan la regla del 2 y el 4 con esos outs', () => {
+    const texto = juzgar(conProyecto, 'pagar', 'intermedia').porQueLargo
+    expect(texto).toMatch(/outs por 2/)
+  })
+
+  it('y no se contradicen: si el proyecto no llega, lo dicen y dan el total', () => {
+    const texto = juzgar(conProyecto, 'pagar', 'intermedia').porQueLargo
+    expect(texto).toMatch(/no llegarías|el precio te sale/)
+  })
+
+  it('cuando nadie ha apostado se dice apostar, no subir', () => {
+    const sinApuesta: Situacion = { ...conProyecto, paraPagar: 0 }
+    const texto = juzgar(sinApuesta, 'subir', 'intermedia', 60).porQue
+    expect(texto).not.toContain('subir')
   })
 })

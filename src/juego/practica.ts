@@ -1,12 +1,13 @@
 import type { Aleatorio } from '../motor/aleatorio'
 import type { Carta } from '../motor/cartas'
-import { barajaCompleta, barajar } from '../motor/cartas'
+import { NOMBRES_VALOR, barajaCompleta, barajar } from '../motor/cartas'
 import type { Calle, Exigencia, Situacion } from '../motor/decision'
 import { categoriaDe, describirMano, evaluar, Categoria } from '../motor/evaluador'
 import type { PerfilRival } from '../motor/perfiles'
 import { RIVAL_TIPICO } from '../motor/perfiles'
 import type { Posicion } from '../motor/rangos'
 import { parsearRango } from '../motor/rangos'
+import { proyectoDeLaMano } from '../motor/proyectos'
 
 /**
  * Una mano de práctica del entrenador.
@@ -376,29 +377,44 @@ export const mesaSeca: Condicion = {
  * pantalla.
  */
 export function proyectosDe(mano: readonly Carta[], mesa: readonly Carta[]): string[] {
-  if (mesa.length === 0 || mesa.length >= 5) return []
-  const proyectos: string[] = []
-
-  // Color: cuatro del mismo palo, con al menos una tuya, y sin estar hecho.
-  for (let palo = 0; palo < 4; palo++) {
-    const mias = mano.filter((c) => (c & 3) === palo).length
-    const total = mias + mesa.filter((c) => (c & 3) === palo).length
-    if (total === 4 && mias >= 1) {
-      proyectos.push('proyecto de color')
-      break
-    }
-  }
-
-  if (tenerProyectoDeEscalera.cumple(mano, mesa)) proyectos.push('proyecto de escalera')
-  return proyectos
+  if (mesa.length === 0 || mesa.length >= 5 || mano.length < 2) return []
+  // El mismo contador que usa la explicación, para que no digan cosas distintas:
+  // nombra las cartas que te faltan, no solo "tienes un proyecto".
+  const outs = proyectoDeLaMano(mano as [Carta, Carta], mesa)
+  if (outs.cuantas === 0) return []
+  return [`${outs.proyecto}: te sirven ${outs.cuantas} cartas (${outs.comoSeLlaman})`]
 }
 
-/** "Carta alta: rey, y proyecto de color". Lo que se enseña encima de la mesa. */
+/**
+ * "Carta alta: rey, y proyecto de color". Lo que se enseña encima de la mesa.
+ *
+ * Con la mesa A-6-J-8 y un 10-3 en la mano, decir "tienes carta alta: as"
+ * confunde: ese as no es tuyo, está en la mesa y lo tiene todo el mundo. Cuando
+ * tus dos cartas no pintan nada se dice así, que es como se dice en una mesa.
+ */
 export function describirTuMano(mano: readonly Carta[], mesa: readonly Carta[]): string {
-  const hecha = describirMano([...mano, ...mesa])
   const proyectos = proyectosDe(mano, mesa)
+  const hecha = describirLoHecho(mano, mesa)
   if (proyectos.length === 0) return hecha
-  return `${hecha}, y ${proyectos.join(' y ')}`
+  const une = hecha.startsWith('no tienes') ? ', pero tienes ' : ', y '
+  return `${hecha}${une}${proyectos.join(' y ')}`
+}
+
+/** La jugada hecha, diciendo la verdad sobre de quién es la carta alta. */
+function describirLoHecho(mano: readonly Carta[], mesa: readonly Carta[]): string {
+  if (mesa.length === 0) return describirMano([...mano, ...mesa])
+  const categoria = categoriaDe(evaluar([...mano, ...mesa]))
+  if (categoria > Categoria.CartaAlta) return describirMano([...mano, ...mesa])
+
+  // "Carta alta: as" cuando el as está en la mesa es mentira piadosa y confunde:
+  // ese as lo tiene todo el que siga en la mano.
+  const masAlta = Math.max(...[...mano, ...mesa].map((c) => c >> 2))
+  const esTuya = mano.some((c) => (c >> 2) === masAlta)
+  // "la jota" y "la reina" llevan artículo femenino; el resto, masculino.
+  const articulo = masAlta === 9 || masAlta === 10 ? 'la' : 'el'
+  return esTuya
+    ? `no tienes pareja: tu carta alta es ${articulo} ${NOMBRES_VALOR[masAlta]}`
+    : 'no tienes pareja: la carta más alta está en la mesa y la tiene todo el mundo'
 }
 
 /** Lo contrario de una condición. */

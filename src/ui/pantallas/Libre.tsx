@@ -104,14 +104,14 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
       const turno = actual.jugadores[actual.turno]
       const leToca = !actual.manoTerminada && turno && !turno.esHumano && turno.estado === 'jugando'
       if (!leToca) {
-        setMesa(actual)
+        setMesa(copia(actual))
         setPensando(false)
         return
       }
       const decision = decidirBot(actual, azar)
       const siguiente = aplicar(actual, decision.accion, decision.cantidad)
       sonar(decision.accion === 'retirarse' ? 'repartir' : 'ficha')
-      setMesa(siguiente)
+      setMesa(copia(siguiente))
       temporizador.current = window.setTimeout(() => paso(siguiente), pausa())
     }
 
@@ -182,21 +182,35 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
 
     sonar(traducida === 'retirarse' ? 'repartir' : 'ficha')
     const siguiente = aplicar(mesa, traducida, Math.min(cantidad, subida?.maximo ?? cantidad))
-    setMesa(siguiente)
+    setMesa(copia(siguiente))
     if (!siguiente.manoTerminada) avanzarBots(siguiente)
   }
+
+  /*
+    Los puntos y la nota se apuntan en cuanto la mano termina, no al pulsar
+    "Siguiente mano".
+
+    Antes se hacía al pasar de mano, y el número de arriba se quedaba con el
+    valor viejo justo mientras estabas leyendo el repaso de la mano que acababas
+    de jugar. La marca evita apuntar dos veces si la pantalla se vuelve a pintar.
+  */
+  const manoYaApuntada = useRef<number | null>(null)
+  useEffect(() => {
+    if (!mesa?.manoTerminada || !torneo || juicios.length === 0) return
+    if (manoYaApuntada.current === torneo.manosJugadas) return
+    manoYaApuntada.current = torneo.manosJugadas
+
+    // Los puntos del modo libre salen de las decisiones, no de si ganaste (D4).
+    const puntos = juicios.reduce((t, j) => t + j.juicio.puntos, 0)
+    // Una mano con cuatro decisiones no vale más que una con una: cuenta su media.
+    const nota = puntos / juicios.length
+    actualizar((p) => anotarMano({ ...p, puntosTotales: p.puntosTotales + puntos }, nota))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mesa?.manoTerminada, juicios.length, torneo?.manosJugadas])
 
   const terminarMano = () => {
     if (!torneo || !mesa) return
     const cerrado = cerrarMano({ ...torneo, mesa })
-    // Los puntos del modo libre salen de las decisiones, no de si ganaste (D4).
-    const puntos = juicios.reduce((t, j) => t + j.juicio.puntos, 0)
-    const nota = juicios.length > 0 ? puntos / juicios.length : null
-    actualizar((p) => {
-      const conPuntos = { ...p, puntosTotales: p.puntosTotales + puntos }
-      // Una mano con cuatro decisiones no vale más que una con una: cuenta su media.
-      return nota === null ? conPuntos : anotarMano(conPuntos, nota)
-    })
     setTorneo(cerrado)
     setMesa(null)
     if (!cerrado.terminado) repartir(cerrado)
@@ -378,6 +392,19 @@ function Portada({ torneo, alEmpezar, ir }: { torneo: Torneo | null; alEmpezar: 
   )
 }
 
+/**
+ * Una copia de la mesa para entregársela a React.
+ *
+ * `aplicar` trabaja sobre la misma mesa y devuelve ese mismo objeto (así es
+ * barato y así lo usan los tests del motor). Pero a React hay que darle un
+ * objeto NUEVO: si la referencia no cambia, se salta el repintado, y entonces
+ * lo que dependa de que la mano haya terminado no llega a enterarse. Por eso la
+ * nota y los puntos no se apuntaban hasta pasar de mano.
+ */
+function copia(mesa: EstadoMesa): EstadoMesa {
+  return { ...mesa }
+}
+
 /** Lo último que hizo ese jugador en esta calle, para que se vea la mano jugarse. */
 function ultimaJugada(mesa: EstadoMesa, jugador: number): string {
   const suyas = mesa.historial.filter((h) => h.jugador === jugador && h.calle === mesa.calle)
@@ -386,7 +413,11 @@ function ultimaJugada(mesa: EstadoMesa, jugador: number): string {
   if (ultima.accion === 'pasar') return 'pasa'
   if (ultima.accion === 'pagar') return 'paga'
   if (ultima.accion === 'retirarse') return 'se retira'
-  return `sube ${ultima.cantidad}`
+  // Si nadie había puesto fichas en esta calle, no está subiendo: está apostando.
+  const habiaApuesta = suyas.length > 1 || mesa.historial.some(
+    (h) => h.calle === mesa.calle && h.accion === 'subir' && h.jugador !== jugador,
+  )
+  return `${habiaApuesta ? 'sube' : 'apuesta'} ${ultima.cantidad}`
 }
 
 const NOMBRE_DE_CALLE: Record<string, string> = {
