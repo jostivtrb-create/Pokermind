@@ -225,7 +225,7 @@ que se puede escribir sin bloquear nada.
 
 **Contenido y vueltas de tuerca**
 
-- [ ] 16 · Los 9 módulos del temario, lección a lección (35–45 lecciones)
+- [x] 16 · Los 9 módulos del temario, lección a lección — **41 lecciones**, todas validadas contra el motor
 - [ ] 17 · Estadísticas, logros, reto diario y repaso espaciado de errores
 - [ ] 18 · Instalable y sin conexión (PWA), pulido visual y repaso final
 
@@ -300,3 +300,13 @@ que se puede escribir sin bloquear nada.
      y una capa de sincronización aparte que fusiona **quedándose con lo más avanzado, no con lo más
      reciente**: quien juega en el móvil sin conexión y luego abre el portátil no puede perder
      lecciones terminadas.
+- **21/09/2026** — Temario completo: los **9 módulos aprobados, 41 lecciones**. Lo más útil que salió
+  de aquí fue una idea de test: cada lección de decisión declara qué debería recomendar el motor
+  (`accionEsperada`), y un test reparte doce manos y comprueba que coinciden. Pilló dos lecciones
+  que **enseñaban mal**, y en los dos casos tenía razón el motor y no yo:
+  · «Un proyecto barato se paga» repartía manos con 42–50% (proyecto *más* cartas altas) contra un
+    rival que se retira casi la mitad de las veces: ahí subir gana más que pagar. Se reescribió como
+    «Un proyecto barato **no se suelta**», que es lo que de verdad se enseña en nivel básico.
+  · «Al que se va a retirar, se le esconde» fallaba en mesas con tres cartas del mismo palo, porque
+    entonces el rival sí tiene con qué seguir. Ahora exige **mesa seca**.
+  Sin ese test, las dos habrían llegado al jugador contradiciendo a la corrección del propio juego.

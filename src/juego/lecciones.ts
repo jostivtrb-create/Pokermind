@@ -1,6 +1,6 @@
 import type { Aleatorio } from '../motor/aleatorio'
 import type { Carta } from '../motor/cartas'
-import type { Exigencia } from '../motor/decision'
+import type { Accion, Exigencia } from '../motor/decision'
 import type { EspecDeMano } from './practica'
 
 /**
@@ -66,6 +66,17 @@ export interface Leccion {
   ayuda: 'siempre' | 'alPrincipio' | 'nunca'
   /** Si la primera mano la juega el propio juego, explicándola (ejemplo resuelto). */
   ejemploResuelto: boolean
+  /**
+   * Qué debería salir casi siempre en las manos de esta lección.
+   *
+   * No lo usa el juego: lo usan los tests. Una lección que enseña "aquí hay que
+   * retirarse" y reparte manos donde el motor dice "sube" está enseñando mal, y
+   * eso es un error de contenido que no se ve mirando la pantalla un rato.
+   *
+   * `"seguir"` vale para las lecciones de nivel básico, donde lo que se enseña
+   * es no soltar la mano y da igual si se paga o se sube (D20).
+   */
+  accionEsperada?: Accion | 'seguir'
 }
 
 export interface Modulo {

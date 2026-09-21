@@ -11,6 +11,7 @@ import type { EstadoSesion } from '../../juego/sesion'
 import {
   empezarLeccion, empezarPractica, loQueFalta, responder, responderTest, siguienteMano, terminarEjemplo,
 } from '../../juego/sesion'
+import { moduloTerminado } from '../../contenido/temario'
 import { useProgreso } from '../estado'
 import { FilaDeCartas } from '../componentes/Carta'
 import { BarrasDeProbabilidad } from '../componentes/BarraProbabilidad'
@@ -54,17 +55,24 @@ export function Entrenador({ leccion, alSalir }: { leccion: Leccion; alSalir: ()
     const siguiente = siguienteMano(sesion, azar)
     setSesion(siguiente)
     if (siguiente.fase === 'terminada') {
-      actualizar((p) => ({
-        ...p,
-        lecciones: {
-          ...p.lecciones,
-          [leccion.id]: {
-            terminadaEl: new Date().toISOString(),
-            puntos: siguiente.puntos,
-            manos: siguiente.manosJugadas,
+      actualizar((p) => {
+        const conLeccion = {
+          ...p,
+          lecciones: {
+            ...p.lecciones,
+            [leccion.id]: {
+              terminadaEl: new Date().toISOString(),
+              puntos: siguiente.puntos,
+              manos: siguiente.manosJugadas,
+            },
           },
-        },
-      }))
+        }
+        // Terminar el módulo 1 es lo que abre el modo libre (D34).
+        return {
+          ...conLeccion,
+          modoLibreDesbloqueado: conLeccion.modoLibreDesbloqueado || moduloTerminado(conLeccion, 1),
+        }
+      })
     }
   }
 

@@ -1,6 +1,14 @@
 import type { Leccion, Modulo } from '../juego/lecciones'
 import type { Progreso } from '../juego/progreso'
 import { MODULO_1 } from './modulo1'
+import { MODULO_2 } from './modulo2'
+import { MODULO_3 } from './modulo3'
+import { MODULO_4 } from './modulo4'
+import { MODULO_5 } from './modulo5'
+import { MODULO_6 } from './modulo6'
+import { MODULO_7 } from './modulo7'
+import { MODULO_8 } from './modulo8'
+import { MODULO_9 } from './modulo9'
 
 /**
  * El temario completo: los 9 módulos aprobados en la ronda 3 (D35), en orden.
@@ -9,7 +17,7 @@ import { MODULO_1 } from './modulo1'
  * el anterior. Nadie se salta lecciones (D23), pero el que acierta seguido pasa
  * por ellas más deprisa (D37).
  */
-export const TEMARIO: Modulo[] = [MODULO_1]
+export const TEMARIO: Modulo[] = [MODULO_1, MODULO_2, MODULO_3, MODULO_4, MODULO_5, MODULO_6, MODULO_7, MODULO_8, MODULO_9]
 
 /** Todos los módulos previstos, incluidos los que todavía no tienen lecciones. */
 export const MODULOS_PREVISTOS = [

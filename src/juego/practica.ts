@@ -260,3 +260,109 @@ export const mesaSinParejas: Condicion = {
     return new Set(valores).size === valores.length
   },
 }
+
+/** Pareja usando una carta tuya, pero NO la carta más alta de la mesa. */
+export const tenerParejaMedia: Condicion = {
+  nombre: 'pareja que no es la más alta',
+  cumple: (mano, mesa) => {
+    if (mesa.length === 0) return false
+    const valores = mesa.map((c) => c >> 2)
+    const masAlta = Math.max(...valores)
+    const emparejadas = mano.filter((c) => valores.includes(c >> 2))
+    if (emparejadas.length !== 1) return false
+    return (emparejadas[0] >> 2) !== masAlta
+  },
+}
+
+/** Mano floja de las de tirar antes del flop: sin pareja, sin figuras, sin conexión. */
+export const manoFloja: Condicion = {
+  nombre: 'mano floja antes del flop',
+  cumple: (mano) => {
+    const [a, b] = mano
+    const va = a >> 2
+    const vb = b >> 2
+    if (va === vb) return false
+    if (va >= 9 || vb >= 9) return false // nada de jotas para arriba
+    const conectada = Math.abs(va - vb) <= 2
+    const mismoPalo = (a & 3) === (b & 3)
+    return !(conectada && mismoPalo)
+  },
+}
+
+/** Mano de las que se abren desde el botón pero no desde primera posición. */
+export const manoDeButaca: Condicion = {
+  nombre: 'mano media, de las que dependen de la posición',
+  cumple: (mano) => {
+    const [a, b] = mano
+    const va = a >> 2
+    const vb = b >> 2
+    if (va === vb) return false
+    const alta = Math.max(va, vb)
+    const baja = Math.min(va, vb)
+    const mismoPalo = (a & 3) === (b & 3)
+    // Suited de as/rey bajitas, conectores del mismo palo, o figura con carta media.
+    if (mismoPalo && (alta >= 10 || alta - baja <= 2)) return alta < 12 || baja < 8
+    return alta >= 9 && baja >= 5 && baja <= 8
+  },
+}
+
+/** Mesa de cartas bajas: la que no le sirve a quien juega figuras. */
+export const mesaBaja: Condicion = {
+  nombre: 'mesa de cartas bajas',
+  cumple: (_mano, mesa) => mesa.length > 0 && mesa.every((c) => (c >> 2) <= 6),
+}
+
+/** Mano de las buenas de verdad antes del flop. */
+export const manoPremium: Condicion = {
+  nombre: 'mano fuerte antes del flop',
+  cumple: (mano) => {
+    const [a, b] = mano
+    const va = a >> 2
+    const vb = b >> 2
+    if (va === vb) return va >= 8 // parejas de dieces para arriba
+    const alta = Math.max(va, vb)
+    const baja = Math.min(va, vb)
+    return alta === 12 && baja >= 10 // AK, AQ
+  },
+}
+
+/** Mano que vale para abrir desde cualquier sitio, sin ser premium. */
+export const manoSolida: Condicion = {
+  nombre: 'mano sólida antes del flop',
+  cumple: (mano) => {
+    const [a, b] = mano
+    const va = a >> 2
+    const vb = b >> 2
+    if (va === vb) return va >= 5 // parejas de sietes para arriba
+    const alta = Math.max(va, vb)
+    const baja = Math.min(va, vb)
+    const mismoPalo = (a & 3) === (b & 3)
+    if (alta === 12) return baja >= (mismoPalo ? 8 : 10)
+    if (alta === 11) return baja >= (mismoPalo ? 9 : 10)
+    return false
+  },
+}
+
+/**
+ * Mesa seca: sin tres cartas del mismo palo ni tres seguidas.
+ *
+ * Importa más de lo que parece. En una mesa con tres cartas del mismo palo, el
+ * rival que juega figuras del mismo palo SÍ tiene con qué seguir, y entonces
+ * esconder una mano fuerte deja de ser lo mejor. Una lección sobre "su rango no
+ * liga nada" tiene que repartir mesas donde de verdad no ligue nada.
+ */
+export const mesaSeca: Condicion = {
+  nombre: 'mesa seca',
+  cumple: (_mano, mesa) => {
+    if (mesa.length === 0) return false
+    const porPalo = [0, 0, 0, 0]
+    for (const c of mesa) porPalo[c & 3]++
+    if (porPalo.some((n) => n >= 3)) return false
+
+    const valores = [...new Set(mesa.map((c) => c >> 2))].sort((a, b) => a - b)
+    for (let i = 0; i + 2 < valores.length; i++) {
+      if (valores[i + 2] - valores[i] <= 4) return false // tres cartas cerca: hay escaleras
+    }
+    return true
+  },
+}
