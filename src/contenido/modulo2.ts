@@ -4,6 +4,9 @@ import type { Carta } from '../motor/cartas'
 import type { Modulo, PreguntaTest } from '../juego/lecciones'
 import { leccion } from '../juego/lecciones'
 import { tenerProyectoDeColor, tenerProyectoDeEscalera, alguna } from '../juego/practica'
+import { manoDeCodigo } from '../motor/cartas'
+
+const m = (texto: string): Carta[] => manoDeCodigo(texto)
 
 /**
  * MÓDULO 2 · Probabilidad básica.
@@ -68,11 +71,14 @@ export const MODULO_2: Modulo = {
       modulo: 2,
       titulo: 'Qué significa un porcentaje',
       idea: 'Un 30% no es "voy perdiendo": es que de cada diez veces así, tres las ganas. Y esas tres hay que cobrarlas.',
-      explicacion: [
-        'Cuando el juego dice que ganas el **30%**, no está prediciendo esta mano. Está diciendo que si esta misma situación se repitiera mil veces, ganarías unas trescientas.',
-        'Por eso una buena decisión puede terminar en derrota. No te equivocaste: te tocó una de las siete.',
-        'Y al revés: puedes pagar fatal y ganar. Eso no lo convierte en una buena jugada, solo en una jugada con suerte. **Aquí los puntos van por la decisión, no por el resultado.**',
-        'Todo el juego se apoya en esta idea. Si te la crees, ya juegas mejor que mucha gente que lleva años.',
+      pasos: [
+        { tipo: 'porcentaje', texto: 'Cuando el juego dice que ganas el **30%**, no está prediciendo esta mano.',
+          victoria: 0.3, pie: 'Dice que si esta situación se repitiera mil veces, ganarías unas trescientas.' },
+        { tipo: 'porcentaje', texto: 'Por eso con un **70%** todavía pierdes tres de cada diez veces.',
+          victoria: 0.7, pie: 'Cuando toca una de esas tres no te equivocaste: te tocó.' },
+        { tipo: 'porcentaje', texto: 'Y al revés: puedes pagar con un **15%** y ganar. Eso es suerte, no acierto.',
+          victoria: 0.15, pie: 'Ochenta y cinco de cada cien veces, esa jugada pierde fichas.' },
+        { tipo: 'texto', texto: 'Por eso aquí **los puntos van por la decisión, no por el resultado**. Si te crees esto, ya juegas mejor que mucha gente que lleva años.' },
       ],
       terminos: ['equity'],
       practica: {
@@ -117,11 +123,19 @@ export const MODULO_2: Modulo = {
       modulo: 2,
       titulo: 'Los outs: cuántas cartas te sirven',
       idea: 'Los outs son las cartas que todavía pueden salir y te dan la mano ganadora. Se cuentan, no se intuyen.',
-      explicacion: [
-        'Si te faltan cartas para completar tu mano, lo primero es **contar cuántas te valen**. A esas se las llama **outs**.',
-        'Ejemplo: tienes cuatro cartas de un palo y te falta la quinta para el color. De cada palo hay 13. Estás viendo 4. Quedan **9 outs**.',
-        'Otro: cuatro cartas seguidas abiertas por los dos lados, como 6-7-8-9. Te sirven los 5 y los 10: cuatro de cada uno, **8 outs**.',
-        'Si la escalera es por dentro (6-7-_-9-10, te falta el 8), solo te sirven los cuatro ochos: **4 outs**. La mitad, y por eso vale la mitad.',
+      pasos: [
+        { tipo: 'outs', texto: 'Tienes cuatro corazones. Te falta **uno más** para el color.',
+          mano: m('Ah Kh'), mesa: m('Qh 7h 2c'),
+          outs: m('2h 3h 4h 5h 6h 8h 9h Th Jh'),
+          pie: 'De cada palo hay 13 y estás viendo 4: quedan 9 que te valen. Eso son 9 outs.' },
+        { tipo: 'outs', texto: 'Aquí te falta una carta por **cualquiera de los dos lados** de la escalera.',
+          mano: m('9s 8h'), mesa: m('7d 6c 2s'),
+          outs: m('Ts Th Td Tc 5s 5h 5d 5c'),
+          pie: 'Te sirven los cuatro dieces y los cuatro cincos: 8 outs.' },
+        { tipo: 'outs', texto: 'Y si la escalera es **por dentro**, solo vale una carta.',
+          mano: m('9s 8h'), mesa: m('7d 5c 2s'),
+          outs: m('6s 6h 6d 6c'),
+          pie: 'Solo los cuatro seises: 4 outs. La mitad que antes, y por eso vale la mitad.' },
       ],
       terminos: ['outs', 'proyecto'],
       practica: { tipo: 'test', pregunta: (azar) => cuantosOuts(azar) },
@@ -135,11 +149,14 @@ export const MODULO_2: Modulo = {
       modulo: 2,
       titulo: 'La regla del 2 y el 4',
       idea: 'Outs × 4 si quedan dos cartas, outs × 2 si queda una. Con eso tienes el porcentaje de cabeza.',
-      explicacion: [
-        'En la mesa no hay calculadora, así que hay un truco que se usa desde siempre y se acerca muchísimo.',
-        'Si quedan **dos cartas** por salir (estás en el flop): multiplica tus outs por **4**. Nueve outs ≈ 36%.',
-        'Si queda **una** (estás en el turn): multiplica por **2**. Esos mismos nueve outs ≈ 18%. Fíjate: **la mitad**. Una carta menos, la mitad de posibilidades.',
-        'No es exacto, pero se queda a un par de puntos del número de verdad. Para decidir, sobra.',
+      pasos: [
+        { tipo: 'outs', texto: 'Nueve outs y **dos cartas** por salir. En la mesa no hay calculadora.',
+          mano: m('Ah Kh'), mesa: m('Qh 7h 2c'), outs: m('2h 3h 4h 5h 6h 8h 9h Th Jh') },
+        { tipo: 'porcentaje', texto: 'Multiplica tus outs por **4**: 9 × 4 = 36.',
+          victoria: 0.36, pie: 'El número de verdad es 35%. Para decidir, sobra.' },
+        { tipo: 'porcentaje', texto: 'Si ya queda **una sola carta**, multiplica por **2**: 9 × 2 = 18.',
+          victoria: 0.18, pie: 'Fíjate: una carta menos, la mitad de posibilidades.' },
+        { tipo: 'texto', texto: 'Ese es todo el truco. Outs × 4 en el flop, outs × 2 en el turn.' },
       ],
       terminos: [],
       practica: { tipo: 'test', pregunta: (azar) => cuantoEsEnPorcentaje(azar) },
@@ -153,11 +170,15 @@ export const MODULO_2: Modulo = {
       modulo: 2,
       titulo: 'Un proyecto barato no se suelta',
       idea: 'Con un proyecto bueno y una apuesta pequeña delante, lo único que no puedes hacer es retirarte.',
-      explicacion: [
-        'Tienes cuatro cartas del mismo palo o una escalera a medias: ahora mismo tu mano **no vale nada**. Pero tienes outs, y encima quedan dos cartas por salir.',
-        'Si seguir cuesta poco comparado con lo que hay en el bote, esa mano **gana fichas a la larga** aunque hoy la pierdas.',
-        'Va a resultarte raro poner fichas con una mano que no vale nada. Es correcto: no pagas por lo que tienes, pagas por lo que puedes tener.',
-        'Aquí **pagar y subir valen las dos**, y muchas veces subir gana todavía más, porque además de tus outs puedes llevarte el bote si se retira. Eso lo verás en el módulo 7. Lo que no vale es retirarse.',
+      pasos: [
+        { tipo: 'outs', texto: 'Ahora mismo tu mano **no vale nada**. Pero tienes nueve cartas que te salvan.',
+          mano: m('Ah Kh'), mesa: m('Qh 7h 2c'), outs: m('2h 3h 4h 5h 6h 8h 9h Th Jh') },
+        { tipo: 'porcentaje', texto: 'Con dos cartas por salir, mejoras **más de un tercio** de las veces.',
+          victoria: 0.36 },
+        { tipo: 'precio', texto: 'Y seguir te cuesta muy poco comparado con lo que hay en el bote.',
+          bote: 240, pagar: 40,
+          pie: 'Ganas una de cada tres y te piden una de cada seis: sale a cuenta de sobra.' },
+        { tipo: 'texto', texto: 'Aquí **pagar y subir valen las dos**, y muchas veces subir gana más. Lo que no vale es retirarse.' },
       ],
       terminos: ['proyecto', 'outs'],
       practica: {
@@ -185,11 +206,15 @@ export const MODULO_2: Modulo = {
       modulo: 2,
       titulo: 'Un proyecto caro se suelta',
       idea: 'El mismo proyecto, con una apuesta enorme delante, deja de salir a cuenta. Lo que cambia no es tu mano: es el precio.',
-      explicacion: [
-        'Misma mano que en la lección anterior: cuatro cartas del mismo palo, 36% de mejorar.',
-        'Pero ahora el rival apuesta **más que el bote entero**. Para ganar 100 tienes que poner 150, y solo lo consigues un tercio de las veces.',
-        'Esa cuenta no sale. Y fíjate en lo importante: **tu mano es idéntica**. Lo único que cambió fue lo que te piden por seguir.',
-        'Aquí está el error más caro del que empieza: enamorarse del proyecto y pagar cualquier precio por él.',
+      pasos: [
+        { tipo: 'outs', texto: 'Misma mano que antes: los mismos nueve outs.',
+          mano: m('Ah Kh'), mesa: m('Qh 7h 2c 3d'), outs: m('2h 4h 5h 6h 8h 9h Th Jh 9d') },
+        { tipo: 'porcentaje', texto: 'Pero ya solo queda **una carta**, así que mejoras la mitad de veces.',
+          victoria: 0.18 },
+        { tipo: 'precio', texto: 'Y ahora te piden **casi el doble del bote** por seguir.',
+          bote: 100, pagar: 180,
+          pie: 'Necesitarías ganar casi dos de cada tres veces. Tienes una de cada cinco.' },
+        { tipo: 'texto', texto: 'Tu mano es idéntica. Lo único que cambió es **el precio**. Y con eso basta para soltarla.' },
       ],
       terminos: ['precioDelBote'],
       practica: {

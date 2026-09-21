@@ -4,6 +4,8 @@ import { VALORES, crearCarta, manoDeCodigo } from '../../motor/cartas'
 import { describirMano, evaluar } from '../../motor/evaluador'
 import type { Paso } from '../../juego/lecciones'
 import { Carta, FilaDeCartas } from './Carta'
+import { RejillaDeRango } from './Rejilla'
+import { Sillas } from './Sillas'
 
 /**
  * La explicación de una lección, **un paso por pantalla**.
@@ -153,7 +155,215 @@ function DibujoDelPaso({ paso }: { paso: Paso }) {
           <Pie texto={paso.pie} />
         </>
       )
+
+    case 'acciones':
+      return (
+        <>
+          <Frase texto={paso.texto} />
+          <div className="acciones" style={{ marginTop: 0 }}>
+            {([
+              ['retirarse', '✕ Retirarse', 'Sales de la mano'],
+              ['pagar', '≡ Pagar', 'Sigues viendo cartas'],
+              ['subir', '↗ Subir', 'Aprietas el bote'],
+            ] as const).map(([clave, titulo, sub]) => (
+              <div
+                key={clave}
+                className={`accion ${clave}`}
+                style={{
+                  opacity: !paso.resaltar || paso.resaltar === clave ? 1 : 0.32,
+                  cursor: 'default',
+                }}
+              >
+                <span>{titulo}</span>
+                <span className="sub">{sub}</span>
+              </div>
+            ))}
+          </div>
+          <Pie texto={paso.pie} />
+        </>
+      )
+
+    case 'porcentaje':
+      return (
+        <>
+          <Frase texto={paso.texto} />
+          {paso.mesa && paso.mano && (
+            <div style={{ display: 'grid', gap: 8 }}>
+              <FilaDeCartas cartas={paso.mesa} huecos={5 - paso.mesa.length} pequenas />
+              <FilaDeCartas cartas={paso.mano} />
+            </div>
+          )}
+          <Tarta victoria={paso.victoria} empate={paso.empate ?? 0} />
+          <Pie texto={paso.pie} />
+        </>
+      )
+
+    case 'precio':
+      return (
+        <>
+          <Frase texto={paso.texto} />
+          <PrecioDelBote bote={paso.bote} pagar={paso.pagar} />
+          <Pie texto={paso.pie} />
+        </>
+      )
+
+    case 'outs':
+      return (
+        <>
+          <Frase texto={paso.texto} />
+          <div style={{ display: 'grid', gap: 8 }}>
+            <FilaDeCartas cartas={paso.mesa} huecos={5 - paso.mesa.length} pequenas />
+            <FilaDeCartas cartas={paso.mano} />
+          </div>
+          <div>
+            <span className="etiqueta" style={{ color: 'var(--verde)' }}>
+              Te sirven estas {paso.outs.length}
+            </span>
+            <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 6 }}>
+              {paso.outs.map((c, i) => (
+                <Carta key={`${c}-${i}`} carta={c} pequena destacada />
+              ))}
+            </div>
+          </div>
+          <Pie texto={paso.pie} />
+        </>
+      )
+
+    case 'sillas':
+      return (
+        <>
+          <Frase texto={paso.texto} />
+          <Sillas boton={paso.boton} resaltar={paso.resaltar} nota={paso.nota} />
+          <Pie texto={paso.pie} />
+        </>
+      )
+
+    case 'rango':
+      return (
+        <>
+          <Frase texto={paso.texto} />
+          <RejillaDeRango rango={paso.rango} />
+          <Pie texto={paso.pie} />
+        </>
+      )
+
+    case 'fichas':
+      return (
+        <>
+          <Frase texto={paso.texto} />
+          <MontonesDeFichas montones={paso.montones} />
+          <Pie texto={paso.pie} />
+        </>
+      )
   }
+}
+
+/** La probabilidad, dibujada en una barra de tres tramos. */
+function Tarta({ victoria, empate }: { victoria: number; empate: number }) {
+  const derrota = Math.max(0, 1 - victoria - empate)
+  const tramos: Array<[string, number, string]> = [
+    ['Ganas', victoria, 'var(--verde)'],
+    ['Empate', empate, 'var(--azul)'],
+    ['Pierdes', derrota, 'var(--rojo)'],
+  ]
+  return (
+    <div style={{ display: 'grid', gap: 8 }}>
+      <div style={{ display: 'flex', height: 28, borderRadius: 8, overflow: 'hidden' }}>
+        {tramos.map(([nombre, valor, color]) =>
+          valor <= 0 ? null : (
+            <div
+              key={nombre}
+              style={{
+                width: `${valor * 100}%`, background: color, display: 'grid', placeItems: 'center',
+                color: '#0b0e1a', fontSize: 12, fontWeight: 800,
+              }}
+            >
+              {valor >= 0.12 ? `${Math.round(valor * 100)}%` : ''}
+            </div>
+          ),
+        )}
+      </div>
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+        {tramos.map(([nombre, valor, color]) => (
+          <span key={nombre} style={{ fontSize: 12.5, display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span style={{ width: 9, height: 9, borderRadius: 3, background: color }} />
+            <span className="suave">{nombre} {Math.round(valor * 100)}%</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * El precio del bote, en fichas y en veces.
+ *
+ * "Pagas 50 para optar a 150" se entiende mucho mejor viendo los dos montones y
+ * las casillas de "una de cada tres" que leyendo la división.
+ */
+function PrecioDelBote({ bote, pagar }: { bote: number; pagar: number }) {
+  const total = bote + pagar
+  const necesario = pagar / total
+  const deCada = Math.max(2, Math.round(1 / Math.max(necesario, 0.01)))
+
+  return (
+    <div style={{ display: 'grid', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+        <MontonesDeFichas
+          montones={[
+            { nombre: 'Pones', fichas: pagar, color: 'var(--rojo)' },
+            { nombre: 'Puedes llevarte', fichas: total, color: 'var(--verde)' },
+          ]}
+        />
+      </div>
+      <div>
+        <span className="etiqueta">Necesitas ganar</span>
+        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 6 }}>
+          {Array.from({ length: Math.min(deCada, 12) }, (_, i) => (
+            <span
+              key={i}
+              style={{
+                width: 22, height: 22, borderRadius: 6,
+                background: i === 0 ? 'var(--verde)' : 'rgba(255,255,255,0.08)',
+                border: '1px solid var(--borde)',
+              }}
+            />
+          ))}
+        </div>
+        <p className="suave" style={{ fontSize: 13.5, margin: '7px 0 0' }}>
+          <strong>1 de cada {deCada}</strong> veces ({Math.round(necesario * 100)}%) para no perder fichas.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/** Montones de fichas comparados, para que las cantidades se vean y no se lean. */
+function MontonesDeFichas({
+  montones,
+}: {
+  montones: Array<{ nombre: string; fichas: number; color?: string }>
+}) {
+  const mayor = Math.max(...montones.map((m) => m.fichas), 1)
+  return (
+    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+      {montones.map((monton) => (
+        <div key={monton.nombre} style={{ textAlign: 'center', flex: '0 0 auto' }}>
+          <div
+            style={{
+              width: 54,
+              height: Math.max(12, Math.round((monton.fichas / mayor) * 92)),
+              background: monton.color ?? 'var(--morado)',
+              borderRadius: '7px 7px 4px 4px',
+              boxShadow: 'inset 0 -6px 0 rgba(0,0,0,0.18), inset 0 6px 0 rgba(255,255,255,0.14)',
+            }}
+          />
+          <div style={{ fontWeight: 700, fontSize: 14, marginTop: 5 }}>{monton.fichas}</div>
+          <div className="tenue" style={{ fontSize: 11.5 }}>{monton.nombre}</div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 /** Ejemplos reales de cada jugada, de la más floja a la más fuerte. */

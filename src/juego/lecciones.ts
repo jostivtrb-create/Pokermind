@@ -28,6 +28,20 @@ export type Paso =
   | { tipo: 'escalera'; texto: string; pie?: string }
   /** Los trece valores en fila, de menor a mayor. */
   | { tipo: 'valores'; texto: string; pie?: string }
+  /** Los tres botones del juego, con uno resaltado. */
+  | { tipo: 'acciones'; texto: string; resaltar?: 'retirarse' | 'pagar' | 'subir'; pie?: string }
+  /** Un porcentaje dibujado: barra de victoria/empate/derrota, con o sin cartas. */
+  | { tipo: 'porcentaje'; texto: string; victoria: number; empate?: number; mano?: Carta[]; mesa?: Carta[]; pie?: string }
+  /** El precio del bote en fichas: lo que pones contra lo que puedes llevarte. */
+  | { tipo: 'precio'; texto: string; bote: number; pagar: number; pie?: string }
+  /** Las cartas que te sirven, contadas y a la vista. */
+  | { tipo: 'outs'; texto: string; mano: Carta[]; mesa: Carta[]; outs: Carta[]; pie?: string }
+  /** La mesa vista desde arriba: cuatro sillas, el botón y las ciegas. */
+  | { tipo: 'sillas'; texto: string; boton: number; resaltar?: number; nota?: string; pie?: string }
+  /** La rejilla de 13×13 con las manos iniciales que entran en un rango. */
+  | { tipo: 'rango'; texto: string; rango: string; pie?: string }
+  /** Montones de fichas comparados. */
+  | { tipo: 'fichas'; texto: string; montones: Array<{ nombre: string; fichas: number; color?: string }>; pie?: string }
 
 /**
  * El formato de una lección del entrenador.

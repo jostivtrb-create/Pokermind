@@ -2,6 +2,10 @@ import type { Aleatorio } from '../motor/aleatorio'
 import type { Modulo, PreguntaTest } from '../juego/lecciones'
 import { leccion } from '../juego/lecciones'
 import { alguna, tenerParejaMedia, tenerProyectoDeEscalera } from '../juego/practica'
+import { manoDeCodigo } from '../motor/cartas'
+import type { Carta } from '../motor/cartas'
+
+const m = (texto: string): Carta[] => manoDeCodigo(texto)
 
 /**
  * MÓDULO 3 · El precio del bote.
@@ -41,11 +45,16 @@ export const MODULO_3: Modulo = {
       modulo: 3,
       titulo: 'Lo que te cobran y lo que puedes ganar',
       idea: 'Nunca se decide mirando solo tus cartas: se decide comparando tu porcentaje con lo que te están cobrando.',
-      explicacion: [
-        'Hay 100 en el bote y te piden 50. Si pagas, el bote pasa a ser 150 y tú has puesto 50 de esos.',
-        'O sea: pones 1 para ganar 3. Con que ganes **1 de cada 3 veces**, ya no pierdes fichas.',
-        'Eso es el **precio del bote**: el porcentaje mínimo que necesitas para que pagar no sea tirar dinero.',
-        'La regla entera del póker es esta: **si tu porcentaje es mayor que el precio, se paga; si es menor, se suelta**. Todo lo demás son detalles.',
+      pasos: [
+        { tipo: 'precio', texto: 'Hay **100** en el bote y te piden **50** para seguir.',
+          bote: 100, pagar: 50,
+          pie: 'Pones 1 para poder llevarte 3: con ganar una de cada tres ya no pierdes fichas.' },
+        { tipo: 'porcentaje', texto: 'Si tu mano gana el **45%**, pagar sale a cuenta.',
+          victoria: 0.45, pie: 'Necesitabas un 33% y tienes un 45%. Es dinero a la larga.' },
+        { tipo: 'precio', texto: 'Pero con la **misma mano**, si te piden 300 a un bote de 100…',
+          bote: 100, pagar: 300,
+          pie: 'Ahora harían falta tres de cada cuatro veces. Con un 45% es tirar fichas.' },
+        { tipo: 'texto', texto: 'Esa es la regla entera: **si tu porcentaje es mayor que el precio, se paga; si es menor, se suelta.**' },
       ],
       terminos: ['precioDelBote', 'bote'],
       practica: {
@@ -82,11 +91,17 @@ export const MODULO_3: Modulo = {
       modulo: 3,
       titulo: 'Calcular el precio de cabeza',
       idea: 'Divide lo que te piden entre el bote total contando tu pago. Ese es tu porcentaje mínimo.',
-      explicacion: [
-        'La cuenta es siempre la misma: **lo que pones ÷ (el bote + lo que pones)**.',
-        'Te piden 40 y hay 200: 40 ÷ 240 = **17%**. Necesitas ganar una de cada seis veces.',
-        'El error que comete todo el mundo al principio es dividir entre el bote de antes en vez de entre el bote con tu pago dentro. Sale un número más feo del que es y acabas soltando manos que había que pagar.',
-        'Con un poco de práctica sale solo. Y en cuanto sale solo, ya no te engaña nadie con una apuesta grande.',
+      pasos: [
+        { tipo: 'precio', texto: 'Te piden **40** y en el bote hay **200**.',
+          bote: 200, pagar: 40,
+          pie: '40 entre 240: te basta con ganar una de cada seis veces.' },
+        { tipo: 'precio', texto: 'Te piden **60** y en el bote hay **120**.',
+          bote: 120, pagar: 60,
+          pie: '60 entre 180: una de cada tres.' },
+        { tipo: 'precio', texto: 'Cuanto más te piden, más veces tienes que ganar.',
+          bote: 100, pagar: 200,
+          pie: 'Aquí ya hacen falta dos de cada tres. Casi ninguna mano llega.' },
+        { tipo: 'texto', texto: 'El error de todo el mundo al empezar: dividir entre el bote de antes en vez de entre el bote **con tu pago dentro**.' },
       ],
       terminos: ['precioDelBote'],
       practica: { tipo: 'test', pregunta: (azar) => cuentaDePrecio(azar) },
@@ -100,11 +115,16 @@ export const MODULO_3: Modulo = {
       modulo: 3,
       titulo: 'Cuando el precio es bueno, se sigue',
       idea: 'Con una mano mediana y una apuesta pequeña, seguir sale a cuenta aunque sepas que no siempre vas ganando.',
-      explicacion: [
-        'Tienes pareja, pero no la más alta de la mesa. No es una gran mano: pierdes contra bastantes cosas.',
-        'Pero el rival ha apostado poco. Te piden una quinta parte del bote: con ganar una de cada seis veces ya no pierdes.',
-        'Y tu mano gana mucho más que una de cada seis. Aquí retirarse es regalar fichas por miedo.',
-        'Esta es la situación en la que más fichas se dejan por el camino, porque "no tengo la mejor mano" se confunde con "tengo que soltarla".',
+      pasos: [
+        { tipo: 'mesa', texto: 'Tienes pareja, pero **no la más alta** de la mesa.',
+          mano: m('9h 8d'), mesa: m('Ks 9c 4d'),
+          pie: 'No es una gran mano: pierdes contra bastantes cosas.' },
+        { tipo: 'precio', texto: 'Pero el rival ha apostado poco: una quinta parte del bote.',
+          bote: 200, pagar: 40 },
+        { tipo: 'porcentaje', texto: 'Y tu mano gana mucho más que una de cada seis veces.',
+          victoria: 0.42, empate: 0.02,
+          pie: 'Retirarte aquí es regalar fichas por miedo.' },
+        { tipo: 'texto', texto: 'Aquí es donde más fichas se dejan por el camino: confundir «no tengo la mejor mano» con «tengo que soltarla».' },
       ],
       terminos: ['precioDelBote', 'pareja'],
       practica: {
@@ -132,11 +152,16 @@ export const MODULO_3: Modulo = {
       modulo: 3,
       titulo: 'Cuando el precio es malo, se suelta',
       idea: 'La misma mano deja de valer en cuanto te piden mucho por ella. Lo que decide no es tu mano, es la cuenta.',
-      explicacion: [
-        'Ahora el rival apuesta **más que el bote**. Para optar a 250 tienes que poner 150: necesitas ganar **tres de cada cinco veces**.',
-        'Con un proyecto o una pareja media no llegas ni de lejos.',
-        'Y aquí viene lo importante: **no has hecho nada mal**. Llegaste bien a esta situación; simplemente te están cobrando un precio que no puedes pagar.',
-        'Soltar estas manos, una y otra vez, sin enfadarte, es lo que separa al que gana del que pierde poco a poco.',
+      pasos: [
+        { tipo: 'mesa', texto: 'La misma mano regular, y el rival ha apostado en todas las calles.',
+          mano: m('9h 8d'), mesa: m('Ks 9c 4d 2s') },
+        { tipo: 'precio', texto: 'Ahora te pide **más que el bote entero**.',
+          bote: 100, pagar: 150,
+          pie: 'Necesitas ganar tres de cada cinco veces.' },
+        { tipo: 'porcentaje', texto: 'Y contra alguien que apuesta tres veces, tu pareja media gana esto:',
+          victoria: 0.19, empate: 0.02,
+          pie: 'No llega ni de lejos.' },
+        { tipo: 'texto', texto: 'No has hecho nada mal: te están cobrando un precio que no puedes pagar. Soltarlo sin enfadarte es lo que separa al que gana.' },
       ],
       terminos: [],
       practica: {
@@ -166,11 +191,13 @@ export const MODULO_3: Modulo = {
       modulo: 3,
       titulo: 'La misma mano, dos decisiones',
       idea: 'Cambiar el tamaño de la apuesta cambia la respuesta correcta sin tocar una sola carta.',
-      explicacion: [
-        'Esto es lo que hay que llevarse del módulo: **la mano no decide sola**.',
-        'Un proyecto de color con 36% se paga encantado si te piden el 15% del bote... y se suelta sin pensarlo si te piden el 60%.',
-        'Por eso, cuando alguien te pregunta "¿pagarías con esto?", la respuesta honesta siempre es: *depende de cuánto me pidan*.',
-        'Y por eso el rival que apuesta mucho no siempre está fuerte: a veces solo está subiendo el precio para que tú no puedas pagar.',
+      pasos: [
+        { tipo: 'porcentaje', texto: 'Un proyecto de color gana un **36%**. Ese número no cambia.',
+          victoria: 0.36 },
+        { tipo: 'precio', texto: 'Con este precio, se paga encantado.', bote: 200, pagar: 40 },
+        { tipo: 'precio', texto: 'Con este, se suelta sin pensarlo.', bote: 200, pagar: 400,
+          pie: 'La mano es la misma. Lo único que cambió fue lo que te piden.' },
+        { tipo: 'texto', texto: 'Por eso, a «¿pagarías con esto?», la respuesta honesta siempre es: **depende de cuánto me pidan**.' },
       ],
       terminos: ['precioDelBote', 'proyecto'],
       practica: {

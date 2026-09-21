@@ -1,5 +1,9 @@
 import type { Modulo, PreguntaTest } from '../juego/lecciones'
 import { leccion } from '../juego/lecciones'
+import { manoDeCodigo } from '../motor/cartas'
+import type { Carta } from '../motor/cartas'
+
+const m = (texto: string): Carta[] => manoDeCodigo(texto)
 import { tenerManoMuyFuerte } from '../juego/practica'
 
 /**
@@ -22,11 +26,18 @@ export const MODULO_9: Modulo = {
       modulo: 9,
       titulo: 'Ser previsible se paga caro',
       idea: 'Si solo apuestas cuando tienes algo, todo el mundo se retira cuando apuestas. Y entonces no ganas nada.',
-      explicacion: [
-        'Imagina a alguien que apuesta **solo** con manos muy buenas. Es fácil jugar contra él: cuando apuesta, te retiras; cuando pasa, le apuestas tú.',
-        'Ese jugador tiene un problema que no se ve en una mano suelta: **nadie le paga nunca**. Sus manos buenas ganan botes minúsculos.',
-        'Por eso hay que apostar a veces sin nada (farol) y pasar a veces con algo bueno. No para hacerse el listo: para que **apostar siga significando poco**.',
-        'Esa es toda la idea del equilibrio. Lo demás son matices.',
+      pasos: [
+        { tipo: 'rango', rango: 'TT+, AQs+, AKo',
+          texto: 'Imagina a alguien que apuesta **solo** con esto.' },
+        { tipo: 'acciones', resaltar: 'retirarse', texto: 'Es facilísimo jugar contra él: cuando apuesta, te retiras.',
+          pie: 'Y cuando pasa, le apuestas tú.' },
+        { tipo: 'fichas', texto: 'Su problema no se ve en una mano: sus manos buenas ganan botes minúsculos.',
+          montones: [
+            { nombre: 'Previsible', fichas: 35, color: 'var(--rojo)' },
+            { nombre: 'Equilibrado', fichas: 140, color: 'var(--verde)' },
+          ],
+          pie: 'Lo que gana de media con la misma mano buena, según si se le lee o no.' },
+        { tipo: 'texto', texto: 'Por eso hay que apostar a veces sin nada y pasar a veces con algo bueno: para que **apostar siga significando poco**.' },
       ],
       terminos: ['farol', 'valor'],
       practica: {
@@ -63,11 +74,21 @@ export const MODULO_9: Modulo = {
       modulo: 9,
       titulo: 'La proporción entre valor y farol',
       idea: 'Por cada mano fuerte con la que apuestas, hay un número de faroles que puedes permitirte. Ni más ni menos.',
-      explicacion: [
-        'Cuando apuestas el tamaño del bote, el rival necesita acertar una de cada tres veces para pagarte. Eso te dice cuántos faroles caben en tus apuestas: **uno por cada dos manos buenas**, más o menos.',
-        'Con esa proporción, al rival le da **exactamente igual** pagar o retirarse: haga lo que haga, no gana nada contra ti. Eso es estar equilibrado.',
-        'Si faroleas más de la cuenta, le sale rentable pagarte siempre. Si faroleas menos, le sale rentable retirarse siempre.',
-        'En la práctica nadie lleva la cuenta exacta en la mesa. Basta con la idea: **si apuestas mucho, que no sea todo humo; si apuestas poco, que no sea todo oro**.',
+      pasos: [
+        { tipo: 'precio', texto: 'Apuestas el tamaño del bote: al rival le hace falta acertar una de cada tres.',
+          bote: 100, pagar: 100 },
+        { tipo: 'fichas', texto: 'Eso te dice cuántos faroles caben: **uno por cada dos manos buenas**.',
+          montones: [
+            { nombre: 'Por valor', fichas: 2, color: 'var(--verde)' },
+            { nombre: 'De farol', fichas: 1, color: 'var(--rojo)' },
+          ],
+          pie: 'Con esa proporción, al rival le da igual pagar o retirarse: no gana con ninguna de las dos.' },
+        { tipo: 'fichas', texto: 'Si faroleas de más, le sale rentable pagarte siempre.',
+          montones: [
+            { nombre: 'Por valor', fichas: 1, color: 'var(--verde)' },
+            { nombre: 'De farol', fichas: 3, color: 'var(--rojo)' },
+          ] },
+        { tipo: 'texto', texto: 'Nadie lleva la cuenta exacta en la mesa. Basta con la idea: **si apuestas mucho, que no sea todo humo; si apuestas poco, que no sea todo oro**.' },
       ],
       terminos: ['farol', 'valor'],
       practica: {
@@ -104,11 +125,17 @@ export const MODULO_9: Modulo = {
       modulo: 9,
       titulo: 'Equilibrio o explotación',
       idea: 'Contra un rival malo no hace falta equilibrio: hace falta aprovechar su error. El equilibrio es para cuando no sabes con quién juegas.',
-      explicacion: [
-        'Jugar equilibrado te hace **imposible de explotar**. Pero también renuncia a ganar dinero extra.',
-        'Contra alguien que se retira demasiado, lo rentable no es equilibrarse: es farolearle más. Contra alguien que paga todo, es no farolearle nunca y cobrarle las buenas.',
-        'La regla práctica: **si has detectado un error, aprovéchalo; si no sabes nada del rival, juega equilibrado**.',
-        'Y con esto terminas el curso. A partir de aquí, lo que más te va a enseñar es el modo libre: rivales distintos cada partida, y tú decidiendo con todo esto en la cabeza.',
+      pasos: [
+        { tipo: 'acciones', resaltar: 'subir', texto: 'Has visto que un rival se retira casi siempre que le apuestas.',
+          pie: 'Ahí no toca jugar "correcto": toca farolearle más.' },
+        { tipo: 'rango', rango: '22+, A2s+, K5s+, Q7s+, J7s+, T7s+, 96s+, 85s+, A2o+, K8o+, Q8o+, J8o+',
+          texto: 'Y contra el que lo paga todo, al revés: le cobras las buenas y no le faroleas nunca.' },
+        { tipo: 'fichas', texto: 'Aprovechar un error concreto gana más que jugar perfecto.',
+          montones: [
+            { nombre: 'Equilibrado', fichas: 45, color: 'var(--azul)' },
+            { nombre: 'Aprovechando', fichas: 110, color: 'var(--verde)' },
+          ] },
+        { tipo: 'texto', texto: 'La regla: **si has detectado un error, aprovéchalo; si no sabes nada del rival, juega equilibrado**.' },
       ],
       terminos: ['rango'],
       practica: {
@@ -145,10 +172,11 @@ export const MODULO_9: Modulo = {
       modulo: 9,
       titulo: 'Todo junto',
       idea: 'Última lección: una mano cualquiera, sin ayudas, con todo lo que has aprendido.',
-      explicacion: [
-        'Se acabaron las explicaciones. Aquí tienes manos fuertes en mesas normales, sin ver los porcentajes hasta después de decidir.',
-        'Piensa en orden: qué tienes, qué puede tener él, qué te cuesta seguir y qué acción saca más fichas.',
-        'Si aciertas estas, estás jugando mejor que la mayoría de la gente que se sienta en una mesa. Y el modo libre te está esperando.',
+      pasos: [
+        { tipo: 'mesa', texto: 'Se acabaron las explicaciones. Manos normales, sin ver los números.',
+          mano: m('Ks Kh'), mesa: m('Kd 9c 4s 2h') },
+        { tipo: 'acciones', texto: 'Piensa en orden: qué tienes, qué puede tener él, qué te cuesta seguir y qué saca más fichas.' },
+        { tipo: 'texto', texto: 'Si aciertas estas, juegas mejor que la mayoría de la gente que se sienta en una mesa. Y el modo libre te está esperando.' },
       ],
       terminos: [],
       practica: {

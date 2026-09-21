@@ -1,5 +1,9 @@
 import type { Modulo, PreguntaTest } from '../juego/lecciones'
 import { leccion } from '../juego/lecciones'
+import { manoDeCodigo } from '../motor/cartas'
+import type { Carta } from '../motor/cartas'
+
+const m = (texto: string): Carta[] => manoDeCodigo(texto)
 import { tenerParejaMedia } from '../juego/practica'
 
 /**
@@ -20,11 +24,14 @@ export const MODULO_6: Modulo = {
       modulo: 6,
       titulo: 'Cada apuesta cuenta algo',
       idea: 'El rival te está diciendo qué tiene cada vez que pone fichas. No con palabras, pero te lo está diciendo.',
-      explicacion: [
-        'Cuando alguien apuesta, está diciendo: *"mi mano aguanta que pongas más fichas"*. No siempre es verdad, pero la mayoría de las veces lo es.',
-        'Cuando pasa, está diciendo lo contrario: *"prefiero ver la carta siguiente gratis"*.',
-        'Lo importante no es acertar su mano exacta, es **quitar manos de su rango**. Si en una mesa con tres cartas bajas apuesta fuerte tres veces, casi todas sus manos flojas ya no están ahí.',
-        'Eso es leer al rival: no adivinar, ir tachando.',
+      pasos: [
+        { tipo: 'rango', rango: '40%', texto: 'Antes del flop, su rango es **todo esto**.' },
+        { tipo: 'rango', rango: '22+, A2s+, K9s+, Q9s+, J9s+, T9s, ATo+, KJo+',
+          texto: 'Apuesta en el flop: fuera casi todo lo que no ligó nada.' },
+        { tipo: 'rango', rango: '99+, AJs+, KQs, AQo+',
+          texto: 'Apuesta otra vez en el turn. Y otra en el river. Le queda **esto**.',
+          pie: 'Con manos flojas casi nadie apuesta tres veces seguidas.' },
+        { tipo: 'texto', texto: 'Leer al rival no es adivinar su mano: es **ir tachando** las que ya no puede tener.' },
       ],
       terminos: ['rango'],
       practica: {
@@ -61,11 +68,11 @@ export const MODULO_6: Modulo = {
       modulo: 6,
       titulo: 'El rango se estrecha calle a calle',
       idea: 'Su rango empieza ancho y se va cerrando. Tu decisión tiene que ir cerrándose con él.',
-      explicacion: [
-        'Antes del flop su rango es lo que abre desde su silla: puede ser el 40% de las manos.',
-        'Apuesta en el flop: fuera casi todo lo que no ligó nada. Queda puede que el 20%.',
-        'Apuesta otra vez en el turn: queda el 10%. Y en el river, quizá el 5%.',
-        'Fíjate en lo que significa: **la misma pareja que era buenísima en el flop puede ser basura en el river**, sin que hayas hecho nada mal. Su rango cambió, y el tuyo no.',
+      pasos: [
+        { tipo: 'rango', rango: '40%', texto: 'Antes del flop: puede tener el 40% de las manos.' },
+        { tipo: 'rango', rango: '20%', texto: 'Apuesta en el flop: la mitad de su rango desaparece.' },
+        { tipo: 'rango', rango: '99+, AJs+, KQs, AQo+', texto: 'Apuesta en el turn y en el river: le queda muy poco, y muy bueno.' },
+        { tipo: 'texto', texto: 'Fíjate en lo importante: **tu mano no ha cambiado y la suya sí**. La misma pareja que era buenísima en el flop puede ser basura en el river.' },
       ],
       terminos: ['rango', 'calle'],
       practica: {
@@ -102,11 +109,15 @@ export const MODULO_6: Modulo = {
       modulo: 6,
       titulo: 'Contra un rango fuerte, se suelta',
       idea: 'Cuando alguien ha apostado en todas las calles, tu pareja media ya no le gana casi a nada.',
-      explicacion: [
-        'Esta es la situación donde más fichas se pierden en el póker, y casi nunca duele en el momento: duele en el resultado del mes.',
-        'Tienes una mano decente. El rival ha apostado en el flop, en el turn y ahora en el river.',
-        'Mira su rango, no tu mano: después de tres apuestas, casi todo lo que le queda te gana.',
-        'Pagar aquí es pagar por confirmar lo que ya sabes. **La curiosidad, en el póker, se cobra.**',
+      pasos: [
+        { tipo: 'mesa', texto: 'Tienes una mano decente y el rival ha apostado en las tres calles.',
+          mano: m('9h 8d'), mesa: m('Ks 9c 4d 2s 7h') },
+        { tipo: 'rango', rango: '99+, AJs+, KQs, AQo+',
+          texto: 'Mira su rango, no tu mano. Después de tres apuestas le queda esto.' },
+        { tipo: 'porcentaje', texto: 'Y contra eso, tu pareja media gana:',
+          victoria: 0.12, empate: 0.02,
+          pie: 'Casi todo lo que le queda te gana.' },
+        { tipo: 'texto', texto: 'Pagar aquí es pagar por confirmar lo que ya sabes. **La curiosidad, en el póker, se cobra.**' },
       ],
       terminos: ['rango'],
       practica: {
@@ -136,11 +147,14 @@ export const MODULO_6: Modulo = {
       modulo: 6,
       titulo: 'Contra un rango flojo, se paga',
       idea: 'Si nadie ha enseñado fuerza en toda la mano, una pareja media suele ser la mejor mano.',
-      explicacion: [
-        'La otra cara de la lección anterior, y la que cuesta más de aplicar: **no soltar de más**.',
-        'Si el rival no ha subido antes del flop y solo ha ido pagando, su rango sigue siendo ancho: muchas manos regulares y muchas manos vacías.',
-        'Contra eso, tu pareja media gana la mayoría de las veces. Retirarte porque "podría tener algo mejor" es regalarle botes.',
-        'El póker no va de esperar la mano perfecta: va de ganar los botes que te tocan.',
+      pasos: [
+        { tipo: 'mesa', texto: 'El rival no ha subido en ningún momento: solo ha ido pagando.',
+          mano: m('9h 8d'), mesa: m('Ks 9c 4d 2s 7h') },
+        { tipo: 'rango', rango: '22+, A2s+, K5s+, Q7s+, J7s+, T7s+, 96s+, 85s+, 75s+, 64s+, 54s, A2o+, K8o+, Q8o+, J8o+, T8o+, 98o',
+          texto: 'Su rango sigue siendo **ancho**: muchas manos regulares y muchas vacías.' },
+        { tipo: 'porcentaje', texto: 'Contra eso, tu pareja media gana la mayoría de las veces.',
+          victoria: 0.68, empate: 0.03 },
+        { tipo: 'texto', texto: 'Retirarte porque "podría tener algo mejor" es regalarle botes. El póker va de ganar los que te tocan.' },
       ],
       terminos: [],
       practica: {

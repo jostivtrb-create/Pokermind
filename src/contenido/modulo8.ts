@@ -19,11 +19,26 @@ export const MODULO_8: Modulo = {
       modulo: 8,
       titulo: 'Cuando las ciegas te comen',
       idea: 'Con pocas fichas el tiempo juega en tu contra: esperar una mano mejor cuesta fichas cada vuelta.',
-      explicacion: [
-        'En un torneo las ciegas **suben**. Lo que al principio era una apuesta pequeña, más tarde es un mordisco a tu montón.',
-        'Cuando te quedan pocas fichas —digamos, menos de diez veces la ciega grande— cada vuelta de mesa te cuesta una parte importante de lo que tienes.',
-        'Por eso, con fichas cortas se juegan **más** manos, no menos. Esperar a que te toquen ases es cómodo... y te deja sin fichas antes de que lleguen.',
-        'Es lo contrario de lo que pide el instinto, y por eso hay que practicarlo.',
+      pasos: [
+        { tipo: 'fichas', texto: 'Empiezas el torneo con fichas de sobra para esperar.',
+          montones: [
+            { nombre: 'Tus fichas', fichas: 1000, color: 'var(--verde)' },
+            { nombre: 'Ciega grande', fichas: 20, color: 'var(--morado)' },
+          ],
+          pie: 'Cincuenta veces la ciega: puedes tirar manos toda la tarde.' },
+        { tipo: 'fichas', texto: 'Pero las ciegas **suben**, y tus fichas no.',
+          montones: [
+            { nombre: 'Tus fichas', fichas: 800, color: 'var(--ambar)' },
+            { nombre: 'Ciega grande', fichas: 120, color: 'var(--morado)' },
+          ],
+          pie: 'Ahora cada vuelta de mesa te cuesta una parte seria de lo que tienes.' },
+        { tipo: 'fichas', texto: 'Y llega un momento en que esperar ya no es una opción.',
+          montones: [
+            { nombre: 'Tus fichas', fichas: 240, color: 'var(--rojo)' },
+            { nombre: 'Ciega grande', fichas: 120, color: 'var(--morado)' },
+          ],
+          pie: 'Dos vueltas más y te quedas sin nada que apostar.' },
+        { tipo: 'texto', texto: 'Por eso con fichas cortas se juegan **más** manos, no menos. Es lo contrario de lo que pide el instinto.' },
       ],
       terminos: ['ciegas', 'todoIn'],
       practica: {
@@ -60,11 +75,21 @@ export const MODULO_8: Modulo = {
       modulo: 8,
       titulo: 'Todo-in y botes paralelos',
       idea: 'Si te quedas sin fichas sigues en la mano, pero solo puedes ganar la parte del bote a la que llegaste a poner.',
-      explicacion: [
-        'Ir **todo-in** es apostar todo lo que te queda. A partir de ahí ya no decides nada: se reparten las cartas que falten y se ve quién gana.',
-        'Si otros dos siguen apostando después de tu todo-in, esas fichas van a un **bote paralelo** al que tú no puedes aspirar: no llegaste a poner tanto.',
-        'O sea: puedes ganar tu parte y que otro se lleve el resto. No es injusto, es lo justo — solo se gana lo que se arriesgó.',
-        'Saber esto evita un susto muy típico: ganar la mano y ver que el montón que te llevas es más pequeño de lo que había en la mesa.',
+      pasos: [
+        { tipo: 'fichas', texto: 'Vas **todo-in** con 100. Otros dos siguen apostando 500 cada uno.',
+          montones: [
+            { nombre: 'Tú', fichas: 100, color: 'var(--ambar)' },
+            { nombre: 'Rival 1', fichas: 500, color: 'var(--azul)' },
+            { nombre: 'Rival 2', fichas: 500, color: 'var(--azul)' },
+          ] },
+        { tipo: 'fichas', texto: 'El bote se parte: tú solo puedes aspirar a lo que llegaste a poner.',
+          montones: [
+            { nombre: 'Bote principal', fichas: 300, color: 'var(--verde)' },
+            { nombre: 'Bote paralelo', fichas: 800, color: 'var(--texto-tenue)' },
+          ],
+          pie: 'El paralelo se lo juegan los otros dos. No es injusto: solo se gana lo que se arriesgó.' },
+        { tipo: 'acciones', texto: 'Y con todas tus fichas dentro, ya no decides nada más.',
+          pie: 'Se reparten las cartas que falten y se ve quién gana. Por eso esa decisión hay que pensarla antes.' },
       ],
       terminos: ['todoIn', 'botePartido'],
       practica: {
@@ -101,10 +126,16 @@ export const MODULO_8: Modulo = {
       modulo: 8,
       titulo: 'Con fichas cortas, se empuja',
       idea: 'Con pocas fichas y una mano decente, meterlas todas gana más que pagar y jugar a ciegas.',
-      explicacion: [
-        'Te quedan pocas fichas y tienes una mano razonable. Pagar te deja con casi nada y tendrás que decidir a ciegas en el flop.',
-        'Meterlas todas hace dos cosas a la vez: puedes llevarte las ciegas sin ver una carta, y si te pagan, sigues teniendo tu porcentaje.',
-        'Esa suma —lo que ganas cuando se retiran **más** lo que ganas cuando te pagan— es lo que hace que empujar sea la mejor jugada con fichas cortas.',
+      pasos: [
+        { tipo: 'fichas', texto: 'Te quedan pocas fichas y alguien ha subido.',
+          montones: [
+            { nombre: 'Tus fichas', fichas: 220, color: 'var(--ambar)' },
+            { nombre: 'Su subida', fichas: 60, color: 'var(--azul)' },
+          ] },
+        { tipo: 'porcentaje', texto: 'Con una mano razonable, si te pagan sigues teniendo tu parte.',
+          victoria: 0.45, empate: 0.02 },
+        { tipo: 'acciones', resaltar: 'subir', texto: 'Y si se retira, te llevas las ciegas **sin ver una carta**.',
+          pie: 'Esa suma —lo que ganas cuando se van más lo que ganas cuando pagan— es lo que hace que empujar sea lo mejor.' },
       ],
       terminos: ['todoIn'],
       practica: {
@@ -134,11 +165,21 @@ export const MODULO_8: Modulo = {
       modulo: 8,
       titulo: 'La presión de quedar fuera',
       idea: 'En un torneo no todas las fichas valen lo mismo: las últimas valen mucho más que las primeras.',
-      explicacion: [
-        'En una partida normal, perder 100 fichas y ganar 100 fichas se compensan. En un torneo **no**.',
-        'Si pierdes las últimas, te vas a casa. No hay forma de recuperarlas. Por eso arriesgar tu montón entero con una ventaja pequeña suele ser peor de lo que dice la cuenta a secas.',
-        'Al revés, cuando tienes muchas fichas puedes apretar a los que van cortos: para ellos cada mano es su vida, y para ti no.',
-        'Es la única parte del juego donde la cuenta de fichas no manda sola. Y es justo lo que vas a notar en el modo libre cuando queden dos.',
+      pasos: [
+        { tipo: 'fichas', texto: 'En una partida normal, perder 100 y ganar 100 se compensan.',
+          montones: [
+            { nombre: 'Pierdes', fichas: 100, color: 'var(--rojo)' },
+            { nombre: 'Ganas', fichas: 100, color: 'var(--verde)' },
+          ] },
+        { tipo: 'fichas', texto: 'En un torneo no: si pierdes **las últimas**, te vas a casa.',
+          montones: [
+            { nombre: 'Te quedan', fichas: 100, color: 'var(--rojo)' },
+            { nombre: 'Si las pierdes', fichas: 0, color: 'var(--texto-tenue)' },
+          ],
+          pie: 'No hay forma de recuperarlas.' },
+        { tipo: 'sillas', boton: 0, resaltar: 0, texto: 'Y al revés: con muchas fichas puedes apretar a los que van cortos.',
+          nota: 'Para ellos cada mano es su torneo. Para ti, no.' },
+        { tipo: 'texto', texto: 'Es la única parte del juego donde la cuenta de fichas no manda sola. Lo vas a notar en el modo libre cuando queden dos.' },
       ],
       terminos: [],
       practica: {

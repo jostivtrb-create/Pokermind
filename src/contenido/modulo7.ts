@@ -1,5 +1,9 @@
 import type { Modulo, PreguntaTest } from '../juego/lecciones'
 import { leccion } from '../juego/lecciones'
+import { manoDeCodigo } from '../motor/cartas'
+import type { Carta } from '../motor/cartas'
+
+const m = (texto: string): Carta[] => manoDeCodigo(texto)
 import { mesaBaja, mesaSeca, tenerManoMuyFuerte, tenerNada, todas } from '../juego/practica'
 
 /**
@@ -24,11 +28,18 @@ export const MODULO_7: Modulo = {
       modulo: 7,
       titulo: 'Apostar por valor',
       idea: 'Con una mano buena no apuestas para que se retiren: apuestas para que te paguen con una peor.',
-      explicacion: [
-        'Suena obvio y casi nadie lo hace bien. Cuando tienes la mejor mano, **lo que quieres es que el rival ponga fichas**.',
-        'Por eso el tamaño importa: si apuestas tan fuerte que solo te paga lo que te gana, estás apostando al revés.',
-        'La pregunta antes de apostar con una mano buena es siempre la misma: **¿con qué manos peores me va a pagar esto?** Si la respuesta es "con ninguna", o apuestas menos, o no apuestas.',
-        'Eso se llama **apostar por valor**, y es de donde sale casi todo el dinero del póker. Los faroles son la parte llamativa; el valor es la que paga las facturas.',
+      pasos: [
+        { tipo: 'mesa', texto: 'Tienes una mano muy buena. La pregunta no es "¿cómo le hago retirarse?".',
+          mano: m('9s 9h'), mesa: m('9d 5c 2s') },
+        { tipo: 'acciones', resaltar: 'subir', texto: 'La pregunta es: **¿con qué manos peores me va a pagar esto?**',
+          pie: 'Si la respuesta es "con ninguna", o apuestas menos, o no apuestas.' },
+        { tipo: 'fichas', texto: 'Apostar demasiado echa a quien te paga y solo cobra de quien te gana.',
+          montones: [
+            { nombre: 'Apuesta justa', fichas: 120, color: 'var(--verde)' },
+            { nombre: 'Apuesta de más', fichas: 40, color: 'var(--rojo)' },
+          ],
+          pie: 'Fichas que acabas ganando de media con cada tamaño.' },
+        { tipo: 'texto', texto: 'Esto se llama **apostar por valor**, y de ahí sale casi todo el dinero del póker. Los faroles son la parte llamativa; el valor paga las facturas.' },
       ],
       terminos: ['valor'],
       practica: {
@@ -65,10 +76,13 @@ export const MODULO_7: Modulo = {
       modulo: 7,
       titulo: 'Al que lo paga todo, se le cobra',
       idea: 'Contra alguien que no suelta la mano, con una mano fuerte se apuesta y se apuesta grande.',
-      explicacion: [
-        'Hay un tipo de rival que paga casi cualquier cosa "por ver". Contra él, el póker es muy fácil: **le cobras**.',
-        'Nada de esconder la mano ni de trucos. Si va a pagar con una pareja cualquiera, apuesta y déjale pagar.',
-        'Este es el caso en el que apostar es claramente lo mejor, y conviene tenerlo claro antes de la lección siguiente, que es justo la contraria.',
+      pasos: [
+        { tipo: 'mesa', texto: 'Mano enorme, y enfrente el que lo paga todo "por ver".',
+          mano: m('9s 9h'), mesa: m('9d 5c 2s') },
+        { tipo: 'porcentaje', texto: 'Ganas casi siempre, y él va a pagar con cualquier pareja.',
+          victoria: 0.94, empate: 0.01 },
+        { tipo: 'acciones', resaltar: 'subir', texto: 'Contra él no hay trucos: **le cobras**.',
+          pie: 'Nada de esconder la mano. Apuesta y déjale pagar.' },
       ],
       terminos: ['valor'],
       practica: {
@@ -97,12 +111,19 @@ export const MODULO_7: Modulo = {
       modulo: 7,
       titulo: 'Al que se va a retirar, se le esconde',
       idea: 'Con una mano enorme contra un rival que no puede pagar, apostar es ganar poco. Pasar le deja meterse solo.',
-      explicacion: [
-        'Esta es la lección que hace distinto a este juego, y la más difícil de tragar.',
-        'Tienes una mano casi imbatible. La mesa es de cartas bajas, sin colores ni escaleras a la vista, y el rival juega figuras: **no ha ligado nada y no tiene ni con qué soñar**.',
-        'Si apuestas, tira la mano y te llevas un bote pequeño. Pero si **pasas**, le estás enseñando debilidad... y un rival agresivo apuesta con nada en cuanto huele debilidad.',
-        'Es decir: no apostar no es dejar de ganar. Es **dejar que apueste él**. Esconder la mano no es un truco de película, es una cuenta: contra este rival concreto, pasar gana más fichas que apostar.',
-        'Ojo: esto **no** vale siempre. Contra el de la lección anterior sería un error carísimo. Depende de quién tengas delante, y por eso el juego te enseña a mirarlo.',
+      pasos: [
+        { tipo: 'mesa', texto: 'Mano casi imbatible, en una mesa de cartas bajas.',
+          mano: m('7s 7h'), mesa: m('7d 4c 2h') },
+        { tipo: 'rango', rango: 'AKo, AQo, AJo, AKs, AQs, AJs, KQo, KQs',
+          texto: 'Pero el rival juega figuras: **no ha ligado nada y no puede ligar casi nada**.' },
+        { tipo: 'acciones', resaltar: 'subir', texto: 'Si apuestas, tira la mano y te llevas un bote pequeño.' },
+        { tipo: 'fichas', texto: 'Si pasas, le enseñas debilidad... y un rival agresivo apuesta con nada.',
+          montones: [
+            { nombre: 'Si apuestas', fichas: 111, color: 'var(--rojo)' },
+            { nombre: 'Si pasas', fichas: 193, color: 'var(--verde)' },
+          ],
+          pie: 'Fichas que ganas de media con cada jugada. No apostar no es dejar de ganar: es dejar que apueste él.' },
+        { tipo: 'texto', texto: 'Ojo: esto **no** vale siempre. Contra el de la lección anterior sería un error carísimo. Depende de quién tengas delante.' },
       ],
       terminos: ['farol', 'valor'],
       practica: {
@@ -131,11 +152,16 @@ export const MODULO_7: Modulo = {
       modulo: 7,
       titulo: 'Cuándo sale a cuenta un farol',
       idea: 'Un farol no se hace porque te apetezca: se hace cuando el rival casi no puede tener nada.',
-      explicacion: [
-        'Farolear no es valentía, es una cuenta. Apuestas 100 para ganar los 100 que hay en el bote: necesitas que se retire **más de la mitad de las veces**.',
-        'Eso solo pasa cuando su rango **no liga con esta mesa**. Si él juega figuras y la mesa es de cartas bajas, casi nunca tiene nada.',
-        'Al revés: en una mesa que encaja con lo que él juega, farolear es regalar fichas por muy convincente que te parezca tu historia.',
-        'Y hay una regla que ahorra mucho dinero: **no se farolea a quien no se retira nunca**. Da igual lo bonita que sea la jugada.',
+      pasos: [
+        { tipo: 'precio', texto: 'Farolear no es valentía, es una cuenta. Apuestas 100 para ganar 100.',
+          bote: 100, pagar: 100,
+          pie: 'Necesitas que se retire más de la mitad de las veces.' },
+        { tipo: 'rango', rango: 'AKo, AQo, AJo, AKs, AQs, AJs, KQo, KQs',
+          texto: 'Eso solo pasa si su rango **no liga** con esta mesa.' },
+        { tipo: 'mesa', texto: 'Con un rango de figuras, en una mesa así casi nunca tiene nada.',
+          mano: m('Jc 9d'), mesa: m('7d 4c 2h'),
+          pie: 'En una mesa A-K-Q sería justo al revés.' },
+        { tipo: 'texto', texto: 'Y una regla que ahorra mucho dinero: **no se farolea a quien no se retira nunca**.' },
       ],
       terminos: ['farol'],
       practica: {
@@ -172,11 +198,17 @@ export const MODULO_7: Modulo = {
       modulo: 7,
       titulo: 'El farol que sí se hace',
       idea: 'Con nada en la mano, en una mesa que al rival no le sirve, apostar gana fichas.',
-      explicacion: [
-        'Tu mano no vale nada y no va a mejorar. Hasta aquí, malo.',
-        'Pero mira la mesa: cartas bajas. Y mira su rango: figuras. **Casi nunca tiene nada.**',
-        'Apostar aquí no es un acto de fe, es la jugada de mayor valor esperado: se va a retirar la mayoría de las veces y te vas a llevar el bote.',
-        'Esta es la otra mitad del póker. Si solo apuestas cuando tienes algo, eres previsible y nadie te paga nunca.',
+      pasos: [
+        { tipo: 'mesa', texto: 'Tu mano no vale nada y no va a mejorar.',
+          mano: m('Jc 9d'), mesa: m('7d 4c 2h') },
+        { tipo: 'rango', rango: 'AKo, AQo, AJo, AKs, AQs, AJs, KQo, KQs, ATo, ATs',
+          texto: 'Pero mira su rango: figuras. En esta mesa **casi nunca tiene nada**.' },
+        { tipo: 'fichas', texto: 'Apostar aquí no es fe: es la jugada que más fichas gana.',
+          montones: [
+            { nombre: 'Si pasas', fichas: 18, color: 'var(--azul)' },
+            { nombre: 'Si apuestas', fichas: 62, color: 'var(--verde)' },
+          ] },
+        { tipo: 'texto', texto: 'Si solo apuestas cuando tienes algo, eres previsible y nadie te paga nunca.' },
       ],
       terminos: ['farol'],
       practica: {

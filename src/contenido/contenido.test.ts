@@ -51,6 +51,26 @@ describe('el temario está bien montado', () => {
     }
   })
 
+  /**
+   * La regla que salió de la segunda prueba del usuario: *"cualquier pantalla
+   * que sea solo texto aburre; tiene que ser muy gráfico todo lo que va
+   * explicando (...) si es un reguero de texto, hasta a mí me aburrió"*.
+   *
+   * Así que esto deja de ser una buena intención y pasa a ser un test.
+   */
+  it('ninguna lección explica a base de texto suelto', () => {
+    const flojas: string[] = []
+    for (const l of LECCIONES) {
+      const pasos = pasosDeLaLeccion(l)
+      const soloTexto = pasos.filter((p) => p.tipo === 'texto').length
+      const visuales = pasos.length - soloTexto
+      if (soloTexto > 1 || visuales < pasos.length / 2) {
+        flojas.push(`${l.id} (${visuales} visuales de ${pasos.length})`)
+      }
+    }
+    expect(flojas, `lecciones con demasiado texto suelto: ${flojas.join(' · ')}`).toHaveLength(0)
+  })
+
   it('todos los términos citados existen en el glosario', () => {
     for (const l of LECCIONES) {
       for (const clave of l.terminos) {

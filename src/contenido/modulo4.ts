@@ -19,11 +19,14 @@ export const MODULO_4: Modulo = {
       modulo: 4,
       titulo: 'Hablar el último es información gratis',
       idea: 'El que decide el último decide sabiendo lo que han hecho los demás. Esa información vale dinero.',
-      explicacion: [
-        'Imagina dos personas con las mismas cartas. Una tiene que decidir **primero**, a oscuras. La otra decide **después de ver** lo que hizo la primera.',
-        'La segunda sabe algo que la primera no sabía. Y en el póker, saber es lo único que se paga.',
-        'Por eso la misma mano vale más desde el botón que desde la primera silla: no porque las cartas cambien, sino porque cambia lo que sabes cuando decides.',
-        'Todo lo que viene en los módulos siguientes —leer al rival, apostar por valor, farolear— es mucho más fácil desde la última posición.',
+      pasos: [
+        { tipo: 'sillas', boton: 0, resaltar: 3, texto: 'Este habla **el primero**. Decide sin saber nada de los demás.',
+          nota: 'A ciegas' },
+        { tipo: 'sillas', boton: 0, resaltar: 0, texto: 'Y este habla **el último**: decide viendo lo que han hecho los otros tres.',
+          nota: 'Con toda la información' },
+        { tipo: 'sillas', boton: 0, texto: 'Las mismas cartas valen **más** en la segunda silla que en la primera.',
+          nota: 'No cambian las cartas: cambia lo que sabes' },
+        { tipo: 'texto', texto: 'En el póker, saber es lo único que se paga. Por eso la posición es el concepto que más dinero mueve.' },
       ],
       terminos: ['posicion', 'boton'],
       practica: {
@@ -68,11 +71,14 @@ export const MODULO_4: Modulo = {
       modulo: 4,
       titulo: 'Las sillas de la mesa',
       idea: 'Cuanta más gente hable después de ti, más apretado tienes que jugar.',
-      explicacion: [
-        'En una mesa de cuatro hay cuatro sitios: **primera posición**, **el botón**, **la ciega pequeña** y **la ciega grande**.',
-        'Desde primera posición hablas antes que todos y te quedan **tres personas** que pueden tener algo mejor. Hay que jugar pocas manos y buenas.',
-        'Desde el botón ya han hablado casi todos y encima decidirás el último el resto de la mano. Ahí se pueden abrir muchas más manos.',
-        'Las ciegas son incómodas: ya has puesto fichas, pero después del flop hablas de los primeros. Se juegan con cuidado.',
+      pasos: [
+        { tipo: 'sillas', boton: 0, resaltar: 3, texto: '**Primera posición**: hablas antes que todos y te quedan tres por detrás.',
+          nota: 'Pocas manos y buenas' },
+        { tipo: 'sillas', boton: 0, resaltar: 0, texto: '**El botón**: ya han hablado casi todos y tú decides el último.',
+          nota: 'Aquí se pueden jugar muchas más manos' },
+        { tipo: 'sillas', boton: 0, resaltar: 1, texto: 'Las **ciegas** son incómodas: ya has puesto fichas y hablas pronto.',
+          nota: 'Se juegan con cuidado' },
+        { tipo: 'texto', texto: 'La regla es sencilla: **cuanta más gente hable después de ti, más apretado tienes que jugar**.' },
       ],
       terminos: ['posicion', 'ciegas'],
       practica: {
@@ -109,10 +115,13 @@ export const MODULO_4: Modulo = {
       modulo: 4,
       titulo: 'Desde el botón se abre más',
       idea: 'Con casi nadie detrás y la última palabra en todas las calles, una mano mediana ya es jugable.',
-      explicacion: [
-        'Estás en el botón. Solo quedan las dos ciegas por hablar, y a partir del flop decidirás **siempre el último**.',
-        'Manos que desde primera posición son basura —una figura con carta media, dos cartas seguidas del mismo palo— desde aquí ganan fichas.',
-        'No porque vayan a ligar más, sino porque cuando no liguen podrás soltarlas baratas, y cuando liguen sabrás mejor cuánto cobrar.',
+      pasos: [
+        { tipo: 'sillas', boton: 0, resaltar: 0, texto: 'Estás en el botón: solo quedan las dos ciegas por hablar.',
+          nota: 'Y a partir del flop decides siempre el último' },
+        { tipo: 'rango', rango: '22+, A2s+, K8s+, Q9s+, J9s+, T8s+, 97s+, 86s+, 75s+, 65s, A8o+, KTo+, QTo+, JTo',
+          texto: 'Desde aquí se pueden abrir **todas estas manos**.',
+          pie: 'Manos que desde primera posición serían basura, aquí ganan fichas.' },
+        { tipo: 'texto', texto: 'No porque vayan a ligar más, sino porque cuando no liguen las sueltas baratas, y cuando liguen sabrás cuánto cobrar.' },
       ],
       terminos: ['posicion'],
       practica: {
@@ -141,11 +150,15 @@ export const MODULO_4: Modulo = {
       modulo: 4,
       titulo: 'Desde primera posición se aprieta',
       idea: 'Con tres jugadores que pueden tener algo mejor, las manos regulares se tiran sin pensarlo.',
-      explicacion: [
-        'Misma mesa, otra silla. Hablas el primero y quedan tres detrás.',
-        'Cada uno de esos tres puede tener una mano mejor que la tuya. Y si alguno sube, tendrás que jugar toda la mano a ciegas.',
-        'Por eso desde aquí se juegan pocas manos y buenas. Aburre un poco, y es exactamente lo que hay que hacer.',
-        'Si te fijas, es la misma idea de siempre: no es tu mano lo que decide, es tu mano **en esta situación**.',
+      pasos: [
+        { tipo: 'sillas', boton: 0, resaltar: 3, texto: 'Misma mesa, otra silla: hablas el primero y quedan **tres detrás**.' },
+        { tipo: 'rango', rango: '77+, ATs+, KJs+, QJs, AQo+',
+          texto: 'Desde aquí solo se abre **esto**.',
+          pie: 'Aburre un poco, y es exactamente lo que hay que hacer.' },
+        { tipo: 'rango', rango: '22+, A2s+, K8s+, Q9s+, J9s+, T8s+, 97s+, 86s+, 75s+, 65s, A8o+, KTo+, QTo+, JTo',
+          texto: 'Compáralo con lo que abrías desde el botón.',
+          pie: 'Las mismas cartas, media mesa de diferencia.' },
+        { tipo: 'texto', texto: 'No es tu mano lo que decide: es tu mano **en esta situación**.' },
       ],
       terminos: [],
       practica: {

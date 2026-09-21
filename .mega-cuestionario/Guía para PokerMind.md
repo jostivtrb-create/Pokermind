@@ -120,6 +120,7 @@ El usuario publicó el juego, lo probó y trajo dos cosas. Las dos cambian decis
 | D40 | **La explicación va en pasos de una frase con cartas a la vista**, uno por pantalla, en vez de párrafos seguidos | *"siento que de entrada tiene muchísimo texto y aburre"*. Cuatro párrafos no se leen, se saltan |
 | D41 | El módulo 1 empieza por **las cartas** (trece valores, el as manda) y sigue por **las jugadas** (pareja, trío, escalera, color, full… con cartas delante), cada una con su pregunta, antes de enseñar una mano de siete cartas | *"empieza como que muy de golpe, ya directo un montón de texto y luego listo, que tienes en la mesa, que gana… falta una transición ahí"*. Faltaban dos escalones enteros |
 | D42 | Quien elige un nivel distinto de «no sé nada» **tiene el modo libre abierto desde el principio** | Se le está creyendo que sabe las reglas; pedirle que lo demuestre para poder sentarse a una mesa sobra |
+| D43 | **Ninguna pantalla puede ser solo texto.** Todo lo que se explica se dibuja: cartas, porcentajes, montones de fichas, la mesa desde arriba, la rejilla de rangos. Como mucho **un** paso de texto suelto por lección, y eso es un test que falla si se incumple | *"cualquier pantalla que sea solo texto aburre (...) si es un reguero de texto, hasta a mí me aburrió, y eso que estaba probando la idea"*. Se convirtieron las 38 lecciones que quedaban |
 
 ### De la ronda 3
 
@@ -373,3 +374,16 @@ preparado), otros idiomas (D12) y el mazo de cuatro colores.
   El formato de pasos se aplica a TODAS las lecciones, no solo a las rehechas: las que aún no
   tienen pasos escritos a mano parten su explicación en un paso por párrafo, así que ninguna
   lección enseña ya un muro de texto.
+- **21/09/2026 (noche)** — Segunda tanda de correcciones del usuario, y la más importante del
+  proyecto: **ninguna pantalla puede ser solo texto** (D43). Se inventaron seis formas nuevas de
+  dibujar lo que antes se contaba con palabras: los tres botones resaltando el que toca, la
+  probabilidad como barra de tres tramos, el precio del bote como dos montones de fichas más las
+  casillas de «una de cada N», los outs con las cartas que te sirven a la vista, **la mesa vista
+  desde arriba** con el botón y las ciegas, y **la rejilla de 13×13** de las manos iniciales. Con
+  esa rejilla, el módulo 6 —cómo se estrecha el rango del rival calle a calle— se entiende en tres
+  pantallas sin leer una línea de explicación.
+  La regla no se queda en buena intención: hay un **test que recorre las 41 lecciones** y falla si
+  alguna tiene más de un paso de texto suelto o menos de la mitad de pasos visuales. Al escribirlo
+  señaló 38 lecciones; ahora no señala ninguna.
+  De paso salió un fallo de dibujo: el texto que iba dentro del óvalo de la mesa lo tapaban las
+  sillas de los lados. Ahora va debajo.

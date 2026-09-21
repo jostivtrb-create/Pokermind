@@ -55,11 +55,13 @@ export const MODULO_5: Modulo = {
       modulo: 5,
       titulo: 'Con qué manos merece la pena entrar',
       idea: 'No todas las manos valen: de las 169 posibles, la mayoría pierden fichas si las juegas.',
-      explicacion: [
-        'Hay **169 manos iniciales distintas** (A♠K♠ y A♥K♥ son la misma cosa antes del flop: "AK del mismo palo").',
-        'De esas, un buen jugador juega entre el **15% y el 45%**, según la silla. El resto las tira antes de que salga nada.',
-        'Las mejores son las parejas altas y las cartas altas juntas. Las peores, cartas bajas y separadas de distinto palo, como 7-2.',
-        'Tirar la mayoría de las manos no es ser cobarde: es que jugarlas cuesta dinero. El juego está en cobrar mucho las pocas veces que tienes algo.',
+      pasos: [
+        { tipo: 'rango', rango: '100%', texto: 'Estas son las **169 manos** con las que puedes empezar.',
+          pie: 'A♠K♠ y A♥K♥ son la misma cosa antes del flop: "AK del mismo palo".' },
+        { tipo: 'rango', rango: '5%', texto: 'Esto es el **5% mejor**: las manos con las que cualquiera juega.' },
+        { tipo: 'rango', rango: '40%', texto: 'Y esto, el **40%**: lo máximo que se abre, y solo desde el botón.',
+          pie: 'Todo lo blanco se tira antes de ver una sola carta de la mesa.' },
+        { tipo: 'texto', texto: 'Tirar la mayoría de las manos no es ser cobarde: es que jugarlas cuesta dinero.' },
       ],
       terminos: ['rango', 'parejaServida'],
       practica: { tipo: 'test', pregunta: (azar) => cualManoEsMejor(azar) },
@@ -73,11 +75,16 @@ export const MODULO_5: Modulo = {
       modulo: 5,
       titulo: 'Pensar en rangos, no en cartas',
       idea: 'No adivines qué tiene el rival: piensa qué PUEDE tener, que es un conjunto de manos y se puede calcular.',
-      explicacion: [
-        'Preguntarse "¿tendrá ases?" no lleva a ningún sitio: a veces sí y a veces no.',
-        'La pregunta útil es: **"¿qué manos juega alguien desde esa silla?"**. Eso es un **rango**, y es un conjunto de manos concreto.',
-        'Si sube desde primera posición, su rango son manos fuertes: parejas medias o mejores, ases con figura... unas veinte manos distintas.',
-        'Contra un rango puedes calcular. Contra una corazonada, no. Todo lo que hace este juego se apoya en esa diferencia.',
+      pasos: [
+        { tipo: 'rango', rango: '77+, ATs+, KJs+, QJs, AQo+',
+          texto: 'El rival sube desde primera posición. **Esto** es lo que puede tener.',
+          pie: 'No una mano: un conjunto de manos. Eso es un rango.' },
+        { tipo: 'rango', rango: 'AA, KK',
+          texto: 'Preguntarse "¿tendrá ases?" no sirve: son solo dos casillas de todas esas.',
+          pie: 'Los ases salen una de cada 221 manos.' },
+        { tipo: 'porcentaje', texto: 'Contra el rango entero sí se puede calcular. Por ejemplo, tus JJ ganan esto:',
+          victoria: 0.43, empate: 0.01 },
+        { tipo: 'texto', texto: 'Contra un rango puedes calcular. Contra una corazonada, no. Todo este juego se apoya en esa diferencia.' },
       ],
       terminos: ['rango'],
       practica: {
@@ -114,10 +121,12 @@ export const MODULO_5: Modulo = {
       modulo: 5,
       titulo: 'Con una mano sólida se entra',
       idea: 'Las manos buenas se juegan desde cualquier silla, y se juegan subiendo, no pagando.',
-      explicacion: [
-        'Con una pareja media o dos cartas altas juntas tienes de sobra para entrar en la mano, estés donde estés.',
-        'Y la forma de entrar es **subiendo**, no pagando. Al subir echas a las manos regulares y, si te pagan, sabes que el que queda tiene algo.',
-        'Entrar pagando con una mano buena invita a todo el mundo a ver el flop barato, y cuantos más haya, más fácil es que alguno te pase por encima.',
+      pasos: [
+        { tipo: 'rango', rango: '77+, A9s+, KTs+, QTs+, JTs, AJo+, KQo',
+          texto: 'Con una de **estas** manos entras desde cualquier silla.' },
+        { tipo: 'acciones', resaltar: 'subir', texto: 'Y se entra **subiendo**, no pagando.',
+          pie: 'Al subir echas a las manos regulares, y si te pagan sabes que el que queda tiene algo.' },
+        { tipo: 'texto', texto: 'Entrar pagando invita a todos a ver el flop barato, y cuantos más haya, más fácil es que alguno te pase por encima.' },
       ],
       terminos: ['rango', 'subir'],
       practica: {
@@ -146,11 +155,17 @@ export const MODULO_5: Modulo = {
       modulo: 5,
       titulo: 'Con una mano de las grandes se resube',
       idea: 'Con ases, reyes o AK no se paga: se vuelve a subir, para que el bote crezca mientras llevas ventaja.',
-      explicacion: [
-        'Te toca una de las manos gordas y alguien ha subido antes que tú. La reacción natural es pagar para "no espantarle".',
-        'Es un error que cuesta muchísimo. Contra el rango con el que alguien sube, tus ases ganan más del 80% de las veces.',
-        'Cuando llevas esa ventaja, lo que quieres es **que haya más fichas en el bote**, no menos. Cada ficha que entra es tuya cuatro de cada cinco veces.',
-        'Y si se retira, tampoco pasa nada: te llevas lo que había. Lo que no puedes hacer es jugar un bote pequeño con la mejor mano de la mesa.',
+      pasos: [
+        { tipo: 'rango', rango: 'JJ+, AKs, AKo', texto: 'Te toca una de **las grandes** y alguien ha subido antes.' },
+        { tipo: 'porcentaje', texto: 'Contra el rango con el que la gente sube, tus ases ganan esto:',
+          victoria: 0.83, empate: 0.01, pie: 'Más de cuatro de cada cinco veces.' },
+        { tipo: 'fichas', texto: 'Cuando llevas esa ventaja, quieres que haya **más** fichas en el bote, no menos.',
+          montones: [
+            { nombre: 'Si pagas', fichas: 70, color: 'var(--azul)' },
+            { nombre: 'Si resubes', fichas: 180, color: 'var(--verde)' },
+          ],
+          pie: 'Cada ficha que entra es tuya cuatro de cada cinco veces.' },
+        { tipo: 'texto', texto: 'Y si se retira, tampoco pasa nada: te llevas lo que había. Lo que no puedes es jugar un bote pequeño con la mejor mano.' },
       ],
       terminos: ['valor'],
       practica: {
