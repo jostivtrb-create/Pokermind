@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { hayServidor, usuarioActual } from '../almacen/cuenta'
 import { ProveedorDeProgreso, useProgreso } from './estado'
 import { Cuenta } from './pantallas/Cuenta'
+import { Bienvenida } from './pantallas/Bienvenida'
 import { Inicio } from './pantallas/Inicio'
 import { Jugar } from './pantallas/Jugar'
 import { Libre } from './pantallas/Libre'
@@ -58,7 +59,27 @@ export function App() {
 
 function Marco() {
   const [pantalla, setPantalla] = useState<Pantalla>('inicio')
-  const { progreso } = useProgreso()
+  const { progreso, actualizar } = useProgreso()
+
+  // Lo primero de todo: por dónde empieza. Se pregunta una sola vez.
+  if (progreso.nivel === null) {
+    return (
+      <main className="contenido">
+        <Bienvenida
+          alElegir={(nivel) => {
+            actualizar((p) => ({
+              ...p,
+              nivel,
+              // Quien ya sabe las reglas no tiene que demostrarlo para poder
+              // sentarse a una mesa: el modo libre se le abre desde el principio.
+              modoLibreDesbloqueado: p.modoLibreDesbloqueado || nivel !== 'cero',
+            }))
+            setPantalla('jugar')
+          }}
+        />
+      </main>
+    )
+  }
 
   return (
     <div className="app">

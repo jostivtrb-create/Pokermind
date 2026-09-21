@@ -3,12 +3,14 @@ import { Pica } from '../App'
 import { Carta } from '../componentes/Carta'
 import { deCodigo } from '../../motor/cartas'
 import { useProgreso } from '../estado'
-import { LECCIONES, avanceDelCurso, siguienteLeccion } from '../../contenido/temario'
+import { avanceDelCurso, leccionTerminada, leccionesDeSuNivel, siguienteLeccion } from '../../contenido/temario'
 
 export function Inicio({ ir }: { ir: (p: Pantalla) => void }) {
   const { progreso } = useProgreso()
   const siguiente = siguienteLeccion(progreso)
   const avance = avanceDelCurso(progreso)
+  const suyas = leccionesDeSuNivel(progreso)
+  const hechas = suyas.filter((l) => leccionTerminada(progreso, l.id)).length
   const empezado = progreso.decisiones > 0
 
   return (
@@ -51,7 +53,7 @@ export function Inicio({ ir }: { ir: (p: Pantalla) => void }) {
             <div style={{ width: `${Math.round(avance * 100)}%` }} />
           </div>
           <p className="tenue" style={{ fontSize: 13, margin: 0 }}>
-            {Object.keys(progreso.lecciones).length} de {LECCIONES.length} lecciones terminadas
+            {hechas} de {suyas.length} lecciones terminadas
           </p>
         </section>
       )}

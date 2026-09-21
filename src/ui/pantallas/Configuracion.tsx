@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import type { Pantalla } from '../App'
 import { borrarCuenta, hayServidor, salir, usuarioActual } from '../../almacen/cuenta'
 import { borrarTodo } from '../../almacen/local'
-import { progresoNuevo } from '../../juego/progreso'
+import { MODULO_DE_ENTRADA, progresoNuevo } from '../../juego/progreso'
+import type { Nivel } from '../../juego/progreso'
+import { TEMARIO } from '../../contenido/temario'
 import { useProgreso } from '../estado'
 
 export function Configuracion({ ir }: { ir: (p: Pantalla) => void }) {
@@ -81,6 +83,39 @@ export function Configuracion({ ir }: { ir: (p: Pantalla) => void }) {
             </span>
           </button>
         ))}
+      </div>
+
+      <div className="tarjeta">
+        <span className="etiqueta">Por dónde empiezas</span>
+        <p className="suave" style={{ fontSize: 14, margin: '6px 0 10px' }}>
+          Cambia el punto del curso por el que vas. Lo que ya tengas hecho no se pierde.
+        </p>
+        <div style={{ display: 'grid', gap: 7 }}>
+          {(['cero', 'reglas', 'intermedio'] as Nivel[]).map((nivel) => {
+            const modulo = TEMARIO.find((m) => m.numero === MODULO_DE_ENTRADA[nivel])
+            const nombres: Record<Nivel, string> = {
+              cero: 'No sé nada de póker',
+              reglas: 'Sé las reglas',
+              intermedio: 'Ya juego',
+            }
+            return (
+              <button
+                key={nivel}
+                className="silla"
+                style={{ textAlign: 'left', borderColor: progreso.nivel === nivel ? 'var(--morado)' : undefined }}
+                onClick={() => actualizar((p) => ({ ...p, nivel }))}
+              >
+                <span>
+                  <strong>{nombres[nivel]}</strong>
+                  <span className="tenue" style={{ fontSize: 13, display: 'block' }}>
+                    Empiezas en: {modulo?.titulo}
+                  </span>
+                </span>
+                {progreso.nivel === nivel && <span style={{ color: 'var(--morado-claro)' }}>✓</span>}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       <div className="tarjeta">

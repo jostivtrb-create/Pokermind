@@ -5,6 +5,7 @@ import { NOMBRES_CALLE, analizar } from '../../motor/decision'
 import { Categoria, categoriaDe, describirMano, evaluar } from '../../motor/evaluador'
 import { GLOSARIO_POR_CLAVE } from '../../contenido/glosario'
 import type { Leccion } from '../../juego/lecciones'
+import { pasosDeLaLeccion } from '../../juego/lecciones'
 import { aSituacion, usaTusCartas } from '../../juego/practica'
 import { anotarDecision } from '../../juego/progreso'
 import type { EstadoSesion } from '../../juego/sesion'
@@ -17,6 +18,7 @@ import { moduloTerminado } from '../../contenido/temario'
 import { useProgreso } from '../estado'
 import { FilaDeCartas } from '../componentes/Carta'
 import { BarrasDeProbabilidad } from '../componentes/BarraProbabilidad'
+import { Pasos } from '../componentes/Pasos'
 import { RangoDelRival } from '../componentes/RangoDelRival'
 import { Rebobinar } from '../componentes/Rebobinar'
 import { parsearRango } from '../../motor/rangos'
@@ -148,42 +150,46 @@ function Cabecera({ sesion, alSalir }: { sesion: EstadoSesion; alSalir: () => vo
   )
 }
 
+/**
+ * La explicación de la lección: **un paso por pantalla**, no un muro de texto.
+ *
+ * Las palabras nuevas del glosario se enseñan al final, ya con el concepto
+ * visto: dar primero una lista de definiciones es justo lo que aburre.
+ */
 function Explicacion({ leccion, alEmpezar }: { leccion: Leccion; alEmpezar: () => void }) {
+  const [verPalabras, setVerPalabras] = useState(false)
+  const terminos = leccion.terminos
+    .map((clave) => GLOSARIO_POR_CLAVE.get(clave))
+    .filter((t): t is NonNullable<typeof t> => Boolean(t))
+
   return (
-    <div className="tarjeta">
-      <div className="aviso info" style={{ marginBottom: 14 }}>
-        <div className="titulo">💡 La idea</div>
-        <p style={{ margin: 0 }}>{leccion.idea}</p>
+    <div style={{ display: 'grid', gap: 12 }}>
+      <div className="aviso info">
+        <div className="titulo">💡 {leccion.idea}</div>
       </div>
 
-      {leccion.explicacion.map((parrafo, i) => (
-        <p key={i} className="suave" dangerouslySetInnerHTML={{ __html: negritas(parrafo) }} />
-      ))}
+      <Pasos pasos={pasosDeLaLeccion(leccion)} alTerminar={alEmpezar} />
 
-      {leccion.terminos.length > 0 && (
-        <div style={{ marginTop: 14 }}>
-          <span className="etiqueta">Palabras nuevas</span>
-          <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
-            {leccion.terminos.map((clave) => {
-              const termino = GLOSARIO_POR_CLAVE.get(clave)
-              if (!termino) return null
-              return (
-                <div key={clave} className="tarjeta tenue" style={{ padding: 12 }}>
+      {terminos.length > 0 && (
+        <>
+          <button className="boton" onClick={() => setVerPalabras((v) => !v)}>
+            {verPalabras ? 'Ocultar las palabras nuevas' : `Palabras nuevas de esta lección (${terminos.length})`}
+          </button>
+          {verPalabras && (
+            <div style={{ display: 'grid', gap: 8 }}>
+              {terminos.map((termino) => (
+                <div key={termino.clave} className="tarjeta tenue" style={{ padding: 12 }}>
                   <strong>{termino.palabra}</strong>
                   {termino.tambien && (
                     <span className="tenue" style={{ fontSize: 13 }}> · también: {termino.tambien.join(', ')}</span>
                   )}
                   <div className="suave" style={{ fontSize: 14 }}>{termino.definicion}</div>
                 </div>
-              )
-            })}
-          </div>
-        </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
-
-      <button className="boton principal ancho" style={{ marginTop: 16 }} onClick={alEmpezar}>
-        Practicar →
-      </button>
     </div>
   )
 }
@@ -378,17 +384,31 @@ function Test({
           <div style={{ marginTop: 6 }}><FilaDeCartas cartas={pregunta.mesa} /></div>
         </div>
       )}
-      {pregunta.mano && (
-        <div style={{ marginBottom: 10 }}>
-          <span className="etiqueta">{pregunta.manoB ? 'Mano de arriba' : 'Tus cartas'}</span>
-          <div style={{ marginTop: 6 }}><FilaDeCartas cartas={pregunta.mano} /></div>
+
+      {/* Dos cartas sueltas se enfrentan, no se apilan: la pregunta es cuál gana. */}
+      {esDuelo(pregunta) ? (
+        <div style={{ display: 'flex', gap: 14, alignItems: 'center', justifyContent: 'center', margin: '14px 0' }}>
+          <FilaDeCartas cartas={pregunta.mano!} />
+          <span className="tenue" style={{ fontSize: 13 }}>contra</span>
+          <FilaDeCartas cartas={pregunta.manoB!} />
         </div>
-      )}
-      {pregunta.manoB && (
-        <div style={{ marginBottom: 12 }}>
-          <span className="etiqueta">Mano de abajo</span>
-          <div style={{ marginTop: 6 }}><FilaDeCartas cartas={pregunta.manoB} /></div>
-        </div>
+      ) : (
+        <>
+          {pregunta.mano && (
+            <div style={{ marginBottom: 10 }}>
+              <span className="etiqueta">
+                {pregunta.manoB ? 'Mano de arriba' : 'Tus cartas'}
+              </span>
+              <div style={{ marginTop: 6 }}><FilaDeCartas cartas={pregunta.mano} /></div>
+            </div>
+          )}
+          {pregunta.manoB && (
+            <div style={{ marginBottom: 12 }}>
+              <span className="etiqueta">Mano de abajo</span>
+              <div style={{ marginTop: 6 }}><FilaDeCartas cartas={pregunta.manoB} /></div>
+            </div>
+          )}
+        </>
       )}
 
       <div style={{ display: 'grid', gap: 9, marginTop: 8 }}>
@@ -466,6 +486,11 @@ function hayQueAvisarDeLaMesa(mano: readonly number[], mesa: readonly number[]):
   return !usaTusCartas(mano, mesa)
 }
 
+/** Dos cartas sueltas frente a frente, sin mesa: la pregunta de "cuál vale más". */
+function esDuelo(pregunta: { mano?: unknown[]; manoB?: unknown[]; mesa?: unknown[] }): boolean {
+  return !pregunta.mesa && pregunta.mano?.length === 1 && pregunta.manoB?.length === 1
+}
+
 function textoVeredicto(veredicto: string): string {
   return {
     optima: '¡La mejor jugada!',
@@ -475,11 +500,3 @@ function textoVeredicto(veredicto: string): string {
   }[veredicto] ?? ''
 }
 
-/** Convierte **esto** en negrita, que es lo único que se usa en las explicaciones. */
-function negritas(texto: string): string {
-  return texto
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-}

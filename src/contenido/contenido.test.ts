@@ -4,6 +4,7 @@ import { analizar } from '../motor/decision'
 import { LECCIONES, MODULOS_PREVISTOS, TEMARIO } from './temario'
 import { GLOSARIO_POR_CLAVE } from './glosario'
 import { aSituacion, crearManoDePractica } from '../juego/practica'
+import { pasosDeLaLeccion } from '../juego/lecciones'
 
 /**
  * Tests del CONTENIDO, no del código.
@@ -39,8 +40,14 @@ describe('el temario está bien montado', () => {
     for (const l of LECCIONES) {
       expect(l.idea.length, `${l.id} sin idea`).toBeGreaterThan(20)
       expect(l.idea.length, `${l.id}: la idea es un párrafo, y tiene que ser una frase`).toBeLessThan(180)
-      expect(l.explicacion.length, `${l.id} sin explicación`).toBeGreaterThan(0)
-      expect(l.explicacion.length, `${l.id}: demasiada explicación para una sola idea`).toBeLessThanOrEqual(6)
+      const pasos = pasosDeLaLeccion(l)
+      expect(pasos.length, `${l.id} sin explicación`).toBeGreaterThan(0)
+      expect(pasos.length, `${l.id}: demasiados pasos para una sola idea`).toBeLessThanOrEqual(8)
+      for (const paso of pasos) {
+        // Un paso es una pantalla: una frase, no un párrafo. Si no cabe en una
+        // frase, es que son dos pasos.
+        expect(paso.texto.length, `${l.id}: un paso con un párrafo entero`).toBeLessThan(240)
+      }
     }
   })
 

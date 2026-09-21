@@ -39,8 +39,30 @@ export interface EstadisticasPorCalle {
   puntos: number
 }
 
+/**
+ * Por dónde empieza cada jugador.
+ *
+ * En la ronda 2 se decidió que nadie se saltaba lecciones. Al probar el juego
+ * el usuario cambió de idea — *"yo sé que ahorita te había dicho que no, pero
+ * sí, yo creo que es lo mejor"*— y tiene razón: obligar a alguien que ya sabe
+ * las reglas a pasar por "qué es una pareja" es la forma más rápida de que
+ * cierre el juego.
+ *
+ * No es un examen: lo elige el jugador. Y lo anterior a su nivel queda abierto
+ * por si quiere repasarlo.
+ */
+export type Nivel = 'cero' | 'reglas' | 'intermedio'
+
+export const MODULO_DE_ENTRADA: Record<Nivel, number> = {
+  cero: 1,
+  reglas: 2,
+  intermedio: 4,
+}
+
 export interface Progreso {
   version: number
+  /** null mientras no lo haya elegido: entonces se le pregunta. */
+  nivel: Nivel | null
   /** Lecciones terminadas, con lo que se sacó en cada una. */
   lecciones: Record<string, { terminadaEl: string; puntos: number; manos: number }>
   puntosTotales: number
@@ -61,6 +83,7 @@ export interface Progreso {
 export function progresoNuevo(): Progreso {
   return {
     version: VERSION_PROGRESO,
+    nivel: null,
     lecciones: {},
     puntosTotales: 0,
     decisiones: 0,

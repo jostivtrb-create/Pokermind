@@ -5,7 +5,7 @@
 
 - **Tarea:** Crear PokerMind, un juego que enseña a tomar buenas decisiones en póker usando probabilidades, con tutorial desde cero y modo libre contra bots.
 - **Inicio:** 21 de septiembre de 2026
-- **Estado:** ✅ Terminada la primera versión completa · pendiente solo que el usuario cree el proyecto de Supabase
+- **Estado:** 🔵 Publicado en Vercel y en pruebas reales · corrigiendo con lo que sale al jugarlo
 - **Proyecto:** `/home/user/Pokermind` · rama `claude/poker-learning-game-xh7r22`
 
 ---
@@ -109,6 +109,17 @@ No se vuelven a preguntar. Cada una con su **porqué**.
 | D28 | **El torneo a medias se guarda** y se puede retomar | S3 → Sí |
 | D29 | **Reto diario**: una mano difícil al día, la misma para todos, con su explicación | S4 → Sí |
 | D30 | Se construyen las pantallas de **recuperar contraseña, borrar cuenta y política de privacidad** | S5 → Sí. No son opcionales si el juego sale a internet |
+
+### De la primera prueba real (21/09/2026)
+
+El usuario publicó el juego, lo probó y trajo dos cosas. Las dos cambian decisiones anteriores.
+
+| # | Decisión | Por qué |
+|---|----------|---------|
+| D39 | **Se elige nivel al entrar** y se empieza por el módulo que toca: «no sé nada» → módulo 1, «sé las reglas» → módulo 2, «ya juego» → módulo 4. Lo anterior queda abierto para repasar | **Cambia D23** («no se salta nada»), y lo cambia él: *"yo sé que ahorita te había dicho que no, pero sí, yo creo que es lo mejor"*. Tiene razón: obligar a quien ya sabe las reglas a pasar por «qué es una pareja» es la forma más rápida de que cierre el juego |
+| D40 | **La explicación va en pasos de una frase con cartas a la vista**, uno por pantalla, en vez de párrafos seguidos | *"siento que de entrada tiene muchísimo texto y aburre"*. Cuatro párrafos no se leen, se saltan |
+| D41 | El módulo 1 empieza por **las cartas** (trece valores, el as manda) y sigue por **las jugadas** (pareja, trío, escalera, color, full… con cartas delante), cada una con su pregunta, antes de enseñar una mano de siete cartas | *"empieza como que muy de golpe, ya directo un montón de texto y luego listo, que tienes en la mesa, que gana… falta una transición ahí"*. Faltaban dos escalones enteros |
+| D42 | Quien elige un nivel distinto de «no sé nada» **tiene el modo libre abierto desde el principio** | Se le está creyendo que sabe las reglas; pedirle que lo demuestre para poder sentarse a una mesa sobra |
 
 ### De la ronda 3
 
@@ -353,3 +364,12 @@ local y se juega igual.
 
 **Lo que se dejó fuera a propósito**, por decisión suya: multijugador con amigos (D14, el motor está
 preparado), otros idiomas (D12) y el mazo de cuatro colores.
+- **21/09/2026 (tarde)** — Primera prueba real del usuario y primer rediseño con datos de verdad.
+  Tres cambios: pantalla de nivel al entrar (D39), explicación en pasos visuales (D40) y módulo 1
+  rehecho con la transición que faltaba (D41). Dos piezas nuevas de código que hacían falta para
+  esto: un **constructor de jugadas** (`contenido/generador.ts`) que sabe repartir un color o un
+  full a voluntad —repartiendo al azar saldrían parejas el 90% de las veces y la lección no
+  enseñaría nada— y un componente de **pasos** que enseña una frase y unas cartas por pantalla.
+  El formato de pasos se aplica a TODAS las lecciones, no solo a las rehechas: las que aún no
+  tienen pasos escritos a mano parten su explicación en un paso por párrafo, así que ninguna
+  lección enseña ya un muro de texto.

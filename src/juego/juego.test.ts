@@ -45,7 +45,7 @@ describe('las manos de práctica salen como pide la lección', () => {
 
 describe('una lección de principio a fin', () => {
   it('se explica, se practica y se domina acertando', () => {
-    const leccion = MODULO_1.lecciones[2] // los tres botones (test)
+    const leccion = MODULO_1.lecciones.find((l) => l.id === 'm1-l3')! // los tres botones (test)
     let sesion = empezarLeccion(leccion, azar())
     expect(sesion.fase).toBe('explicacion')
 
@@ -66,7 +66,7 @@ describe('una lección de principio a fin', () => {
   })
 
   it('fallando se alarga, pero no eternamente', () => {
-    const leccion = MODULO_1.lecciones[2]
+    const leccion = MODULO_1.lecciones.find((l) => l.id === 'm1-l3')!
     let sesion = empezarPractica(empezarLeccion(leccion, azar()))
     let vueltas = 0
     while (sesion.fase !== 'terminada' && vueltas++ < 50) {
@@ -80,7 +80,7 @@ describe('una lección de principio a fin', () => {
   })
 
   it('una mano de decisión se corrige al instante', () => {
-    const leccion = MODULO_1.lecciones[5] // la de decisión
+    const leccion = MODULO_1.lecciones.find((l) => l.id === 'm1-l6')! // la de decisión
     let sesion = empezarPractica(empezarLeccion(leccion, azar()))
     if (sesion.fase === 'ejemplo') {
       expect(sesion.jugadaDelEjemplo).not.toBeNull()

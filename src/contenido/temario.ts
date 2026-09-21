@@ -1,5 +1,6 @@
 import type { Leccion, Modulo } from '../juego/lecciones'
 import type { Progreso } from '../juego/progreso'
+import { MODULO_DE_ENTRADA } from '../juego/progreso'
 import { MODULO_1 } from './modulo1'
 import { MODULO_2 } from './modulo2'
 import { MODULO_3 } from './modulo3'
@@ -42,17 +43,31 @@ export function leccionTerminada(progreso: Progreso, id: string): boolean {
   return progreso.lecciones[id] !== undefined
 }
 
+/** Por qué módulo empieza el curso según el nivel que eligió. */
+export function moduloDeEntrada(progreso: Progreso): number {
+  return progreso.nivel ? MODULO_DE_ENTRADA[progreso.nivel] : 1
+}
+
+/** Las lecciones que le tocan: de su módulo de entrada en adelante. */
+export function leccionesDeSuNivel(progreso: Progreso): Leccion[] {
+  const desde = moduloDeEntrada(progreso)
+  return LECCIONES.filter((l) => l.modulo >= desde)
+}
+
 /**
  * La siguiente lección por hacer. Como no se salta nada, es simplemente la
  * primera que no esté terminada.
  */
 export function siguienteLeccion(progreso: Progreso): Leccion | null {
-  return LECCIONES.find((l) => !leccionTerminada(progreso, l.id)) ?? null
+  return leccionesDeSuNivel(progreso).find((l) => !leccionTerminada(progreso, l.id)) ?? null
 }
 
 /** Una lección está abierta si es la siguiente o si ya se hizo (para repasar). */
 export function leccionDisponible(progreso: Progreso, id: string): boolean {
   if (leccionTerminada(progreso, id)) return true
+  // Lo anterior a su nivel queda abierto para repasar cuando quiera.
+  const leccion = buscarLeccion(id)
+  if (leccion && leccion.modulo < moduloDeEntrada(progreso)) return true
   return siguienteLeccion(progreso)?.id === id
 }
 
@@ -64,7 +79,7 @@ export function moduloTerminado(progreso: Progreso, numero: number): boolean {
 
 /** Cuánto llevas del curso, de 0 a 1. */
 export function avanceDelCurso(progreso: Progreso): number {
-  if (LECCIONES.length === 0) return 0
-  const hechas = LECCIONES.filter((l) => leccionTerminada(progreso, l.id)).length
-  return hechas / LECCIONES.length
+  const suyas = leccionesDeSuNivel(progreso)
+  if (suyas.length === 0) return 0
+  return suyas.filter((l) => leccionTerminada(progreso, l.id)).length / suyas.length
 }

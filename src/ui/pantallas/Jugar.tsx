@@ -2,8 +2,8 @@ import { useState } from 'react'
 import type { Pantalla } from '../App'
 import { useProgreso } from '../estado'
 import {
-  LECCIONES, MODULOS_PREVISTOS, TEMARIO, avanceDelCurso, leccionDisponible,
-  leccionTerminada, moduloTerminado, siguienteLeccion,
+  MODULOS_PREVISTOS, TEMARIO, avanceDelCurso, leccionDisponible, leccionTerminada,
+  leccionesDeSuNivel, moduloDeEntrada, moduloTerminado, siguienteLeccion,
 } from '../../contenido/temario'
 import type { Leccion } from '../../juego/lecciones'
 import { erroresParaRepasar } from '../../juego/progreso'
@@ -30,7 +30,9 @@ export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
 
   const siguiente = siguienteLeccion(progreso)
   const avance = avanceDelCurso(progreso)
-  const moduloUnoHecho = moduloTerminado(progreso, 1)
+  const entrada = moduloDeEntrada(progreso)
+  const suyas = leccionesDeSuNivel(progreso)
+  const libreAbierto = progreso.modoLibreDesbloqueado || moduloTerminado(progreso, 1)
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -80,26 +82,35 @@ export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
           <span className="etiqueta">Modo libre</span>
           <h3 style={{ margin: '4px 0' }}>Torneo contra tres bots</h3>
           <p className="suave" style={{ fontSize: 14, margin: 0 }}>
-            {moduloUnoHecho
+            {libreAbierto
               ? 'Una partida de verdad, con fichas y ciegas que suben. Los puntos siguen premiando las decisiones, ganes o pierdas.'
               : 'Se abre al terminar el módulo 1. Sentarse en una mesa sin saber qué es una ciega no enseña nada.'}
           </p>
         </div>
         <button
-          className={`boton ${moduloUnoHecho ? 'principal' : ''}`}
-          disabled={!moduloUnoHecho}
+          className={`boton ${libreAbierto ? 'principal' : ''}`}
+          disabled={!libreAbierto}
           onClick={() => ir('libre')}
         >
-          {moduloUnoHecho ? 'Jugar torneo →' : '🔒 Bloqueado'}
+          {libreAbierto ? 'Jugar torneo →' : '🔒 Bloqueado'}
         </button>
       </div>
 
       {TEMARIO.map((modulo) => (
-        <section key={modulo.numero} className="tarjeta">
+        <section
+          key={modulo.numero}
+          className="tarjeta"
+          style={modulo.numero < entrada ? { opacity: 0.72 } : undefined}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span className="chip morado">Módulo {modulo.numero}</span>
             <h3 style={{ margin: 0 }}>{modulo.titulo}</h3>
             {moduloTerminado(progreso, modulo.numero) && <span className="chip">✓ Completo</span>}
+            {modulo.numero < entrada && !moduloTerminado(progreso, modulo.numero) && (
+              <span className="chip" title="Por debajo de tu nivel: está abierto por si quieres repasarlo">
+                Repaso opcional
+              </span>
+            )}
           </div>
           <p className="suave" style={{ fontSize: 14, margin: '8px 0 14px' }}>{modulo.resumen}</p>
 
@@ -165,7 +176,8 @@ export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
       </section>
 
       <p className="tenue" style={{ fontSize: 13, textAlign: 'center' }}>
-        {Object.keys(progreso.lecciones).length} de {LECCIONES.length} lecciones terminadas
+        {suyas.filter((l) => leccionTerminada(progreso, l.id)).length} de {suyas.length} lecciones de
+        tu nivel terminadas
       </p>
     </div>
   )
