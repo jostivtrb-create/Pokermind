@@ -21,6 +21,14 @@ export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
   const { progreso } = useProgreso()
   const [enCurso, setEnCurso] = useState<Leccion | null>(null)
   const [extra, setExtra] = useState<'reto' | 'repaso' | null>(null)
+  /*
+    Solo se abre el módulo en el que vas; los demás se pliegan (D56).
+
+    Aquí se guardan únicamente los que TÚ has abierto o cerrado a mano. Los que
+    no tocas siguen al progreso solos, así que al terminar un módulo se pliega y
+    se abre el siguiente sin que haya que hacer nada.
+  */
+  const [aMano, setAMano] = useState<Record<number, boolean>>({})
 
   if (enCurso) {
     return (
@@ -38,6 +46,11 @@ export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
   if (extra === 'repaso') return <RepasoDeErrores alSalir={() => setExtra(null)} />
 
   const siguiente = siguienteLeccion(progreso)
+  // El módulo que se abre solo: aquel donde está la lección que te toca.
+  const moduloEnCurso =
+    siguiente?.modulo ??
+    TEMARIO.find((m) => !moduloTerminado(progreso, m.numero))?.numero ??
+    TEMARIO[TEMARIO.length - 1].numero
   const avance = avanceDelCurso(progreso)
   const entrada = moduloDeEntrada(progreso)
   const suyas = leccionesDeSuNivel(progreso)
@@ -80,23 +93,50 @@ export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
         </button>
       )}
 
-      {TEMARIO.map((modulo) => (
+      {TEMARIO.map((modulo) => {
+        const hechas = modulo.lecciones.filter((l) => leccionTerminada(progreso, l.id)).length
+        const abierto = aMano[modulo.numero] ?? modulo.numero === moduloEnCurso
+        return (
         <section
           key={modulo.numero}
           className="tarjeta"
           style={modulo.numero < entrada ? { opacity: 0.72 } : undefined}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <span className="chip morado">Módulo {modulo.numero}</span>
-            <h3 style={{ margin: 0 }}>{modulo.titulo}</h3>
-            {moduloTerminado(progreso, modulo.numero) && <span className="chip">✓ Completo</span>}
-            {modulo.numero < entrada && !moduloTerminado(progreso, modulo.numero) && (
-              <span className="chip" title="Por debajo de tu nivel: está abierto por si quieres repasarlo">
-                Repaso opcional
+          <button
+            onClick={() => setAMano((previo) => ({ ...previo, [modulo.numero]: !abierto }))}
+            aria-expanded={abierto}
+            style={{
+              all: 'unset', cursor: 'pointer', display: 'grid', gap: 8, width: '100%',
+              boxSizing: 'border-box',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span className="chip morado">Módulo {modulo.numero}</span>
+              <h3 style={{ margin: 0, flex: '1 1 auto' }}>{modulo.titulo}</h3>
+              {moduloTerminado(progreso, modulo.numero) && <span className="chip">✓ Completo</span>}
+              {modulo.numero < entrada && !moduloTerminado(progreso, modulo.numero) && (
+                <span className="chip" title="Por debajo de tu nivel: está abierto por si quieres repasarlo">
+                  Repaso opcional
+                </span>
+              )}
+              <span className="tenue" style={{ fontSize: 13, marginLeft: 'auto', flexShrink: 0 }}>
+                {abierto ? 'Plegar ▴' : 'Ver las lecciones ▾'}
               </span>
-            )}
-          </div>
-          <p className="suave" style={{ fontSize: 14, margin: '8px 0 14px' }}>{modulo.resumen}</p>
+            </div>
+            {/* Plegado hay que ver de un vistazo por dónde vas sin abrirlo. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div className="progreso-fino" style={{ flex: '1 1 auto' }}>
+                <div style={{ width: `${Math.round((hechas / modulo.lecciones.length) * 100)}%` }} />
+              </div>
+              <span className="tenue" style={{ fontSize: 12.5, flexShrink: 0 }}>
+                {hechas} de {modulo.lecciones.length}
+              </span>
+            </div>
+          </button>
+
+          {abierto && (
+            <>
+          <p className="suave" style={{ fontSize: 14, margin: '12px 0 14px' }}>{modulo.resumen}</p>
 
           <div style={{ display: 'grid', gap: 8 }}>
             {modulo.lecciones.map((leccion, i) => {
@@ -137,8 +177,11 @@ export function Jugar({ ir }: { ir: (p: Pantalla) => void }) {
               )
             })}
           </div>
+            </>
+          )}
         </section>
-      ))}
+        )
+      })}
 
       <div className="rejilla dos">
         <button
