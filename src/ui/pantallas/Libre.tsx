@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Pantalla } from '../App'
 import { aleatorioLibre } from '../../motor/aleatorio'
 import type { Accion, Juicio } from '../../motor/decision'
+import type { Carta } from '../../motor/cartas'
 import { juzgar } from '../../motor/decision'
 import { Categoria, categoriaDe, describirMano, evaluar } from '../../motor/evaluador'
 import { describirTuMano, usaTusCartas } from '../../juego/practica'
@@ -19,6 +20,28 @@ import { BotonesDeDecision, tamanosParaElegir } from '../componentes/BotonesDeDe
 import { RangoDelRival } from '../componentes/RangoDelRival'
 
 /**
+ * Lo que hiciste en cada decisión, con las fichas y la mesa de ese momento.
+ *
+ * Antes el repaso decía solo "turn · pagar", y con dos decisiones en la misma
+ * calle no había forma de reconstruir la mano: *"no recuerdo que aposté y la
+ * info se me hace difusa para ver la línea de tiempo"*. Ahora se guarda la
+ * foto del momento: bote, lo que te pedían, lo que pusiste y las cartas que
+ * había en la mesa.
+ */
+interface Apunte {
+  juicio: Juicio
+  calle: string
+  /** Lo que había en el bote ANTES de tu jugada. */
+  bote: number
+  /** Lo que costaba igualar. */
+  paraPagar: number
+  /** Lo que acabaste poniendo tú. */
+  pusiste: number
+  accion: AccionMesa
+  mesa: Carta[]
+}
+
+/**
  * El modo libre: torneo corto contra tres bots (D21).
  *
  * La diferencia con el entrenador es cuándo se corrige: aquí nada interrumpe la
@@ -30,7 +53,7 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
   const azar = useMemo(() => aleatorioLibre(), [])
   const [torneo, setTorneo] = useState<Torneo | null>(() => (progreso.torneoGuardado as Torneo) ?? null)
   const [mesa, setMesa] = useState<EstadoMesa | null>(null)
-  const [juicios, setJuicios] = useState<Array<{ juicio: Juicio; calle: string }>>([])
+  const [juicios, setJuicios] = useState<Apunte[]>([])
   const [pensando, setPensando] = useState(false)
   const temporizador = useRef<number | null>(null)
 
@@ -118,20 +141,43 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
       'intermedia',
       tamanoElegido,
     )
-    setJuicios((lista) => [...lista, { juicio, calle: mesa.calle }])
-
     const opciones = opcionesDisponibles(mesa)
+    const cuestaSeguir = paraPagar(mesa, humano)
     const traducida: AccionMesa =
       accion === 'retirarse'
-        ? paraPagar(mesa, humano) === 0 ? 'pasar' : 'retirarse'
+        ? cuestaSeguir === 0 ? 'pasar' : 'retirarse'
         : accion === 'pagar'
-          ? paraPagar(mesa, humano) === 0 ? 'pasar' : 'pagar'
+          ? cuestaSeguir === 0 ? 'pasar' : 'pagar'
           : 'subir'
     const subida = opciones.find((o) => o.accion === 'subir')
     const cantidad =
       traducida === 'subir'
-        ? Math.max(subida?.minimo ?? 0, tamanoElegido ?? Math.round((boteTotal(mesa) + paraPagar(mesa, humano)) * 0.7))
+        ? Math.max(subida?.minimo ?? 0, tamanoElegido ?? Math.round((boteTotal(mesa) + cuestaSeguir) * 0.7))
         : 0
+
+    /*
+      La foto del momento se saca AQUÍ, no dentro del setJuicios.
+
+      La mesa se modifica sobre sí misma según avanza la mano, y el argumento de
+      un `set...` se ejecuta más tarde: leer la calle o el bote ahí dentro daba
+      los de dos jugadas después. Por eso el repaso decía "turn" en decisiones
+      del flop y llegó a enseñar un bote de 0 en manos ya terminadas.
+    */
+    const apunte: Apunte = {
+      juicio,
+      calle: mesa.calle,
+      bote: boteTotal(mesa),
+      paraPagar: cuestaSeguir,
+      pusiste:
+        traducida === 'subir'
+          ? Math.min(cantidad, subida?.maximo ?? cantidad) + cuestaSeguir
+          : traducida === 'pagar'
+            ? cuestaSeguir
+            : 0,
+      accion: traducida,
+      mesa: [...mesa.comunitarias],
+    }
+    setJuicios((lista) => [...lista, apunte])
 
     sonar(traducida === 'retirarse' ? 'repartir' : 'ficha')
     const siguiente = aplicar(mesa, traducida, Math.min(cantidad, subida?.maximo ?? cantidad))
@@ -262,26 +308,7 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
                   )
                 })()}
 
-                {juicios.length > 0 && (
-                  <div className="tarjeta">
-                    <span className="etiqueta">Tus decisiones en esta mano</span>
-                    <div style={{ display: 'grid', gap: 9, marginTop: 8 }}>
-                      {juicios.map(({ juicio, calle }, i) => (
-                        <div key={i} className={`aviso ${juicio.veredicto === 'mala' ? 'mal' : 'bien'}`} style={{ padding: 11 }}>
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14 }}>
-                            <strong>{calle}</strong>
-                            <span>{juicio.elegida.accion}</span>
-                            <span className="chip morado" style={{ marginLeft: 'auto' }}>+{juicio.puntos}</span>
-                          </div>
-                          <p className="suave" style={{ margin: '4px 0 0', fontSize: 13.5 }}>{juicio.porQue}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="tenue" style={{ fontSize: 13, marginTop: 10, marginBottom: 0 }}>
-                      Los puntos son por cómo decidiste, no por si ganaste la mano.
-                    </p>
-                  </div>
-                )}
+                {juicios.length > 0 && <ComoFueLaMano apuntes={juicios} />}
 
                 <button className="boton principal ancho" onClick={terminarMano}>Siguiente mano →</button>
               </div>
@@ -352,4 +379,92 @@ function ultimaJugada(mesa: EstadoMesa, jugador: number): string {
   if (ultima.accion === 'pagar') return 'paga'
   if (ultima.accion === 'retirarse') return 'se retira'
   return `sube ${ultima.cantidad}`
+}
+
+const NOMBRE_DE_CALLE: Record<string, string> = {
+  preflop: 'Antes del flop',
+  flop: 'En el flop',
+  turn: 'En el turn',
+  river: 'En el river',
+}
+
+/** Qué hiciste, en fichas y en cristiano. */
+function loQueHiciste(a: Apunte): string {
+  const n = (x: number) => x.toLocaleString('es')
+  if (a.accion === 'pasar') return 'Pasaste, sin poner nada'
+  if (a.accion === 'retirarse') return `Te retiraste y dejaste la mano`
+  if (a.accion === 'pagar') return `Pagaste ${n(a.pusiste)}`
+  const subida = a.pusiste - a.paraPagar
+  return a.paraPagar > 0
+    ? `Subiste ${n(subida)} por encima de su apuesta: pusiste ${n(a.pusiste)}`
+    : `Apostaste ${n(a.pusiste)}`
+}
+
+/**
+ * El repaso de la mano como una línea de tiempo.
+ *
+ * Con dos decisiones en la misma calle, un listado de "turn · pagar" no dice
+ * nada. Aquí cada paso enseña la mesa que había, lo que te pedían y lo que
+ * pusiste, en orden y con el hilo dibujado: se lee como se jugó.
+ */
+function ComoFueLaMano({ apuntes }: { apuntes: Apunte[] }) {
+  const total = apuntes.reduce((t, a) => t + a.juicio.puntos, 0)
+
+  return (
+    <div className="tarjeta">
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+        <span className="etiqueta">Cómo fue la mano</span>
+        <span className="chip morado" style={{ marginLeft: 'auto' }}>+{total} en total</span>
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        {apuntes.map((a, i) => {
+          const ultimo = i === apuntes.length - 1
+          const mal = a.juicio.veredicto === 'mala'
+          return (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '24px 1fr', gap: 12 }}>
+              {/* El hilo: el número de la jugada y la línea que une con la siguiente. */}
+              <div style={{ display: 'grid', gridTemplateRows: 'auto 1fr', justifyItems: 'center' }}>
+                <span
+                  style={{
+                    width: 24, height: 24, borderRadius: '50%', display: 'grid', placeItems: 'center',
+                    fontSize: 12.5, fontWeight: 700,
+                    background: mal ? 'var(--rojo-tenue)' : 'var(--verde-tenue)',
+                    color: mal ? 'var(--rojo)' : 'var(--verde)',
+                  }}
+                >
+                  {i + 1}
+                </span>
+                {!ultimo && <span style={{ width: 2, background: 'var(--borde)', borderRadius: 2 }} />}
+              </div>
+
+              <div style={{ paddingBottom: ultimo ? 0 : 16, minWidth: 0 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <strong style={{ fontSize: 14.5 }}>{NOMBRE_DE_CALLE[a.calle] ?? a.calle}</strong>
+                  <span className="chip" style={{ fontSize: 11.5 }}>Bote {a.bote.toLocaleString('es')}</span>
+                  <span className="chip" style={{ fontSize: 11.5 }}>
+                    {a.paraPagar > 0 ? `Te pedían ${a.paraPagar.toLocaleString('es')}` : 'Nadie había apostado'}
+                  </span>
+                  <span className="chip morado" style={{ marginLeft: 'auto' }}>+{a.juicio.puntos}</span>
+                </div>
+
+                {a.mesa.length > 0 && (
+                  <div style={{ marginTop: 7 }}>
+                    <FilaDeCartas cartas={a.mesa} pequenas />
+                  </div>
+                )}
+
+                <p style={{ margin: '7px 0 0', fontSize: 14, fontWeight: 600 }}>{loQueHiciste(a)}</p>
+                <p className="suave" style={{ margin: '3px 0 0', fontSize: 13.5 }}>{a.juicio.porQue}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <p className="tenue" style={{ fontSize: 13, margin: '14px 0 0' }}>
+        Los puntos son por cómo decidiste, no por si ganaste la mano.
+      </p>
+    </div>
+  )
 }
