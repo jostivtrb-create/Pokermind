@@ -63,7 +63,7 @@ export const MODULO_5: Modulo = {
           pie: 'Todo lo blanco se tira antes de ver una sola carta de la mesa.' },
         { tipo: 'texto', texto: 'Tirar la mayoría de las manos no es ser cobarde: es que jugarlas cuesta dinero.' },
       ],
-      terminos: ['rango', 'parejaServida'],
+      terminos: ['rango', 'parejaServida', 'notacion'],
       practica: { tipo: 'test', pregunta: (azar) => cualManoEsMejor(azar) },
       dominio: 4,
       minimoManos: 4,

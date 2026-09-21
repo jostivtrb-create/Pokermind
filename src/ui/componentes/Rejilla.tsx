@@ -16,6 +16,18 @@ export function RejillaDeRango({ rango }: { rango: string }) {
     return { dentro: clasesDelRango(r), porcentaje: porcentajeDeRango(r) }
   }, [rango])
 
+  /*
+    Las casillas se llaman "AKs" y "AKo", y esas letras no se adivinan. Un jugador
+    que iba por el módulo 1 preguntó qué significaban: si la pantalla las enseña,
+    la pantalla las traduce. Solo se dice lo que de verdad sale en la rejilla.
+  */
+  const clave = [
+    'Diagonal: parejas',
+    's = del mismo palo',
+    'o = de distinto palo',
+    rango.includes('+') ? '+ = esa y todas las mejores' : '',
+  ].filter(Boolean)
+
   return (
     <div style={{ display: 'grid', gap: 8 }}>
       <div
@@ -53,7 +65,7 @@ export function RejillaDeRango({ rango }: { rango: string }) {
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         <span className="chip morado">{Math.round(porcentaje * 100)}% de las manos</span>
         <span className="tenue" style={{ fontSize: 12 }}>
-          Diagonal: parejas · arriba: mismo palo · abajo: distinto palo
+          {clave.join(' · ')}
         </span>
       </div>
     </div>

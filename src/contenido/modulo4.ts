@@ -123,7 +123,7 @@ export const MODULO_4: Modulo = {
           pie: 'Manos que desde primera posición serían basura, aquí ganan fichas.' },
         { tipo: 'texto', texto: 'No porque vayan a ligar más, sino porque cuando no liguen las sueltas baratas, y cuando liguen sabrás cuánto cobrar.' },
       ],
-      terminos: ['posicion'],
+      terminos: ['posicion', 'notacion'],
       practica: {
         tipo: 'decision',
         mano: () => ({

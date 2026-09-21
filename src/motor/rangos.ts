@@ -20,11 +20,31 @@ export interface Rango {
   combos: Combo[]
   /** De dónde sale, para poder explicárselo al jugador. */
   descripcion: string
+  /**
+   * La notación de toda la vida ("77+, AJs+"), cuando el rango se escribió así.
+   *
+   * Va aparte de la descripción a propósito: enseñarle "A2s+, KTo+" a alguien
+   * que lleva media hora en el módulo 1 no le explica nada, le confirma que
+   * esto no es para él. La descripción es lo que se le cuenta; la notación solo
+   * se enseña donde además se traduce (la rejilla de 13×13).
+   */
+  notacion?: string
 }
 
 /** Rango vacío con descripción. */
-function rango(combos: Combo[], descripcion: string): Rango {
-  return { combos, descripcion }
+function rango(combos: Combo[], descripcion: string, notacion?: string): Rango {
+  return notacion ? { combos, descripcion, notacion } : { combos, descripcion }
+}
+
+/**
+ * Cómo se le cuenta un rango a quien todavía no sabe leer la notación: cuántas
+ * manos son y qué parte del total ocupan. Las dos cosas se pueden comprobar
+ * contando, que es de lo que va el juego entero.
+ */
+export function enPalabras(r: Rango): string {
+  const manos = r.combos.length
+  const parte = Math.round(porcentajeDeRango(r) * 100)
+  return `las ${manos.toLocaleString('es')} manos que podía llevar, el ${parte}% de todas`
 }
 
 /** Todas las manos posibles: el rival del que no sabemos nada. */
@@ -82,6 +102,8 @@ export function parsearRango(texto: string): Rango {
 
   const base = rangoDeClases([...clases], texto)
   base.combos.push(...sueltas)
+  base.notacion = texto
+  base.descripcion = enPalabras(base)
   return base
 }
 
@@ -148,10 +170,14 @@ export function porcentajeDeRango(r: Rango): number {
 export function quitarBloqueadas(r: Rango, vistas: readonly Carta[]): Rango {
   const fuera = new Uint8Array(TOTAL_CARTAS)
   for (const c of vistas) fuera[c] = 1
-  return rango(
+  const quedan = rango(
     r.combos.filter((c) => !fuera[c.a] && !fuera[c.b]),
     r.descripcion,
+    r.notacion,
   )
+  // La descripción contaba manos: si se van algunas, hay que volver a contarlas.
+  if (r.descripcion === enPalabras(r)) quedan.descripcion = enPalabras(quedan)
+  return quedan
 }
 
 /** ¿Está esta mano dentro del rango? */
@@ -224,10 +250,11 @@ export function estrecharPorFuerza(
   if (quedarse >= 1 || r.combos.length === 0) return r
   const valorados = ordenarPorFuerza(r, mesa)
   const cuantos = Math.max(1, Math.round(valorados.length * quedarse))
-  return rango(
-    valorados.slice(0, cuantos).map((v) => v.combo),
-    descripcion ?? `${r.descripcion}, quedándose con la mejor parte en esta mesa`,
-  )
+  const apretado = rango(valorados.slice(0, cuantos).map((v) => v.combo), '')
+  // Ya no es el rango escrito: la notación dejaría de ser verdad, así que se cae.
+  apretado.descripcion =
+    descripcion ?? `${enPalabras(apretado)}, quedándose con la mejor parte en esta mesa`
+  return apretado
 }
 
 export interface ComboValorado {
