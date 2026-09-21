@@ -5,7 +5,7 @@
 
 - **Tarea:** Crear PokerMind, un juego que enseña a tomar buenas decisiones en póker usando probabilidades, con tutorial desde cero y modo libre contra bots.
 - **Inicio:** 21 de septiembre de 2026
-- **Estado:** 🟡 Ronda 1 entregada, esperando respuestas
+- **Estado:** 🟡 Ronda 2 entregada, esperando respuestas
 - **Proyecto:** `/home/user/Pokermind` · rama `claude/poker-learning-game-xh7r22`
 
 ---
@@ -77,6 +77,23 @@ No se vuelven a preguntar. Cada una con su **porqué**.
 | D6 | Estética: tema oscuro, acento morado, tipografía limpia, sin animaciones complejas, según las 4 imágenes de `docs/identidad/` | Guía visual entregada por el usuario. Es **guía de estética, no de funcionalidad** |
 | D7 | Idioma de la interfaz: español | Toda la guía visual está en español |
 
+### De la ronda 1
+
+| # | Decisión | Por qué |
+|---|----------|---------|
+| D8 | El contenido llega hasta **nivel serio**: equity contra rangos, tamaños de apuesta, nociones de GTO | Respuesta 2. Implica mucho más contenido y un motor de cálculo potente |
+| D9 | El entrenador es un **curso por lecciones cortas que se desbloquean**: una idea nueva + manos de práctica de esa idea, y no se avanza sin demostrar dominio | Respuesta 3 |
+| D10 | El modo libre es una **partida completa con eliminación**: fichas, ciegas que suben, todo-in, hasta que queda uno | Respuesta 4 |
+| D11 | Hay **cuentas con correo y contraseña** desde el principio, con progreso en la nube | Respuesta 5. Obliga a servidor y base de datos desde el día uno |
+| D12 | **Solo español**, sin preparar traducciones | Respuesta 6 |
+| D13 | **No hay versión intermedia**: se entrega el juego completo de una vez | Respuesta 7 |
+| D14 | El **multijugador con amigos queda fuera de esta tarea**, pero el motor de póker se escribe aparte de la pantalla y sin depender del navegador, para que después pueda correr en un servidor sin rehacerlo | Propuesta suya en la respuesta 7 ("primero creamos bien las bases"); lo confirmo |
+| D15 | Se **repasan los errores días después**, con la mano cambiada de palo y posición para que no se memorice | S1 → Sí |
+| D16 | El juego **avisa también cuando ganas con una mala decisión** | S2 → Sí |
+| D17 | Los **bots usan el mismo motor de probabilidades que el juego**, con parámetros propios (agresividad, nivel de acierto, etc.) que se sortean al empezar la partida; así cada bot sale distinto sin programar tres bots a mano | S3, idea suya. Los parámetros concretos los propongo yo en la ronda 2 |
+| D18 | **Instalable en el móvil y jugable sin conexión** | S4 → Sí |
+| D19 | **Nada comprable con dinero, nunca** | S5 → Sí |
+
 ---
 
 ## 4. Suposiciones del agente
@@ -95,20 +112,35 @@ Cosas que decidí yo porque las deduje del material entregado. **Válidas mientr
 - **S5** — Las pantallas que aparecen en la guía visual (Inicio, Jugar, Estadísticas, Logros,
   Configuración, Guía/Ayuda) son el mapa de navegación de la app. *(deducida de: el menú lateral y
   la barra inferior de las maquetas)*
-- **S6** — El juego es **de un jugador y offline-friendly**: no hace falta servidor para jugar una
-  mano. *(deducida de: no se menciona nada en línea)*
+- **S6** — ~~El juego no necesita servidor~~ **DESMENTIDA por la respuesta 5**: con cuentas hay
+  servidor y base de datos. Lo que sí se mantiene es que **una mano se juega entera en el
+  dispositivo**, sin pedirle nada al servidor; el servidor solo guarda el progreso.
+- **S7** — En el entrenador **hay fichas y bote en pantalla** aunque no se pierda nada: sin saber
+  cuánto cuesta pagar y cuánto hay en el bote, las probabilidades no se pueden enseñar. *(deducida
+  de: el criterio de decisión es matemático)*
+- **S8** — El torneo del modo libre es de **4 jugadores (tú + 3 bots)**, no de mesa llena.
+  *(deducida de: "contra tres bots")*
+- **S9** — El motor de póker (cartas, reglas, cálculo de probabilidades y evaluación de decisiones)
+  se escribe **separado de la interfaz**, para que lo usen igual el entrenador, el modo libre, los
+  bots y, más adelante, el multijugador. *(deducida de: D14)*
 
 ---
 
 ## 5. Descartado (no volver a proponer)
 
-- *(vacío por ahora)*
+- **Mazo de 4 colores para daltónicos** → descartado por él: *"la idea es enseñarlos a jugar bien
+  si luego van a jugar en la vida real y los palos no son de colores"*. El juego usa el rojo y
+  negro de siempre.
+- **Versión intermedia / entrega por partes** → prefiere esperar y recibirlo todo junto.
+- **Traducciones a otros idiomas** → solo español.
+- **Multijugador con amigos** → no ahora; primero las bases. No se descarta para siempre (D14).
 
 ---
 
 ## 6. Estado de las rondas
 
-- **Ronda 1 — VISIÓN GENERAL** 🟡 entregada, esperando · `Cuestionario-1-Vision-General.html`
+- **Ronda 1 — VISIÓN GENERAL** ✅ respondida · `Cuestionario-1-Vision-General.html`
+- **Ronda 2 — CÓMO FUNCIONA POR DENTRO** 🟡 entregada, esperando · `Cuestionario-2-Como-Funciona.html`
 
 ---
 
@@ -116,17 +148,39 @@ Cosas que decidí yo porque las deduje del material entregado. **Válidas mientr
 
 Lo que todavía me haría **adivinar**. Cuando esta lista queda vacía → se construye.
 
-1. Qué criterio define exactamente una decisión "buena" (matemática pura, + rangos preflop, reglas simplificadas, o equity contra el rango del rival) *(ronda 1)*
-2. Hasta qué nivel de póker tiene que llevar el contenido *(ronda 1)*
-3. Forma del modo entrenador: curso por lecciones, práctica continua, mesas por nivel, o mixto *(ronda 1)*
-4. Alcance del modo libre: partida completa con fichas y ciegas, o manos sueltas *(ronda 1)*
-5. Progreso local o con cuenta en la nube *(ronda 1)*
-6. Solo español o preparado para inglés *(ronda 1)*
-7. Qué tiene que existir sí o sí en la primera versión jugable *(ronda 1)*
-8. Stack técnico concreto y forma del contenido de las lecciones *(ronda 2, depende de 3 y 5)*
-9. Reglas de puntuación exactas, dificultad y logros *(ronda 2-3, depende de 1 y 2)*
+1. **Criterio exacto de decisión buena** — contestó "decide tú", pero es el corazón del juego y su
+   observación añade un matiz importante (ver abajo). Vuelve a preguntarse **una sola vez**, con mi
+   recomendación marcada *(ronda 2, P1)*
+2. Formato del torneo del modo libre: duración, subida de ciegas *(ronda 2, P2)*
+3. Si la cuenta es **obligatoria** para jugar — choca con jugar sin conexión *(ronda 2, P3)*
+4. Cómo se puntúa: acierto/fallo o puntuación graduada *(ronda 2, P4)*
+5. Si el que ya sabe póker puede saltarse lecciones *(ronda 2, P5)*
+6. Si el jugador ve el estilo de cada bot o tiene que deducirlo *(ronda 2, P6)*
+7. Dónde vive el servidor y con qué presupuesto *(ronda 2, P7)*
+8. Contenido concreto del curso (lista de lecciones en orden) y textos *(ronda 3, depende de 1 y 5)*
+9. Logros concretos y reglas de la dificultad adaptativa *(ronda 3, depende de 4)*
 
----
+### El matiz de la respuesta 1 (importante, no perderlo)
+
+Contestó "decide tú" pero escribió algo que cambia el diseño del motor:
+
+> *"no es lo mismo ganar pero ganar poquito sabiendo que desde el comienzo tenías una mano fuerte y
+> podías ocultarla hasta el final para irlos exprimiendo"*
+
+Es decir: **una decisión buena no es solo "no perder fichas", es sacarle el máximo a la mano**. Un
+motor que solo compare "mi probabilidad de ganar contra lo que cuesta pagar" nunca entiende eso:
+con una mano monstruosa siempre diría "sube", aunque subir espante al rival y gane menos que pagar.
+Para que el juego juzgue como él quiere, hay que comparar el **valor esperado de cada acción contra
+las manos que el rival puede tener** — eso es exactamente lo que hace que jugar lento con una mano
+fuerte salga puntuado como la mejor jugada cuando lo es. Va como recomendación marcada en la P1 de
+la ronda 2.
+
+### El choque que hay que resolver (respuesta 5 vs. S4)
+
+Pidió **cuenta con correo y contraseña desde el principio** y también **poder jugar sin conexión**.
+No son incompatibles, pero chocan en el primer arranque: si la cuenta es obligatoria, el que abre
+el juego sin internet no puede ni empezar. Lo pregunto en la P3 de la ronda 2 en vez de decidirlo
+yo, porque afecta a cuánta gente llega a jugar.
 
 ## 8. Plan de implementación
 
@@ -141,3 +195,9 @@ Lo que todavía me haría **adivinar**. Cuando esta lista queda vacía → se co
   `docs/identidad/`. Se escribe el análisis de "qué hace bueno a un tutorial" (sección 2) y de ahí
   salen las opciones de la ronda 1. Entregada la ronda 1 (VISIÓN GENERAL, 7 preguntas + 6
   sugerencias). Entorno en la nube: el HTML se entrega como archivo, no con `xdg-open`.
+- **21/09/2026** — Ronda 1 respondida. Se cierran 12 decisiones (D8–D19), se desmiente S6 (ahora hay
+  servidor), se descartan el mazo de 4 colores, la entrega por partes, los idiomas y —por ahora— el
+  multijugador. Dos cosas no quedan cerradas: el criterio de decisión (contestó "decide tú" sobre lo
+  más crítico del juego, así que se repregunta **una vez** con recomendación) y la tensión entre
+  cuenta obligatoria y jugar sin conexión. Entregada la ronda 2 (CÓMO FUNCIONA POR DENTRO, 7
+  preguntas + 5 sugerencias).
