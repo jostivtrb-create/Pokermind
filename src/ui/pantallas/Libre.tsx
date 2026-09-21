@@ -39,6 +39,14 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
 
   useEffect(() => () => { if (temporizador.current) clearTimeout(temporizador.current) }, [])
 
+  // Retomar un torneo guardado (D28). Lo que se guarda es el torneo, no la mano
+  // a medias: al volver se reparte la siguiente. Sin esto, volver a un torneo
+  // guardado dejaba una pantalla sin mesa y sin forma de continuar.
+  useEffect(() => {
+    if (torneo && !torneo.terminado && !mesa && !pensando) repartir(torneo)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const empezar = () => {
     const nuevo = crearTorneo({ dificultad: 0.5 })
     setTorneo(nuevo)
@@ -130,7 +138,8 @@ export function Libre({ ir }: { ir: (p: Pantalla) => void }) {
         <button className="boton" style={{ padding: '8px 14px' }} onClick={() => ir('jugar')}>← Salir</button>
         <span className="chip">Mano {torneo.manosJugadas + 1}</span>
         <span className="chip">Ciegas {ciegas.ciegaPequena}/{ciegas.ciegaGrande}</span>
-        {mesa && <span className="chip morado">Bote {boteTotal(mesa)}</span>}
+        {mesa && !mesa.manoTerminada && <span className="chip morado">Bote {boteTotal(mesa)}</span>}
+        <span className="chip">{torneo.jugadores.filter((j) => j.fichas > 0).length} en pie</span>
       </div>
 
       {mesa && (

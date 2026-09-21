@@ -5,7 +5,7 @@
 
 - **Tarea:** Crear PokerMind, un juego que enseña a tomar buenas decisiones en póker usando probabilidades, con tutorial desde cero y modo libre contra bots.
 - **Inicio:** 21 de septiembre de 2026
-- **Estado:** 🔵 Construyendo (rondas cerradas, no se pregunta más)
+- **Estado:** ✅ Terminada la primera versión completa · pendiente solo que el usuario cree el proyecto de Supabase
 - **Proyecto:** `/home/user/Pokermind` · rama `claude/poker-learning-game-xh7r22`
 
 ---
@@ -227,7 +227,7 @@ que se puede escribir sin bloquear nada.
 
 - [x] 16 · Los 9 módulos del temario, lección a lección — **41 lecciones**, todas validadas contra el motor
 - [x] 17 · Estadísticas, logros, reto diario y repaso espaciado de errores
-- [~] 18 · Instalable y sin conexión (PWA) hecho · queda el repaso final
+- [x] 18 · Instalable y sin conexión (PWA), pulido visual y repaso final
 
 ---
 
@@ -324,3 +324,32 @@ que se puede escribir sin bloquear nada.
   se juega igual — eso es a propósito, para que nada dependa de tener el servidor montado.
   Instrucciones completas en `docs/servidor.md`, con el SQL de la tabla y las cuatro políticas que
   impiden que nadie lea el progreso de otro.
+- **21/09/2026** — Repaso final jugando de verdad en móvil: 25 acciones y 13 manos seguidas del
+  torneo sin un solo error de consola. Apareció **un fallo que no daba la cara en los tests**: al
+  salir de un torneo a medias y volver, la pantalla se quedaba sin mesa y sin forma de continuar,
+  porque lo que se guarda es el torneo y no la mano, y nadie repartía la siguiente. Corregido: al
+  volver se reparte mano nueva.
+
+---
+
+## 10. Estado final de la primera versión
+
+**Hecho y funcionando** (18 pasos del plan, 112 tests):
+
+- Motor completo: evaluador de manos, probabilidades exactas y simuladas, rangos, lectura del rival
+  y evaluación de decisiones por valor esperado (D20).
+- Mesa de Hold'em sin límite con botes paralelos, torneo corto con eliminación y bots con carácter.
+- Entrenador con 9 módulos y 41 lecciones, corrección al instante, ayuda que se va quitando, dominio
+  por aciertos y avance rápido para el que ya sabe.
+- Modo libre con puntuación por decisiones, estilos revelados al final y torneo guardable.
+- Reto diario, repaso espaciado de errores, rebobinar la mano, rango del rival, estadísticas, logros,
+  glosario de 29 términos, ajustes y página de privacidad.
+- Cuentas completas y sincronización que no bloquea el juego.
+- Instalable en el móvil y jugable sin conexión.
+
+**Lo único pendiente, y no lo puedo hacer yo:** crear el proyecto gratuito de Supabase y poner sus
+dos claves en `.env` (instrucciones en `docs/servidor.md`). Hasta entonces el juego arranca en modo
+local y se juega igual.
+
+**Lo que se dejó fuera a propósito**, por decisión suya: multijugador con amigos (D14, el motor está
+preparado), otros idiomas (D12) y el mazo de cuatro colores.
