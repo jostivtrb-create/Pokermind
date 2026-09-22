@@ -160,6 +160,26 @@ export function rangoPorPorcentaje(porcentaje: number): Rango {
   return rangoDeClases(clases, `el ${(porcentaje * 100).toFixed(0)}% de manos más fuertes`)
 }
 
+/**
+ * Qué parte del rango está dentro del mejor X% de las manos iniciales.
+ *
+ * Es el equivalente antes del flop de "cuánto le liga la mesa": con un rango de
+ * apertura ancho, poco de lo que lleva aguanta una subida; con un rango tieso,
+ * casi todo.
+ */
+function fraccionPorEncimaDe(r: Rango, mejorParte: number): number {
+  const corte = new Set(rangoPorPorcentaje(mejorParte).combos.map((c) => claveDelCombo(c.a, c.b)))
+  let dentro = 0
+  let peso = 0
+  for (const combo of r.combos) {
+    peso += combo.peso
+    if (corte.has(claveDelCombo(combo.a, combo.b))) dentro += combo.peso
+  }
+  return peso === 0 ? 0 : dentro / peso
+}
+
+const claveDelCombo = (a: Carta, b: Carta) => (a < b ? a * 52 + b : b * 52 + a)
+
 /** Qué porcentaje de todas las manos ocupa un rango. */
 export function porcentajeDeRango(r: Rango): number {
   const suma = r.combos.reduce((t, c) => t + c.peso, 0)
@@ -341,7 +361,11 @@ export { CLASES_PREFLOP }
  * bueno. El motor de decisiones lo usa para saber cuánta gente se va a retirar.
  */
 export function fraccionQueLiga(r: Rango, mesa: readonly Carta[]): number {
-  if (mesa.length === 0 || r.combos.length === 0) return 1
+  if (r.combos.length === 0) return 1
+  // Antes del flop no hay mesa con la que ligar: lo que decide si aguanta una
+  // subida es lo buena que sea su mano de salida. Devolver 1 —"le liga todo"—
+  // hacía creer al motor que casi nadie se retira nunca antes del flop.
+  if (mesa.length === 0) return fraccionPorEncimaDe(r, 0.35)
 
   const valoresMesa = new Uint8Array(13)
   const palosMesa = new Uint8Array(4)
@@ -396,7 +420,10 @@ function ligaAlgo(
  * proyecto. Aquí solo lo que no se tira ante una apuesta.
  */
 export function fraccionQueLigaFuerte(r: Rango, mesa: readonly Carta[]): number {
-  if (mesa.length === 0 || r.combos.length === 0) return 0
+  if (r.combos.length === 0) return 0
+  // Antes del flop, "fuerte" son las manos con las que nadie suelta: el 12% de
+  // arriba, más o menos de dieces para arriba y AK.
+  if (mesa.length === 0) return fraccionPorEncimaDe(r, 0.12)
 
   let masAltaMesa = -1
   const valoresMesa = new Uint8Array(13)

@@ -57,7 +57,7 @@ export function decidirBot(estado: EstadoMesa, azar: Aleatorio): DecisionBot {
 
   const analisis = analizar(situacion)
   const rivalesVivos = jugadoresEnJuego(estado).length - 1
-  const elegida = elegirConCaracter(analisis, perfil, azar, rivalesVivos)
+  const elegida = elegirConCaracter(analisis, perfil, azar, rivalesVivos, situacion.bote)
 
   return traducirAMesa(estado, elegida, perfil, azar)
 }
@@ -68,24 +68,27 @@ export function decidirBot(estado: EstadoMesa, azar: Aleatorio): DecisionBot {
  * Con varios rivales vivos hay que apretar: ganarle a uno es fácil, ganarle a
  * tres a la vez no. Se penaliza seguir en la mano en proporción a cuánta gente queda.
  */
-/** El bote del que habla el análisis, para medir los márgenes con él. */
-function bote(analisis: Analisis): number {
-  const pagar = analisis.acciones.find((a) => a.accion === 'pagar')
-  return Math.max(1, Math.abs(pagar?.valorEsperado ?? 1) * 2)
-}
-
 function elegirConCaracter(
   analisis: Analisis,
   perfil: PerfilRival,
   azar: Aleatorio,
   rivalesVivos: number,
+  bote: number,
 ): ValorDeAccion {
   const castigoPorGente = rivalesVivos > 1 ? 0.75 ** (rivalesVivos - 1) : 1
 
-  // Para subir sin mano hay que atreverse: el margen que exige cada uno por
-  // encima de retirarse sale de lo farolero que sea. La roca casi nunca se lanza;
-  // el loco, con que le salgan las cuentas por poco, ya va.
-  const margenParaFarolear = (1 - perfil.farol) * 0.25 * Math.max(1, analisis.acciones[0] ? bote(analisis) : 1)
+  /*
+    Para subir sin mano hay que atreverse: el margen que exige cada uno por
+    encima de retirarse sale de lo farolero que sea. La roca casi nunca se lanza;
+    el loco, con que le salgan las cuentas por poco, ya va.
+
+    El margen se mide sobre EL BOTE. Antes se estimaba a partir del valor de
+    pagar, y cuando pagar salía casi a cero —que es lo normal antes del flop— el
+    margen se quedaba en dos fichas: con eso, un resubidón con 7-2 que ganaba
+    3 fichas de media pasaba el filtro. El bot resubía con CUALQUIER mano desde
+    la ciega grande, que es justo lo que cazó un jugador de póker probándolo.
+  */
+  const margenParaFarolear = (1 - perfil.farol) * 0.25 * Math.max(1, bote)
 
   const puntuadas = analisis.acciones.map((accion) => {
     let valor = accion.accion === 'retirarse' ? 0 : accion.valorEsperado * castigoPorGente
@@ -103,8 +106,42 @@ function elegirConCaracter(
     return { accion, valor }
   })
 
+  /*
+    Antes de ordenar, se filtran las subidas por CARÁCTER. Es lo que separa a un
+    jugador de una calculadora, y es donde estaba el problema que cazó un
+    jugador de póker probando el juego ("pagan Q6 en bb"):
+
+     · Si subir gana bastante más que no subir, es una jugada y se queda.
+     · Si la diferencia cabe en el ruido, es una decisión de carácter: el farol
+       se lanza a su frecuencia, no siempre. Antes se cogía siempre el máximo, y
+       con eso el bot resubía con 165 de las 169 manos ante una subida pequeña.
+     · Si subir pierde claramente, no es un farol: es tirar fichas. Fuera, por
+       muy loco que sea el bot.
+
+    El margen se mide contra el bote Y contra lo que arriesga la subida:
+    resubir 105 fichas para ganar tres de media no lo hace nadie.
+  */
+  const mejorSinSubir = puntuadas
+    .filter((p) => p.accion.accion !== 'subir')
+    .reduce((a, b) => (b.valor > a.valor ? b : a), { valor: 0 } as { valor: number })
+
+  for (const p of puntuadas) {
+    if (p.accion.accion !== 'subir') continue
+    const ruido = Math.max(0.03 * Math.max(1, bote), 0.12 * (p.accion.pones ?? 0))
+    const ventaja = p.valor - mejorSinSubir.valor
+    if (ventaja >= ruido) continue
+    if (ventaja < -ruido) {
+      p.valor = -Infinity
+      continue
+    }
+    const conMano = (p.accion.equitySiSigue ?? 1) >= 0.5
+    const seAtreve = conMano ? 0.35 + perfil.agresividad * 0.5 : perfil.farol
+    if (azar.siguiente() > seAtreve) p.valor = -Infinity
+  }
+
   const ordenadas = [...puntuadas].sort((a, b) => b.valor - a.valor)
   const mejor = ordenadas[0]
+
 
   // La disciplina decide cuánto se separa de la mejor jugada. Sin este ruido los
   // cuatro bots jugarían idénticos y no habría nada que leer en el modo libre.

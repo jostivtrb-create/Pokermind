@@ -61,7 +61,23 @@ export function rangoEstimado(
   let rango: Rango
   if (subioAntesDelFlop) {
     rango = rangoApertura(posicion)
-    rango = { ...rango, descripcion: `las manos con las que sube desde ${textoPosicion(posicion)}` }
+    /*
+      El TAMAÑO de la subida dice muchísimo, y antes no se miraba: subir tres
+      veces la ciega y subir diez daban el mismo rango. Con eso, el motor creía
+      que a una subida enorme se le podía resubir con J-8, porque el rival
+      "todavía podía llevar cualquier cosa".
+    */
+    const suSubida = suyas.find((h) => h.calle === 'preflop' && h.accion === 'subir')
+    const veces = suSubida ? (suSubida.cantidad + estado.ciegaGrande) / estado.ciegaGrande : 0
+    const quedarse = veces >= 10 ? 0.2 : veces >= 7 ? 0.35 : veces >= 4.5 ? 0.6 : 1
+    if (quedarse < 1) rango = estrecharPorFuerza(rango, [], quedarse)
+    rango = {
+      ...rango,
+      descripcion:
+        quedarse < 1
+          ? `las manos con las que sube ${Math.round(veces)} veces la ciega desde ${textoPosicion(posicion)}`
+          : `las manos con las que sube desde ${textoPosicion(posicion)}`,
+    }
   } else if (pagoAntesDelFlop) {
     rango = rangoPago(posicion)
   } else if (posicion === 'ciegaGrande') {

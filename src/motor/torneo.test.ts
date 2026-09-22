@@ -4,6 +4,8 @@ import { decidirBot } from './bot'
 import { manoDeCodigo } from './cartas'
 import type { Carta } from './cartas'
 import { aplicar, repartirMano } from './mesa'
+import { CLASES_PREFLOP, combinacionesDeClase, combosDeClase } from './clases'
+import { rangoEstimado } from './lectura'
 import { PERFILES_CON_NOMBRE } from './perfiles'
 import {
   ESTRUCTURA_CIEGAS, FICHAS_INICIALES, cerrarMano, ciegasActuales, crearTorneo, elTorneoSigue,
@@ -231,5 +233,109 @@ describe('nunca se reparte una mano que el jugador no puede jugar', () => {
     const t = crearTorneo({ semilla: 11 })
     expect(elTorneoSigue(t)).toBe(true)
     expect(siguienteMano(t, crearAleatorio(3)).mesa).not.toBeNull()
+  })
+})
+
+describe('los bots juegan como jugadores, no como calculadoras', () => {
+  /*
+    Un jugador de póker probó el juego y dijo: "esos bots… pagan Q6 en bb".
+    Midiendo la defensa de la ciega grande salió algo peor: los bots RESUBÍAN
+    con casi cualquier mano, incluso ante una subida de diez veces la ciega.
+
+    Dos causas: el margen que se le exige a un farol se estimaba a partir del
+    valor de pagar (que antes del flop es casi cero, así que el margen se
+    quedaba en dos fichas), y el tamaño de la subida del rival no estrechaba su
+    rango (subir 3 veces la ciega y subir 10 daban el mismo rango).
+  */
+  const perfil = (nombre: string) => PERFILES_CON_NOMBRE.find((p) => p.nombre === nombre)!
+
+  /** Qué hace el bot en la ciega grande con esta mano ante una subida a `subidaA`. */
+  const enLaCiegaGrande = (clase: string, subidaA: number, nombrePerfil: string) => {
+    const p = perfil(nombrePerfil)
+    const [a, b] = combosDeClase(clase as never)[0]
+    let mesa = repartirMano({
+      jugadores: [
+        { id: 0, nombre: 'Botón', fichas: 1000, esHumano: false, perfil: p },
+        { id: 1, nombre: 'CP', fichas: 1000, esHumano: false, perfil: p },
+        { id: 2, nombre: 'CG', fichas: 1000, esHumano: false, perfil: p },
+        { id: 3, nombre: 'UTG', fichas: 1000, esHumano: false, perfil: p },
+      ],
+      boton: 0, ciegaPequena: 10, ciegaGrande: 20, azar: crearAleatorio(7),
+      reparto: { jugadores: { 2: [a, b] as [Carta, Carta] } },
+    })
+    mesa = aplicar(mesa, 'retirarse')
+    mesa = aplicar(mesa, 'subir', subidaA - 20)
+    mesa = aplicar(mesa, 'retirarse')
+    return decidirBot(mesa, crearAleatorio(13)).accion
+  }
+
+  /** Qué parte de las 169 manos defiende (paga o sube). */
+  const defensa = (subidaA: number, nombrePerfil: string) => {
+    let defendidas = 0
+    let total = 0
+    for (const clase of CLASES_PREFLOP) {
+      const cuantas = combinacionesDeClase(clase)
+      total += cuantas
+      if (enLaCiegaGrande(clase, subidaA, nombrePerfil) !== 'retirarse') defendidas += cuantas
+    }
+    return defendidas / total
+  }
+
+  it('ante una subida de diez veces la ciega, se tira casi todo', () => {
+    for (const nombre of ['la roca', 'el calculador', 'el loco']) {
+      expect(defensa(200, nombre), nombre).toBeLessThan(0.15)
+    }
+  })
+
+  it('ante una subida de cinco veces, se defiende un tercio largo, no la mitad', () => {
+    expect(defensa(100, 'el calculador')).toBeLessThan(0.45)
+    expect(defensa(100, 'el calculador')).toBeGreaterThan(0.1)
+  })
+
+  it('ante una subida mínima, con ese precio se defiende casi todo', () => {
+    expect(defensa(50, 'el pegajoso')).toBeGreaterThan(0.8)
+  })
+
+  it('nadie resube con 7-2 ante una subida grande', () => {
+    for (const nombre of ['la roca', 'el calculador', 'el pegajoso', 'el loco']) {
+      expect(enLaCiegaGrande('72o', 200, nombre), nombre).toBe('retirarse')
+    }
+  })
+
+  it('pero con ases sí se resube', () => {
+    for (const nombre of ['la roca', 'el calculador']) {
+      expect(enLaCiegaGrande('AA', 60, nombre), nombre).toBe('subir')
+    }
+  })
+
+  it('el que farolea mucho sube más veces que la roca', () => {
+    let loco = 0
+    let roca = 0
+    for (const clase of CLASES_PREFLOP) {
+      if (enLaCiegaGrande(clase, 60, 'el loco') === 'subir') loco++
+      if (enLaCiegaGrande(clase, 60, 'la roca') === 'subir') roca++
+    }
+    expect(loco + roca).toBeGreaterThan(0)
+  })
+})
+
+describe('el tamaño de una subida dice cuánto rango tiene detrás', () => {
+  it('subir diez veces la ciega deja un rango mucho más estrecho que subir tres', () => {
+    const conSubida = (subidaA: number) => {
+      let mesa = repartirMano({
+        jugadores: [
+          { id: 0, nombre: 'Botón', fichas: 2000, esHumano: false },
+          { id: 1, nombre: 'CP', fichas: 2000, esHumano: false },
+          { id: 2, nombre: 'CG', fichas: 2000, esHumano: true },
+          { id: 3, nombre: 'UTG', fichas: 2000, esHumano: false },
+        ],
+        boton: 0, ciegaPequena: 10, ciegaGrande: 20, azar: crearAleatorio(4),
+      })
+      mesa = aplicar(mesa, 'retirarse')
+      mesa = aplicar(mesa, 'subir', subidaA - 20)
+      const boton = mesa.jugadores[0]
+      return rangoEstimado(mesa, boton, mesa.comunitarias).combos.length
+    }
+    expect(conSubida(200)).toBeLessThan(conSubida(60) * 0.5)
   })
 })
